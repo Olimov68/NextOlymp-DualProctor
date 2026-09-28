@@ -1,0 +1,77 @@
+// server/prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SessionStatus {
+  WAITING_DEVICE
+  DEVICE_CONNECTED
+  CALIBRATING
+  CALIBRATED
+  START_PERMITTED
+  EXAM_IN_PROGRESS
+  TERMINATED
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  fullName        String
+  role            String           @default("student")
+  proctorSessions ProctorSession[]
+  createdAt       DateTime         @default(now())
+}
+
+model Olympiad {
+  id              String           @id @default(uuid())
+  title           String
+  subject         String
+  startTime       DateTime
+  endTime         DateTime
+  durationMinutes Int
+  proctorSessions ProctorSession[]
+  createdAt       DateTime         @default(now())
+}
+
+model ProctorSession {
+  id              String           @id @default(uuid())
+  sessionId       String           @unique
+  token           String
+  examId          String
+  studentId       String
+  status          SessionStatus    @default(WAITING_DEVICE)
+  pairedAt        DateTime?
+  calibratedAt    DateTime?
+  batteryLevel    Int?
+  deviceInfo      String?
+  calibrationLogs CalibrationLog[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  olympiad        Olympiad         @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([examId, studentId])
+}
+
+model CalibrationLog {
+  id               String         @id @default(uuid())
+  sessionId        String
+  validPlacement   Boolean
+  missingElements  String         // JSON array, e.g. ["hands", "screen"]
+  guidanceMessage  String
+  confidence       Float?
+  snapshotHash     String?
+  details          String?        // JSON detailed metrics
+  createdAt        DateTime       @default(now())
+
+  session          ProctorSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@index([sessionId])
+}

@@ -1,0 +1,38 @@
+# NextOlymp SPA Fallback and Security Configuration
+ServerSignature Off
+
+<IfModule mod_headers.c>
+  Header unset Server
+  Header unset X-Powered-By
+</IfModule>
+
+ErrorDocument 404 /404.html
+ErrorDocument 403 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Allow direct access to existing files and directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Direct access to API
+  RewriteRule ^api/ - [L]
+
+  # All other SPA frontend routes fallback to index.html
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Caching for Production Assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>

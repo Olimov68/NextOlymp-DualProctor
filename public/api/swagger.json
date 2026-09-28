@@ -1,0 +1,195 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NextOlymp REST API",
+    "description": "NextOlymp onlayn olimpiada va milliy sertifikat platformasi uchun rasmiy MySQL REST API spetsifikatsiyasi.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "NextOlymp Dev Team",
+      "url": "https://nextolymp.uz"
+    }
+  },
+  "servers": [
+    { "url": "https://nextolymp.uz", "description": "Production Server" },
+    { "url": "", "description": "Local / Current Host" }
+  ],
+  "paths": {
+    "/api/auth.php": {
+      "post": {
+        "summary": "Tizimga kirish (Login) yoki Ro'yxatdan o'tish (Register)",
+        "tags": ["1. Avtorizatsiya (Auth)"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": { "type": "string", "enum": ["login", "register"], "example": "login" },
+                  "email": { "type": "string", "example": "user@nextolymp.uz" },
+                  "password": { "type": "string", "example": "parol123" },
+                  "fullName": { "type": "string", "example": "Jasur Aliyev" },
+                  "phone": { "type": "string", "example": "+998901234567" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Foydalanuvchi va JWT token" } }
+      }
+    },
+    "/api/olympiads.php": {
+      "get": {
+        "summary": "Olimpiadalar ro'yxati va savollarini olish",
+        "tags": ["2. Olimpiadalar (Olympiads)"],
+        "responses": { "200": { "description": "Olimpiadalar ro'yxati" } }
+      },
+      "post": {
+        "summary": "Olimpiada yaratish yoki tahrirlash",
+        "tags": ["2. Olimpiadalar (Olympiads)"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string", "example": "Matematika Respublika Olimpiadasi" },
+                  "category": { "type": "string", "example": "math" },
+                  "duration_minutes": { "type": "integer", "example": 60 },
+                  "price": { "type": "number", "example": 0.0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Olimpiada saqlandi" } }
+      }
+    },
+    "/api/submissions.php": {
+      "get": {
+        "summary": "Topshirilgan test natijalari ro'yxati",
+        "tags": ["3. Natijalar va Rasch Modeli (Submissions)"],
+        "parameters": [
+          { "name": "user_id", "in": "query", "schema": { "type": "string" } },
+          { "name": "olympiad_id", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Submissions ro'yxati" } }
+      },
+      "post": {
+        "summary": "Test topshirish va Rasch bali (theta) hisoblash",
+        "tags": ["3. Natijalar va Rasch Modeli (Submissions)"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "string", "example": "usr_1" },
+                  "olympiad_id": { "type": "string", "example": "1" },
+                  "score": { "type": "integer", "example": 80 },
+                  "total_questions": { "type": "integer", "example": 25 },
+                  "answers": { "type": "object", "example": { "1": "A", "2": "C" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Natija va Rasch theta saqlandi" } }
+      }
+    },
+    "/api/leaderboard.php": {
+      "get": {
+        "summary": "Jonli reyting (Respublika, viloyat va maktablar kesimida)",
+        "tags": ["4. Jonli Reyting (Leaderboard)"],
+        "parameters": [
+          { "name": "region", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Reyting jadvali" } }
+      }
+    },
+    "/api/security.php": {
+      "get": {
+        "summary": "Kiberxavfsizlik va Anti-Cheat jurnali (Grafiklar uchun)",
+        "tags": ["5. Kiberxavfsizlik (Security)"],
+        "responses": { "200": { "description": "Xavfsizlik loglari va statistikasi" } }
+      },
+      "post": {
+        "summary": "Qoidabuzarlik yoki hodisani qayd etish",
+        "tags": ["5. Kiberxavfsizlik (Security)"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "string", "example": "usr_1" },
+                  "event_type": { "type": "string", "example": "tab_switch" },
+                  "details": { "type": "string", "example": "Boshqa oynaga o'tdi" },
+                  "severity": { "type": "string", "example": "medium" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Hodisa yozildi" } }
+      }
+    },
+    "/api/payments.php": {
+      "get": {
+        "summary": "To'lovlar ro'yxatini olish",
+        "tags": ["6. To'lovlar (Payments)"],
+        "responses": { "200": { "description": "To'lovlar ro'yxati" } }
+      },
+      "post": {
+        "summary": "To'lov qabul qilish (Click, Payme, Uzum)",
+        "tags": ["6. To'lovlar (Payments)"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "string", "example": "usr_1" },
+                  "olympiad_id": { "type": "integer", "example": 1 },
+                  "amount": { "type": "number", "example": 35000 },
+                  "provider": { "type": "string", "enum": ["click", "payme", "uzum"], "example": "payme" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "To'lov saqlandi" } }
+      }
+    },
+    "/api/notifications.php": {
+      "get": {
+        "summary": "Foydalanuvchi yoki tizim xabarnomalarini olish",
+        "tags": ["7. Xabarnomalar (Notifications)"],
+        "responses": { "200": { "description": "Xabarnomalar ro'yxati" } }
+      },
+      "post": {
+        "summary": "Yangi xabarnoma jo'natish",
+        "tags": ["7. Xabarnomalar (Notifications)"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string", "example": "Olimpiada boshlandi" },
+                  "message": { "type": "string", "example": "Matematika olimpiadasi rasman ochildi!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Xabarnoma yaratildi" } }
+      }
+    }
+  }
+}
