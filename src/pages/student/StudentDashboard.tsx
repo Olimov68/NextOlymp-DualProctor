@@ -37,27 +37,27 @@ export const StudentDashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       
-      
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827] text-[#F1F5F9] rounded-xl p-4 sm:p-5 border border-[#1E293B] shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5 relative z-10">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-emerald-950/40 text-zinc-100 rounded-2xl p-6 sm:p-8 border border-white/10 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4 relative z-10">
           <Avatar
             name={user.fullName || 'User'}
             src={user.avatarUrl}
             size="lg"
-            className="ring-2 ring-[#3B82F6]/60 shadow-md shrink-0"
+            className="ring-2 ring-emerald-500/60 shadow-lg shrink-0"
           />
 
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B] text-[10px] font-bold uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-[#F59E0B]" />
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
               <span>Xush kelibsiz, {user.fullName || 'Foydalanuvchi'}!</span>
             </div>
             
-            <h1 className="text-lg sm:text-xl font-black text-[#F1F5F9] tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-zinc-100 tracking-tight">
               Shaxsiy Boshqaruv Paneli
             </h1>
             
-            <p className="text-[11px] sm:text-xs text-[#94A3B8] font-medium max-w-xl">
+            <p className="text-xs sm:text-sm text-zinc-400 font-normal max-w-xl">
               Platformadagi musobaqalarda qatnashing, bilimingizni sinang va milliy reytingda yuqori pog'onani egallang.
             </p>
           </div>
@@ -67,9 +67,9 @@ export const StudentDashboard: React.FC = () => {
           <Link to="/student/olympiads">
             <Button
               variant="primary"
-              size="sm"
-              className="font-bold shadow-xs"
-              rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              size="md"
+              className="font-semibold shadow-lg shadow-emerald-500/20"
+              rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               Musobaqalarga kirish
             </Button>
@@ -77,66 +77,66 @@ export const StudentDashboard: React.FC = () => {
         </div>
       </div>
 
-      
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <Link to="/student/olympiads">
-          <Card hoverEffect className="p-4 flex items-center gap-3.5 bg-[#111827] border border-[#1E293B] group">
-            <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/15 group-hover:bg-[#3B82F6] text-[#3B82F6] group-hover:text-white border border-[#3B82F6]/30 flex items-center justify-center font-bold shrink-0 transition-colors">
-              <Trophy className="w-5 h-5" />
+          <Card hoverEffect className="p-6 flex items-center gap-4 bg-zinc-900/60 border border-white/10 rounded-2xl group backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/15 group-hover:bg-emerald-500 text-emerald-400 group-hover:text-white border border-emerald-500/30 flex items-center justify-center font-bold shrink-0 transition-all duration-200">
+              <Trophy className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-black text-[#F1F5F9] font-mono">{activeOlympiads.length} ta</div>
-              <div className="text-[11px] text-[#94A3B8] font-bold uppercase tracking-wider">Faol Olimpiadalar</div>
+              <div className="text-2xl sm:text-3xl font-black text-zinc-100 font-mono">{activeOlympiads.length} ta</div>
+              <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Faol Olimpiadalar</div>
             </div>
           </Card>
         </Link>
 
         <Link to="/certificates">
-          <Card hoverEffect className="p-4 flex items-center gap-3.5 bg-[#111827] border border-[#1E293B] group">
-            <div className="w-10 h-10 rounded-lg bg-[#F59E0B]/15 group-hover:bg-[#F59E0B] text-[#F59E0B] group-hover:text-slate-950 border border-[#F59E0B]/30 flex items-center justify-center font-bold shrink-0 transition-colors">
-              <Award className="w-5 h-5" />
+          <Card hoverEffect className="p-6 flex items-center gap-4 bg-zinc-900/60 border border-white/10 rounded-2xl group backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/15 group-hover:bg-amber-500 text-amber-400 group-hover:text-zinc-950 border border-amber-500/30 flex items-center justify-center font-bold shrink-0 transition-all duration-200">
+              <Award className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-black text-[#F1F5F9] font-mono">{certificatesCount} ta</div>
-              <div className="text-[11px] text-[#94A3B8] font-bold uppercase tracking-wider">Sertifikatlar</div>
+              <div className="text-2xl sm:text-3xl font-black text-zinc-100 font-mono">{certificatesCount} ta</div>
+              <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Sertifikatlar</div>
             </div>
           </Card>
         </Link>
 
         <Link to="/student/leaderboard">
-          <Card hoverEffect className="p-4 flex items-center gap-3.5 bg-[#111827] border border-[#1E293B] group">
-            <div className="w-10 h-10 rounded-lg bg-[#10B981]/15 group-hover:bg-[#10B981] text-[#10B981] group-hover:text-white border border-[#10B981]/30 flex items-center justify-center font-bold shrink-0 transition-colors">
-              <BarChart3 className="w-5 h-5" />
+          <Card hoverEffect className="p-6 flex items-center gap-4 bg-zinc-900/60 border border-white/10 rounded-2xl group backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-teal-500/15 group-hover:bg-teal-500 text-teal-400 group-hover:text-white border border-teal-500/30 flex items-center justify-center font-bold shrink-0 transition-all duration-200">
+              <BarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-black text-[#10B981] font-mono">{totalXp.toLocaleString()} XP</div>
-              <div className="text-[11px] text-[#94A3B8] font-bold uppercase tracking-wider">Reyting Ballaringiz</div>
+              <div className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">{totalXp.toLocaleString()} XP</div>
+              <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Reyting Ballaringiz</div>
             </div>
           </Card>
         </Link>
       </div>
 
-      
-      <div className="space-y-4">
+      {/* Recommended & Ongoing Contests */}
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-[#F1F5F9] tracking-tight">
+          <h3 className="text-xl font-bold text-zinc-100 tracking-tight">
             Davom etayotgan va Tavsiya etiladigan Musobaqalar
           </h3>
-          <Link to="/student/olympiads" className="text-xs font-semibold text-[#3B82F6] hover:underline">
+          <Link to="/student/olympiads" className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
             Barchasini ko'rish →
           </Link>
         </div>
 
         {activeOlympiads.length === 0 ? (
-          <div className="p-10 rounded-xl bg-[#111827] border border-dashed border-[#1E293B] text-center space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] mx-auto flex items-center justify-center">
-              <Trophy className="w-6 h-6" />
+          <div className="p-12 rounded-2xl bg-zinc-900/40 border border-dashed border-white/10 text-center space-y-4 backdrop-blur-md">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center">
+              <Trophy className="w-7 h-7" />
             </div>
-            <h4 className="text-base font-bold text-[#F1F5F9]">Hozircha faol olimpiada yo'q</h4>
-            <p className="text-xs text-[#94A3B8] max-w-md mx-auto">
+            <h4 className="text-lg font-bold text-zinc-100">Hozircha faol olimpiada yo'q</h4>
+            <p className="text-sm text-zinc-400 max-w-md mx-auto">
               Yaqin soatlarda yangi fan olimpiadalari boshlanadi. Musobaqalar taqvimi bilan tanishishingiz mumkin.
             </p>
-            <Link to="/student/olympiads" className="inline-block pt-1">
+            <Link to="/student/olympiads" className="inline-block pt-2">
               <Button size="sm" variant="primary">
                 Olimpiadalar ro'yxatiga o'tish
               </Button>
@@ -157,43 +157,43 @@ export const StudentDashboard: React.FC = () => {
               const isCompleted = attemptsCount > 0 && (!retakeAllowed || attemptsCount >= maxAttempts);
 
               return (
-                <Card key={o.id} hoverEffect className="p-5 flex flex-col justify-between border border-[#1E293B] bg-[#111827] space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs flex-wrap gap-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#3B82F6]/15 text-[#60A5FA] border border-[#3B82F6]/30 font-bold uppercase text-[10px]">
+                <Card key={o.id} hoverEffect className="p-6 flex flex-col justify-between border border-white/10 bg-zinc-900/60 rounded-2xl space-y-5 backdrop-blur-md">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold text-xs">
                           {o.subject}
                         </span>
                         {hasGradeFilter && (
-                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 text-[10px] font-bold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-xs font-semibold">
                             {targetGrades.join(', ')}-sinf
                           </span>
                         )}
                         {retakeAllowed && (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-semibold">
                             {maxAttempts}x Urinish
                           </span>
                         )}
                       </div>
-                      <span className="text-[#94A3B8] flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-[#3B82F6]" />
+                      <span className="text-zinc-400 flex items-center gap-1.5 text-xs">
+                        <Clock className="w-3.5 h-3.5 text-emerald-400" />
                         {(o as any).durationMinutes || 60} daqiqa
                       </span>
                     </div>
 
-                    <h4 className="text-base font-bold text-[#F1F5F9]">{o.title}</h4>
-                    <p className="text-xs text-[#94A3B8] line-clamp-2">{o.description}</p>
+                    <h4 className="text-lg font-bold text-zinc-100 group-hover:text-emerald-300 transition-colors">{o.title}</h4>
+                    <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed">{o.description}</p>
 
                     {!isGradeEligible && (
-                      <div className="text-[11px] text-rose-400 font-medium pt-1">
+                      <div className="text-xs text-rose-400 font-medium pt-1">
                         ⚠️ Faqat {targetGrades.join(', ')}-sinflar uchun (Siz: {studentGrade}-sinf)
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-3 border-t border-[#1E293B] flex items-center justify-between">
-                    <span className="text-xs text-[#94A3B8] flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-[#F59E0B]" />
+                  <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-xs text-zinc-400 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
                       {o.startDate}
                     </span>
 

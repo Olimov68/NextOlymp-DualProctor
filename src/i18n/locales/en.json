@@ -113,11 +113,11 @@
   },
   "certificate": {
     "title": "Certificates & Awards",
-    "subtitle": "Official verified credentials issued by Next Olymp",
+    "subtitle": "Official verified credentials issued by Ibn Sino Platform",
     "verifyCode": "Verification Code",
     "downloadPdf": "Download PDF",
     "verifyTitle": "Certificate Authentication",
-    "verifyInputPlaceholder": "Example: NO-2026-MATH-8921",
+    "verifyInputPlaceholder": "Example: IS-2026-MATH-8921",
     "verifyButton": "Verify Now",
     "validCertificate": "Officially Verified Credential",
     "issuedTo": "Recipient",
@@ -125,7 +125,7 @@
     "subject": "Subject"
   },
   "auth": {
-    "loginTitle": "Sign In to Next Olymp",
+    "loginTitle": "Sign In to Ibn Sino Platform",
     "registerTitle": "Create an Account",
     "emailLabel": "Email Address",
     "passwordLabel": "Password",

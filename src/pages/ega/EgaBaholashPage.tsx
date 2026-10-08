@@ -135,7 +135,7 @@ export const EgaBaholashPage: React.FC = () => {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Milliy Sertifikat Sinovlari');
-    XLSX.writeFile(workbook, `NextOlymp_Milliy_Sertifikat_Sinovlari_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(workbook, `IbnSino_Milliy_Sertifikat_Sinovlari_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   
@@ -453,36 +453,36 @@ export const EgaBaholashPage: React.FC = () => {
 
             
             {filteredExams.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl bg-[#111827] border border-[#1E293B] space-y-3">
-                <Award className="w-12 h-12 text-[#94A3B8] mx-auto opacity-60" />
-                <h3 className="text-base font-bold text-[#F1F5F9]">Milliy sertifikat sinovlari topilmadi</h3>
-                <p className="text-xs text-[#94A3B8]">Qidiruv yoki filtrlash parametrlarini o'zgartirib ko'ring</p>
+              <div className="p-12 text-center rounded-2xl bg-zinc-900/60 border border-white/10 space-y-3">
+                <Award className="w-12 h-12 text-zinc-500 mx-auto opacity-60" />
+                <h3 className="text-base font-bold text-zinc-100">Milliy sertifikat sinovlari topilmadi</h3>
+                <p className="text-xs text-zinc-400">Qidiruv yoki filtrlash parametrlarini o'zgartirib ko'ring</p>
               </div>
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredExams.map((exam) => (
                   <Card
                     key={exam.id}
-                    className="overflow-hidden bg-[#111827] border border-[#1E293B] hover:border-[#3B82F6]/50 transition-all duration-200 flex flex-col justify-between group shadow-lg"
+                    className="overflow-hidden bg-zinc-900/60 border border-white/10 rounded-2xl hover:border-emerald-500/40 transition-all duration-200 flex flex-col justify-between group shadow-xl"
                   >
                     <div>
-                      
-                      <div className="relative h-44 w-full overflow-hidden bg-[#0B1120]">
+                      {/* Image header */}
+                      <div className="relative h-44 w-full overflow-hidden bg-zinc-950">
                         <img
                           src={exam.image}
                           alt={exam.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
 
-                        
+                        {/* Format & status badges */}
                         <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                           <span
                             className={clsx(
                               "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border",
                               exam.format === 'online'
-                                ? "bg-[#3B82F6]/90 text-white border-[#3B82F6]"
-                                : "bg-purple-600/90 text-white border-purple-500"
+                                ? "bg-emerald-500/90 text-white border-emerald-400"
+                                : "bg-teal-600/90 text-white border-teal-500"
                             )}
                           >
                             {exam.format.toUpperCase()}
@@ -492,7 +492,7 @@ export const EgaBaholashPage: React.FC = () => {
                             className={clsx(
                               "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border",
                               exam.status === 'ochiq'
-                                ? "bg-[#10B981]/90 text-white border-[#10B981]"
+                                ? "bg-emerald-500/90 text-white border-emerald-400"
                                 : "bg-rose-600/90 text-white border-rose-500"
                             )}
                           >
@@ -500,96 +500,93 @@ export const EgaBaholashPage: React.FC = () => {
                           </span>
                         </div>
 
-                        
+                        {/* Pin button */}
                         <button
                           onClick={() => togglePinExam(exam.id)}
                           className={clsx(
-                            "absolute top-3 right-3 p-1.5 rounded-lg border transition-colors cursor-pointer",
+                            "absolute top-3 right-3 p-1.5 rounded-xl border transition-colors cursor-pointer",
                             exam.isPinned
-                              ? "bg-[#F59E0B] text-black border-[#F59E0B]"
-                              : "bg-[#111827]/80 text-[#94A3B8] border-[#1E293B] hover:text-white"
+                              ? "bg-amber-500 text-zinc-950 border-amber-400"
+                              : "bg-zinc-900/80 text-zinc-400 border-white/10 hover:text-white"
                           )}
                           title={exam.isPinned ? "To'g'nog'ichni olib tashlash" : "Yuqoriga qadash"}
                         >
                           <Pin className="w-3.5 h-3.5" />
                         </button>
 
-                        
+                        {/* Subject */}
                         <div className="absolute bottom-3 left-3">
-                          <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#F59E0B]/20 text-[#FBBF24] border border-[#F59E0B]/40">
+                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                             {exam.subject}
                           </span>
                         </div>
                       </div>
 
-                      
+                      {/* Content */}
                       <div className="p-5 space-y-3">
-                        
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#60A5FA] text-[10px] font-bold">
-                          <Scale className="w-3 h-3 text-[#60A5FA]" />
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                          <Scale className="w-3 h-3 text-emerald-400" />
                           <span>Rasch 75 ball shkalasi • A: 65+</span>
                         </div>
 
-                        <h3 className="font-bold text-base text-[#F1F5F9] line-clamp-1 group-hover:text-[#3B82F6] transition-colors">
+                        <h3 className="font-bold text-base text-zinc-100 line-clamp-1 group-hover:text-emerald-400 transition-colors">
                           {exam.title}
                         </h3>
 
-                        <p className="text-xs text-[#94A3B8] line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
                           {exam.description}
                         </p>
 
-                        
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#1E293B] text-[11px]">
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-[11px]">
                           <div>
-                            <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Ro'yxatdan o'tganlar:</span>
-                            <span className="font-bold text-[#60A5FA]">{exam.registeredCount} kishi</span>
+                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Ro'yxatdan o'tganlar:</span>
+                            <span className="font-bold text-emerald-400">{exam.registeredCount} kishi</span>
                           </div>
                           <div>
-                            <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Topshirganlar:</span>
-                            <span className="font-bold text-[#34D399]">{exam.submittedCount} kishi</span>
+                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Topshirganlar:</span>
+                            <span className="font-bold text-teal-400">{exam.submittedCount} kishi</span>
                           </div>
                           <div>
-                            <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Narx:</span>
-                            <span className="font-bold text-[#F1F5F9]">{exam.price > 0 ? `${exam.price.toLocaleString()} UZS` : 'Bepul'}</span>
+                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Narx:</span>
+                            <span className="font-bold text-zinc-100">{exam.price > 0 ? `${exam.price.toLocaleString()} UZS` : 'Bepul'}</span>
                           </div>
                           <div>
-                            <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Jami Tushum:</span>
-                            <span className="font-bold text-[#F59E0B]">{exam.totalRevenue.toLocaleString()} UZS</span>
+                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Jami Tushum:</span>
+                            <span className="font-bold text-amber-400">{exam.totalRevenue.toLocaleString()} UZS</span>
                           </div>
                         </div>
 
-                        
-                        <div className="pt-2 text-[11px] text-[#94A3B8] space-y-1">
+                        <div className="pt-2 text-[11px] text-zinc-400 space-y-1">
                           <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-[#3B82F6]" />
+                            <Clock className="w-3.5 h-3.5 text-emerald-400" />
                             <span>{exam.durationMinutes} daqiqa • {exam.totalQuestions} ta savol</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-[#10B981]" />
+                            <Calendar className="w-3.5 h-3.5 text-teal-400" />
                             <span>{exam.startDate.split(' ')[0]} ({exam.startDate.split(' ')[1] || '09:00'})</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    
-                    <div className="p-4 pt-0 border-t border-[#1E293B] mt-2 flex items-center justify-between gap-2">
+                    {/* Actions footer */}
+                    <div className="p-4 pt-0 border-t border-white/10 mt-2 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setViewingExam(exam)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#0B1120] hover:bg-[#1E293B] border border-[#1E293B] text-xs font-semibold text-[#94A3B8] hover:text-[#F1F5F9] flex items-center gap-1 transition-colors cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-400 hover:text-zinc-100 flex items-center gap-1 transition-colors cursor-pointer"
                           title="Ko'rish"
                         >
-                          <Eye className="w-3.5 h-3.5 text-[#3B82F6]" />
+                          <Eye className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Ko'rish</span>
                         </button>
 
                         <button
                           onClick={() => setSelectedExamForEdit(exam)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#0B1120] hover:bg-[#1E293B] border border-[#1E293B] text-xs font-semibold text-[#94A3B8] hover:text-[#F1F5F9] flex items-center gap-1 transition-colors cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-400 hover:text-zinc-100 flex items-center gap-1 transition-colors cursor-pointer"
                           title="Tahrirlash"
                         >
-                          <Pencil className="w-3.5 h-3.5 text-[#F59E0B]" />
+                          <Pencil className="w-3.5 h-3.5 text-amber-400" />
                           <span>Tahrirlash</span>
                         </button>
                       </div>
@@ -597,7 +594,7 @@ export const EgaBaholashPage: React.FC = () => {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => toggleExamStatus(exam.id)}
-                          className="px-2 py-1.5 rounded-lg bg-[#0B1120] hover:bg-[#1E293B] border border-[#1E293B] text-xs font-semibold text-[#94A3B8] hover:text-[#F1F5F9] transition-colors cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
                           title={exam.status === 'ochiq' ? "Yopish" : "Ochish"}
                         >
                           {exam.status === 'ochiq' ? 'Yopish' : 'Ochish'}
@@ -609,7 +606,7 @@ export const EgaBaholashPage: React.FC = () => {
                               deleteExam(exam.id);
                             }
                           }}
-                          className="p-1.5 rounded-lg bg-[#0B1120] hover:bg-[#EF4444]/20 border border-[#1E293B] text-[#94A3B8] hover:text-[#EF4444] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-xl bg-zinc-950/80 hover:bg-rose-500/20 border border-white/10 text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
                           title="O'chirish"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -620,10 +617,9 @@ export const EgaBaholashPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              
-              <div className="rounded-xl border border-[#1E293B] bg-[#111827] overflow-x-auto">
-                <table className="w-full text-left text-xs text-[#94A3B8]">
-                  <thead className="bg-[#0B1120] text-[#F1F5F9] uppercase text-[10px] font-bold border-b border-[#1E293B]">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/60 overflow-x-auto">
+                <table className="w-full text-left text-xs text-zinc-400">
+                  <thead className="bg-zinc-950/80 text-zinc-100 uppercase text-[10px] font-bold border-b border-white/10">
                     <tr>
                       <th className="py-3.5 px-4">Sinov ID & Nomi</th>
                       <th className="py-3.5 px-4">Fani</th>
@@ -636,58 +632,58 @@ export const EgaBaholashPage: React.FC = () => {
                       <th className="py-3.5 px-4 text-right">Amallar</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1E293B]">
+                  <tbody className="divide-y divide-white/5">
                     {filteredExams.map((exam) => (
-                      <tr key={exam.id} className="hover:bg-[#1E293B]/40 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-[#F1F5F9]">
+                      <tr key={exam.id} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-zinc-100">
                           <div className="flex items-center gap-2">
-                            {exam.isPinned && <Pin className="w-3 h-3 text-[#F59E0B]" />}
+                            {exam.isPinned && <Pin className="w-3 h-3 text-amber-400" />}
                             <span>{exam.title}</span>
                           </div>
-                          <span className="text-[10px] text-[#64748B] font-mono">{exam.id}</span>
+                          <span className="text-[10px] text-zinc-500 font-mono">{exam.id}</span>
                         </td>
-                        <td className="py-3.5 px-4 text-[#FBBF24] font-semibold">{exam.subject}</td>
+                        <td className="py-3.5 px-4 text-amber-400 font-semibold">{exam.subject}</td>
                         <td className="py-3.5 px-4">
                           <span className={clsx(
-                            "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                            exam.format === 'online' ? "bg-[#3B82F6]/20 text-[#60A5FA]" : "bg-purple-500/20 text-purple-300"
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                            exam.format === 'online' ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300"
                           )}>
                             {exam.format}
                           </span>
                         </td>
                         <td className="py-3.5 px-4">
                           <span className={clsx(
-                            "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                            exam.status === 'ochiq' ? "bg-[#10B981]/20 text-[#34D399]" : "bg-rose-500/20 text-rose-300"
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                            exam.status === 'ochiq' ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"
                           )}>
                             {exam.status}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-[#60A5FA] font-medium">
+                        <td className="py-3.5 px-4 text-emerald-400 font-medium">
                           Rasch (Maks. 75 ball / A: 65)
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-[#F1F5F9]">
+                        <td className="py-3.5 px-4 font-bold text-zinc-100">
                           {exam.price > 0 ? `${exam.price.toLocaleString()} UZS` : 'Bepul'}
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className="text-[#34D399] font-semibold">{exam.submittedCount}</span>
-                          <span className="text-[#64748B]"> / {exam.registeredCount}</span>
+                          <span className="text-teal-400 font-semibold">{exam.submittedCount}</span>
+                          <span className="text-zinc-500"> / {exam.registeredCount}</span>
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-[#F59E0B]">
+                        <td className="py-3.5 px-4 font-bold text-amber-400">
                           {exam.totalRevenue.toLocaleString()} UZS
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => setViewingExam(exam)}
-                              className="p-1.5 rounded-lg hover:bg-[#1E293B] text-[#94A3B8] hover:text-white"
+                              className="p-1.5 rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-white"
                               title="Ko'rish"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setSelectedExamForEdit(exam)}
-                              className="p-1.5 rounded-lg hover:bg-[#1E293B] text-[#94A3B8] hover:text-[#F59E0B]"
+                              className="p-1.5 rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-amber-400"
                               title="Tahrirlash"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -698,7 +694,7 @@ export const EgaBaholashPage: React.FC = () => {
                                   deleteExam(exam.id);
                                 }
                               }}
-                              className="p-1.5 rounded-lg hover:bg-[#EF4444]/20 text-[#94A3B8] hover:text-[#EF4444]"
+                              className="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400"
                               title="O'chirish"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -714,53 +710,53 @@ export const EgaBaholashPage: React.FC = () => {
           </div>
         )}
 
-        
+        {/* TAB 2: Nomzodlar Apellyatsiya E'tirozlari Navbati */}
         {activeViewTab === 'appeals' && (
           <div className="space-y-6">
-            <div className="p-5 rounded-xl bg-[#111827] border border-[#1E293B] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-[#F59E0B]" />
+                <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-amber-400" />
                   <span>Nomzodlar Apellyatsiya E'tirozlari Navbati</span>
                 </h3>
-                <p className="text-xs text-[#94A3B8] mt-0.5">
+                <p className="text-xs text-zinc-400 mt-0.5">
                   Talabgorlar yozma ish yoki test ballaridan norozi bo'lib yuborgan apellyatsiya arizalarini ko'rib chiqish va ball qo'shish/rad etish
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 text-xs font-bold font-mono">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold font-mono">
                 Kutilayotgan arizalar: {pendingAppealsCount} ta
               </div>
             </div>
 
             <div className="space-y-4">
               {appeals.map((app) => (
-                <Card key={app.id} className="p-6 bg-[#111827] border border-[#1E293B] space-y-4 shadow-md">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1E293B] pb-3">
+                <Card key={app.id} className="p-6 bg-zinc-900/60 border border-white/10 rounded-2xl space-y-4 shadow-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
                     <div>
-                      <div className="text-xs font-mono text-[#94A3B8]">Ariza ID: {app.id} • Sana: {app.createdAt}</div>
-                      <h4 className="text-sm font-bold text-[#F1F5F9] mt-0.5">{app.candidateName} — {app.examTitle}</h4>
+                      <div className="text-xs font-mono text-zinc-400">Ariza ID: {app.id} • Sana: {app.createdAt}</div>
+                      <h4 className="text-sm font-bold text-zinc-100 mt-0.5">{app.candidateName} — {app.examTitle}</h4>
                     </div>
 
                     <span className={clsx(
                       "px-3 py-1 rounded-full text-xs font-bold border",
-                      app.status === 'accepted' && "bg-[#10B981]/15 text-[#34D399] border-[#10B981]/30",
-                      app.status === 'rejected' && "bg-[#EF4444]/15 text-[#F87171] border-[#EF4444]/30",
-                      app.status === 'pending' && "bg-[#F59E0B]/15 text-[#FBBF24] border-[#F59E0B]/30"
+                      app.status === 'accepted' && "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+                      app.status === 'rejected' && "bg-rose-500/15 text-rose-400 border-rose-500/30",
+                      app.status === 'pending' && "bg-amber-500/15 text-amber-400 border-amber-500/30"
                     )}>
                       {app.status === 'accepted' ? 'Qanoatlantirilgan (+ball)' : app.status === 'rejected' ? 'Rad etilgan' : 'Kutilmoqda (Ekspertiza)'}
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-2">
-                    <div className="text-xs text-[#60A5FA] font-bold">
+                  <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/10 space-y-2">
+                    <div className="text-xs text-emerald-400 font-bold">
                       {app.taskNo}-topshiriq bo'yicha e'tiroz (Dastlabki ball: {app.originalScore} → Da'vo qilingan ball: {app.demandedScore})
                     </div>
-                    <p className="text-xs text-[#94A3B8] italic">"{app.reason}"</p>
+                    <p className="text-xs text-zinc-400 italic">"{app.reason}"</p>
                   </div>
 
                   {app.reviewerNotes && (
-                    <div className="p-3 rounded-lg bg-[#111827] border border-[#1E293B] text-xs text-[#60A5FA]">
-                      <span className="font-bold text-white">Ekspert xulosasi:</span> {app.reviewerNotes}
+                    <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/10 text-xs text-teal-300">
+                      <span className="font-bold text-zinc-100">Ekspert xulosasi:</span> {app.reviewerNotes}
                     </div>
                   )}
 
@@ -770,7 +766,7 @@ export const EgaBaholashPage: React.FC = () => {
                         placeholder="Komissiya xulosasi va asoslantiruvchi izoh..."
                         value={appealNotes[app.id] || ''}
                         onChange={(e) => setAppealNotes({ ...appealNotes, [app.id]: e.target.value })}
-                        className="text-xs bg-[#0B1120]"
+                        className="text-xs bg-zinc-950/80"
                       />
 
                       <div className="flex items-center justify-end gap-3">
@@ -778,8 +774,8 @@ export const EgaBaholashPage: React.FC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleAppealDecision(app.id, 'rejected')}
-                          leftIcon={<X className="w-3.5 h-3.5 text-[#EF4444]" />}
-                          className="text-xs text-[#EF4444] hover:bg-[#EF4444]/10 border-rose-900"
+                          leftIcon={<X className="w-3.5 h-3.5 text-rose-400" />}
+                          className="text-xs text-rose-400 hover:bg-rose-500/10 border-rose-900/50"
                         >
                           Rad etish
                         </Button>
@@ -789,7 +785,7 @@ export const EgaBaholashPage: React.FC = () => {
                           variant="primary"
                           onClick={() => handleAppealDecision(app.id, 'accepted')}
                           leftIcon={<Check className="w-3.5 h-3.5 text-white" />}
-                          className="text-xs font-bold bg-[#10B981] hover:bg-[#059669]"
+                          className="text-xs font-bold"
                         >
                           Qanoatlantirish (+ball berish)
                         </Button>
@@ -802,16 +798,16 @@ export const EgaBaholashPage: React.FC = () => {
           </div>
         )}
 
-        
+        {/* TAB 3: Rasch Modeli & BMBA Standart Shkalalari */}
         {activeViewTab === 'rasch_engine' && (
           <div className="space-y-6">
-            <div className="p-4 rounded-xl bg-[#111827] border border-[#1E293B] flex items-center justify-between">
+            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-[#3B82F6]" />
+                <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-emerald-400" />
                   <span>Rasch Modeli & BMBA Standart Shkalalari</span>
                 </h3>
-                <p className="text-xs text-[#94A3B8]">
+                <p className="text-xs text-zinc-400">
                   Standartlashtirilgan ball formulalari, til fanlari (24→75 ball) va mutaxassislik fanlari konversiyasi
                 </p>
               </div>
@@ -827,7 +823,7 @@ export const EgaBaholashPage: React.FC = () => {
             </div>
 
             {savedSuccess && (
-              <div className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/40 flex items-center gap-2 text-[#34D399] text-xs font-bold">
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2 text-emerald-400 text-xs font-bold">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Rasch mezonlari muvaffaqiyatli saqlandi!</span>
               </div>
@@ -838,51 +834,51 @@ export const EgaBaholashPage: React.FC = () => {
           </div>
         )}
 
-        
+        {/* Modal: View Exam */}
         {viewingExam && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-            <div className="relative w-full max-w-xl rounded-2xl bg-[#111827] border border-[#1E293B] shadow-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <div className="relative w-full max-w-xl rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div>
-                  <span className="text-[10px] font-mono text-[#60A5FA]">{viewingExam.id}</span>
-                  <h3 className="text-base font-bold text-[#F1F5F9]">{viewingExam.title}</h3>
+                  <span className="text-[10px] font-mono text-emerald-400">{viewingExam.id}</span>
+                  <h3 className="text-base font-bold text-zinc-100">{viewingExam.title}</h3>
                 </div>
                 <button
                   onClick={() => setViewingExam(null)}
-                  className="p-1 rounded-lg hover:bg-[#1E293B] text-[#94A3B8] hover:text-white"
+                  className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-2">
+                <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94A3B8]">Baholash Metodi:</span>
-                    <span className="font-bold text-[#34D399]">Rasch Modeli (BMBA 75 ball)</span>
+                    <span className="text-zinc-400">Baholash Metodi:</span>
+                    <span className="font-bold text-emerald-400">Rasch Modeli (BMBA 75 ball)</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94A3B8]">A Daraja Chegarasi:</span>
-                    <span className="font-bold text-[#60A5FA]">{viewingExam.aThreshold} ball (65+)</span>
+                    <span className="text-zinc-400">A Daraja Chegarasi:</span>
+                    <span className="font-bold text-teal-400">{viewingExam.aThreshold} ball (65+)</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94A3B8]">Maksimal Ball:</span>
-                    <span className="font-bold text-[#F1F5F9]">{viewingExam.maxScore} ball</span>
+                    <span className="text-zinc-400">Maksimal Ball:</span>
+                    <span className="font-bold text-zinc-100">{viewingExam.maxScore} ball</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94A3B8]">Davomiyligi:</span>
-                    <span className="font-bold text-[#F1F5F9]">{viewingExam.durationMinutes} daqiqa</span>
+                    <span className="text-zinc-400">Davomiyligi:</span>
+                    <span className="font-bold text-zinc-100">{viewingExam.durationMinutes} daqiqa</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94A3B8]">Savollar Soni:</span>
-                    <span className="font-bold text-[#F1F5F9]">{viewingExam.totalQuestions} ta</span>
+                    <span className="text-zinc-400">Savollar Soni:</span>
+                    <span className="font-bold text-zinc-100">{viewingExam.totalQuestions} ta</span>
                   </div>
                 </div>
 
-                <p className="text-[#94A3B8] leading-relaxed">{viewingExam.description}</p>
+                <p className="text-zinc-400 leading-relaxed">{viewingExam.description}</p>
               </div>
 
-              <div className="flex justify-end pt-3 border-t border-[#1E293B]">
+              <div className="flex justify-end pt-3 border-t border-white/10">
                 <Button size="sm" variant="primary" onClick={() => setViewingExam(null)}>
                   Yopish
                 </Button>

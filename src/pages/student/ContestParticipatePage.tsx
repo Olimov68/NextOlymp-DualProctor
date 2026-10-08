@@ -278,10 +278,10 @@ export const ContestParticipatePage: React.FC = () => {
           ctx.drawImage(videoRef.current, 0, 0, 320, 240);
         } else {
           
-          ctx.fillStyle = '#0f172a';
+          ctx.fillStyle = '#09090b';
           ctx.fillRect(0, 0, 320, 240);
 
-          ctx.fillStyle = '#1e293b';
+          ctx.fillStyle = '#18181b';
           ctx.beginPath();
           ctx.arc(160, 100, 45, 0, Math.PI * 2);
           ctx.fill();
@@ -568,13 +568,13 @@ export const ContestParticipatePage: React.FC = () => {
 
   if (!olympiad || !questions || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center text-center p-6">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-center p-6">
         <div className="space-y-4 max-w-md">
-          <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/20 border border-[#3B82F6]/40 text-[#60A5FA] mx-auto flex items-center justify-center animate-spin">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 mx-auto flex items-center justify-center animate-spin">
             <Trophy className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-white">Musobaqaga tayyorgarlik ko'rilmoqda...</h3>
-          <p className="text-xs text-slate-400">Savollar va xavfsizlik protokollari yuklanmoqda.</p>
+          <h3 className="text-lg font-bold text-zinc-100">Musobaqaga tayyorgarlik ko'rilmoqda...</h3>
+          <p className="text-xs text-zinc-400">Savollar va xavfsizlik protokollari yuklanmoqda.</p>
         </div>
       </div>
     );
@@ -593,38 +593,38 @@ export const ContestParticipatePage: React.FC = () => {
   
   if (!hasStarted) {
     return (
-      <div className="min-h-screen bg-[#0B1120] text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto space-y-6">
           
           <div className="flex items-center justify-between">
             <Link
               to="/student/olympiads"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Olimpiadalar ro'yxatiga qaytish</span>
             </Link>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-              <span>ExamGuard Anti-Cheat Himoyasi</span>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>DualProctor AI Himoyasi</span>
             </div>
           </div>
 
           
-          <div className="grid grid-cols-2 gap-3 p-1.5 bg-[#111827] border border-[#1E293B] rounded-2xl shadow-lg">
+          <div className="grid grid-cols-2 gap-3 p-1.5 bg-zinc-900/60 border border-white/10 rounded-2xl shadow-xl backdrop-blur-md">
             <button
               type="button"
               onClick={() => setCurrentStep('registration')}
               className={clsx(
-                "flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer",
+                "flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95",
                 currentStep === 'registration'
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-[#0B1120]"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
               )}
             >
               <span className={clsx(
                 "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0",
-                isRegistered ? "bg-emerald-500 text-slate-950" : "bg-slate-700 text-white"
+                isRegistered ? "bg-emerald-400 text-zinc-950" : "bg-zinc-800 text-white"
               )}>
                 {isRegistered ? "✓" : "1"}
               </span>
@@ -638,15 +638,15 @@ export const ContestParticipatePage: React.FC = () => {
               }}
               disabled={!isRegistered || !canAttempt}
               className={clsx(
-                "flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all",
+                "flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95",
                 currentStep === 'exam_briefing'
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
                   : !isRegistered || !canAttempt
-                  ? "text-slate-600 opacity-50 cursor-not-allowed"
-                  : "text-slate-400 hover:text-white hover:bg-[#0B1120] cursor-pointer"
+                  ? "text-zinc-600 opacity-50 cursor-not-allowed"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/60 cursor-pointer"
               )}
             >
-              <span className="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center text-xs font-black shrink-0">
+              <span className="w-6 h-6 rounded-full bg-zinc-800 text-white flex items-center justify-center text-xs font-black shrink-0">
                 2
               </span>
               <span>2-Qadam: Imtihon va Anti-Cheat</span>
@@ -657,28 +657,28 @@ export const ContestParticipatePage: React.FC = () => {
           
           
           {currentStep === 'registration' && (
-            <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
               
-              <div className="border-b border-[#1E293B] pb-6 space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <div className="border-b border-white/10 pb-6 space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                   <span>1-Bosqich: Olimpiada Ma'lumotlari va Ro'yxatdan O'tish</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-zinc-100 tracking-tight">
                   {olympiad.title}
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-400">
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal">
                   {olympiad.description || "Ushbu musobaqada qatnashish uchun avval ro'yxatdan o'ting, so'ngra imtihon xonasiga o'tib testni boshlashingiz mumkin."}
                 </p>
 
                 
                 {isAlwaysOpen ? (
-                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-emerald-900/20 border border-emerald-500/50 text-emerald-200 flex items-start gap-3 mt-3">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-zinc-900/60 border border-emerald-500/40 text-emerald-200 flex items-start gap-3 mt-3 backdrop-blur-xs">
                     <Sparkles className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                     <div className="text-xs space-y-1">
                       <div className="font-bold text-white text-sm flex items-center gap-2">
                         <span>🟢 24/7 Doimiy Ochiq Test</span>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold">
                           Cheklovsiz kirish
                         </span>
                       </div>
@@ -688,21 +688,21 @@ export const ContestParticipatePage: React.FC = () => {
                     </div>
                   </div>
                 ) : isDateFinished ? (
-                  <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/50 text-rose-200 flex items-start gap-3 mt-3">
+                  <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start gap-3 mt-3">
                     <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                     <div className="text-xs space-y-1">
                       <div className="font-bold text-white text-sm">🛑 Musobaqa Yakunlangan</div>
-                      <p>
+                      <p className="text-rose-300/80">
                         Ushbu olimpiada muddati o'tgan ({olympiad.endDate || 'Muddati tugagan'}). Yangi ro'yxatdan o'tish yoki topshirish imkoni mavjud emas.
                       </p>
                     </div>
                   </div>
                 ) : isRegistrationExpired && !isRegistered ? (
-                  <div className="p-3.5 rounded-xl bg-amber-500/20 border border-amber-500/50 text-amber-200 flex items-start gap-3 mt-3">
+                  <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 flex items-start gap-3 mt-3">
                     <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                     <div className="text-xs space-y-1">
                       <div className="font-bold text-white text-sm">⏳ Ro'yxatdan O'tish Muddati Tugagan</div>
-                      <p>
+                      <p className="text-amber-300/80">
                         Ushbu musobaqaga ro'yxatdan o'tish yopilgan ({olympiad.registrationEndDate || 'Yopilgan'}).
                       </p>
                     </div>
@@ -711,7 +711,7 @@ export const ContestParticipatePage: React.FC = () => {
 
                 
                 {!isGradeEligible ? (
-                  <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/50 text-rose-200 flex items-start gap-3 mt-3">
+                  <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start gap-3 mt-3">
                     <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                     <div className="text-xs space-y-1">
                       <div className="font-bold text-white text-sm">❌ Sinf Cheklovi: Siz ushbu olimpiadada qatnasha olmaysiz!</div>
@@ -722,7 +722,7 @@ export const ContestParticipatePage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mt-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mt-2">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Mos sinflar: {targetGrades.join(', ')}-sinflar {studentGrade ? `(Sizning sinfingiz: ${studentGrade}-sinf ✓)` : ''}</span>
                   </div>
@@ -731,32 +731,32 @@ export const ContestParticipatePage: React.FC = () => {
 
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3.5 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                    <Clock className="w-4 h-4 text-blue-400" />
+                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                    <Clock className="w-4 h-4 text-emerald-400" />
                     <span>Ajratilgan vaqt</span>
                   </div>
-                  <div className="text-lg font-black text-white">{olympiad.durationMinutes || (olympiad as any).duration_minutes || 60} daqiqa</div>
+                  <div className="text-lg font-black text-zinc-100">{olympiad.durationMinutes || (olympiad as any).duration_minutes || 60} daqiqa</div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                    <HelpCircle className="w-4 h-4 text-emerald-400" />
+                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                    <HelpCircle className="w-4 h-4 text-teal-400" />
                     <span>Savollar soni</span>
                   </div>
-                  <div className="text-lg font-black text-white">{questions.length} ta savol</div>
+                  <div className="text-lg font-black text-zinc-100">{questions.length} ta savol</div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
                     <Trophy className="w-4 h-4 text-amber-400" />
                     <span>Maksimal ball</span>
                   </div>
-                  <div className="text-lg font-black text-white">{olympiad.maxScore || 100} ball</div>
+                  <div className="text-lg font-black text-zinc-100">{olympiad.maxScore || 100} ball</div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
                     <Award className="w-4 h-4 text-purple-400" />
                     <span>Sertifikat</span>
                   </div>
@@ -765,15 +765,15 @@ export const ContestParticipatePage: React.FC = () => {
               </div>
 
               
-              <div className="p-5 rounded-2xl bg-[#0D1832] border border-blue-500/40 space-y-4">
-                <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
+              <div className="p-5 rounded-2xl bg-zinc-950/80 border border-white/10 space-y-4 backdrop-blur-xs">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
-                      {isRegistered ? <UserCheck className="w-5 h-5 text-emerald-400" /> : <UserPlus className="w-5 h-5 text-cyan-400" />}
+                    <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                      {isRegistered ? <UserCheck className="w-5 h-5 text-emerald-400" /> : <UserPlus className="w-5 h-5 text-teal-400" />}
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">Ishtirokchi Shaxsiy Ma'lumotlari</h3>
-                      <p className="text-[11px] text-slate-400">Musobaqada qatnashish maqomi va shaxsiy kabinet ma'lumotlari</p>
+                      <h3 className="text-sm font-bold text-zinc-100">Ishtirokchi Shaxsiy Ma'lumotlari</h3>
+                      <p className="text-[11px] text-zinc-400">Musobaqada qatnashish maqomi va shaxsiy kabinet ma'lumotlari</p>
                     </div>
                   </div>
 
@@ -790,23 +790,23 @@ export const ContestParticipatePage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
-                  <div className="p-3 rounded-xl bg-[#091124] border border-blue-900/40 space-y-1">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">F.I.Sh.</div>
-                    <div className="font-bold text-white text-sm truncate">{user?.fullName || "Ishtirokchi"}</div>
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
+                    <div className="text-[10px] text-zinc-400 uppercase font-bold">F.I.Sh.</div>
+                    <div className="font-bold text-zinc-100 text-sm truncate">{user?.fullName || "Ishtirokchi"}</div>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#091124] border border-blue-900/40 space-y-1">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">Sinfi & Hudud</div>
-                    <div className="font-bold text-slate-200">{user?.grade ? `${user.grade}-sinf` : '9-sinf'} • {user?.region || 'Toshkent sh.'}</div>
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
+                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Sinfi & Hudud</div>
+                    <div className="font-bold text-zinc-200">{user?.grade ? `${user.grade}-sinf` : '9-sinf'} • {user?.region || 'Toshkent sh.'}</div>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#091124] border border-blue-900/40 space-y-1">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">Ishtirok Narxi</div>
-                    <div className={clsx("font-bold text-sm font-mono", isFree ? "text-emerald-400" : isPaid ? "text-cyan-300" : "text-amber-400")}>
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
+                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Ishtirok Narxi</div>
+                    <div className={clsx("font-bold text-sm font-mono", isFree ? "text-emerald-400" : isPaid ? "text-teal-300" : "text-amber-400")}>
                       {isFree ? 'BEPUL (Open Access)' : isPaid ? `${olympiadPrice.toLocaleString()} UZS (To'langan ✓)` : `${olympiadPrice.toLocaleString()} UZS`}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#091124] border border-blue-900/40 space-y-1">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">Holati</div>
-                    <div className={clsx("font-bold text-xs", isRegistered ? "text-emerald-400" : !isFree && !isPaid ? "text-amber-400" : "text-cyan-300")}>
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
+                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Holati</div>
+                    <div className={clsx("font-bold text-xs", isRegistered ? "text-emerald-400" : !isFree && !isPaid ? "text-amber-400" : "text-teal-300")}>
                       {isRegistered ? 'Ishtirok Tasdiqlangan ✓' : !isFree && !isPaid ? "To'lov qilinmagan" : 'Ro\'yxatdan o\'tish zarur'}
                     </div>
                   </div>
@@ -814,15 +814,15 @@ export const ContestParticipatePage: React.FC = () => {
 
                 
                 {attemptsUsed > 0 && (
-                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between text-xs text-blue-300">
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs text-emerald-300">
                     <div className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 text-cyan-400 shrink-0" />
+                      <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>
                         Siz ushbu testda <strong>{attemptsUsed} marta</strong> qatnashgansiz.
                         {retakeAllowed && attemptsUsed < maxAttempts ? ` Yana ${maxAttempts - attemptsUsed} ta urinish imkoniyati mavjud.` : ' Urinishlar to\'liq tugagan.'}
                       </span>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold text-[10px]">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">
                       {attemptsUsed} / {maxAttempts} Urinish
                     </span>
                   </div>
@@ -830,9 +830,9 @@ export const ContestParticipatePage: React.FC = () => {
               </div>
 
               
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[#1E293B]">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/10">
                 <Link to="/student/olympiads" className="w-full sm:w-auto">
-                  <Button variant="ghost" size="md" className="w-full sm:w-auto text-slate-400 hover:text-white">
+                  <Button variant="ghost" size="md" className="w-full sm:w-auto text-zinc-400 hover:text-white">
                     Bekor qilish va ro'yxatga qaytish
                   </Button>
                 </Link>
@@ -845,12 +845,12 @@ export const ContestParticipatePage: React.FC = () => {
                     variant="primary"
                     size="lg"
                     className={clsx(
-                      "w-full sm:w-auto text-white font-bold px-8 shadow-lg",
+                      "w-full sm:w-auto text-white font-bold px-8 shadow-xl active:scale-95",
                       !isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered)
-                        ? "bg-slate-700 opacity-60 cursor-not-allowed"
+                        ? "bg-zinc-800 opacity-60 cursor-not-allowed text-zinc-500"
                         : !isFree && !isPaid
-                        ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 shadow-emerald-500/30 ring-2 ring-emerald-400/30 animate-pulse"
-                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
+                        ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-500/30 ring-2 ring-emerald-400/30 animate-pulse"
+                        : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25"
                     )}
                     leftIcon={
                       !isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered) ? (
@@ -877,7 +877,7 @@ export const ContestParticipatePage: React.FC = () => {
                     <Button
                       variant="primary"
                       size="lg"
-                      className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-emerald-600 hover:bg-emerald-500"
+                      className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600"
                       rightIcon={<ArrowRight className="w-4 h-4" />}
                     >
                       Natijani Ko'rish 📊
@@ -888,7 +888,7 @@ export const ContestParticipatePage: React.FC = () => {
                     variant="secondary"
                     size="lg"
                     disabled
-                    className="w-full sm:w-auto font-black opacity-60 cursor-not-allowed bg-slate-800 text-slate-400 border border-slate-700"
+                    className="w-full sm:w-auto font-black opacity-60 cursor-not-allowed bg-zinc-800 text-zinc-500 border border-white/5"
                   >
                     Musobaqa Yakunlangan 🔒
                   </Button>
@@ -897,7 +897,7 @@ export const ContestParticipatePage: React.FC = () => {
                     variant="primary"
                     size="lg"
                     onClick={() => setCurrentStep('exam_briefing')}
-                    className="w-full sm:w-auto font-black shadow-lg shadow-blue-500/25 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500"
+                    className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500"
                     rightIcon={<ArrowRight className="w-4 h-4" />}
                   >
                     Keyingi bosqich: Imtihon xonasiga o'tish (2-Qadam) ➡️
@@ -911,18 +911,18 @@ export const ContestParticipatePage: React.FC = () => {
           
           
           {currentStep === 'exam_briefing' && (
-            <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
               
-              <div className="border-b border-[#1E293B] pb-6 space-y-3">
+              <div className="border-b border-white/10 pb-6 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                    <Shield className="w-3.5 h-3.5 text-emerald-400" />
                     <span>2-Bosqich: Imtihon Xonasi & Tayyorgarlik</span>
                   </div>
 
                   
-                  <div className="flex items-center gap-1.5 bg-[#0B1120] p-1 rounded-xl border border-[#1E293B]">
-                    <span className="text-[10px] font-bold text-slate-400 px-2 uppercase">Til:</span>
+                  <div className="flex items-center gap-1.5 bg-zinc-950/80 p-1 rounded-xl border border-white/10">
+                    <span className="text-[10px] font-bold text-zinc-400 px-2 uppercase">Til:</span>
                     {allowedLangs.map((lang: string) => {
                       const code = lang.includes("O'zbek") ? "UZ" : lang.includes("Rus") ? "RU" : lang.includes("Ingliz") ? "EN" : "UZ";
                       const flag = code === "UZ" ? "🇺🇿" : code === "RU" ? "🇷🇺" : "🇬🇧";
@@ -934,10 +934,10 @@ export const ContestParticipatePage: React.FC = () => {
                           type="button"
                           onClick={() => handleLanguageChange(lang)}
                           className={clsx(
-                            "px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 cursor-pointer",
+                            "px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95",
                             isSelected
-                              ? "bg-[#3B82F6] text-white shadow-xs"
-                              : "text-slate-400 hover:text-white hover:bg-[#111827]"
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-xs"
+                              : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
                           )}
                         >
                           <span>{flag}</span>
@@ -948,51 +948,51 @@ export const ContestParticipatePage: React.FC = () => {
                   </div>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <h2 className="text-2xl sm:text-3xl font-black text-zinc-100 tracking-tight">
                   {olympiad.title} — Imtihon Xonasi
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-400">
+                <p className="text-xs sm:text-sm text-zinc-400 font-normal leading-relaxed">
                   Imtihonni boshlashdan oldin texnik tayyorgarlikni tekshiring hamda xavfsizlik qoidalariga rozilik berib testni boshlang.
                 </p>
               </div>
 
               
-              <div className="p-4 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-3">
-                <div className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-amber-400" />
+              <div className="p-5 rounded-xl bg-zinc-950/70 border border-white/10 space-y-3 backdrop-blur-xs">
+                <div className="text-xs font-bold text-zinc-200 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-emerald-400" />
                   <span>Imtihon qoidalari va eslatmalar:</span>
                 </div>
 
-                <ul className="space-y-2 text-xs text-slate-300">
+                <ul className="space-y-2 text-xs text-zinc-300">
                   <li className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">1</span>
                     <span><strong>Sahifadan chiqish taqiqlanadi:</strong> Tab almashish yoki boshqa ilovani ochish anti-cheat tomonidan qayd etiladi.</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">2</span>
+                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">2</span>
                     <span><strong>Avtomatik saqlanish:</strong> Javoblaringiz har bir belgilanganda darhol serverga saqlanadi.</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">3</span>
+                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">3</span>
                     <span><strong>Veb-kamera nazorati:</strong> Kadrni tark etish yoki begona shaxslar paydo bo'lishi taqiqlanadi.</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">4</span>
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">4</span>
                     <span><strong>To'liq ekran rejimi:</strong> Test faqat to'liq ekranda ishlaydi.</span>
                   </li>
                 </ul>
               </div>
 
               
-              <div className="p-4 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-3">
-                <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+              <div className="p-5 rounded-xl bg-zinc-950/70 border border-white/10 space-y-3 backdrop-blur-xs">
+                <div className="text-xs font-bold text-zinc-200 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
                     Tizim va Qurilmalar Tayyorgarligi Tekshiruvi:
                   </span>
                   <button
                     onClick={handleTestCamera}
-                    className="text-[11px] font-bold text-[#3B82F6] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-[11px] font-semibold text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
                   >
                     <RefreshCw className="w-3 h-3" />
                     <span>Qayta tekshirish</span>
@@ -1000,9 +1000,9 @@ export const ContestParticipatePage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="p-2.5 rounded-lg bg-[#111827] border border-[#1E293B] flex items-center justify-between">
-                    <span className="text-slate-400 flex items-center gap-2">
-                      <Wifi className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                    <span className="text-zinc-400 flex items-center gap-2">
+                      <Wifi className="w-3.5 h-3.5 text-emerald-400" />
                       Internet Aloqasi:
                     </span>
                     <span className="font-bold text-emerald-400 flex items-center gap-1">
@@ -1011,9 +1011,9 @@ export const ContestParticipatePage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-[#111827] border border-[#1E293B] flex items-center justify-between">
-                    <span className="text-slate-400 flex items-center gap-2">
-                      <Camera className="w-3.5 h-3.5 text-purple-400" />
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                    <span className="text-zinc-400 flex items-center gap-2">
+                      <Camera className="w-3.5 h-3.5 text-teal-400" />
                       Veb-Kamera:
                     </span>
                     {cameraChecked === 'ready' ? (
@@ -1023,15 +1023,15 @@ export const ContestParticipatePage: React.FC = () => {
                     ) : (
                       <button
                         onClick={handleTestCamera}
-                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                        className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
                       >
                         {cameraChecked === 'checking' ? 'Tekshirilmoqda...' : 'Kamerani yoqish'}
                       </button>
                     )}
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-[#111827] border border-[#1E293B] flex items-center justify-between">
-                    <span className="text-slate-400 flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                    <span className="text-zinc-400 flex items-center gap-2">
                       <Maximize className="w-3.5 h-3.5 text-amber-400" />
                       To'liq Ekran:
                     </span>
@@ -1040,9 +1040,9 @@ export const ContestParticipatePage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-[#111827] border border-[#1E293B] flex items-center justify-between">
-                    <span className="text-slate-400 flex items-center gap-2">
-                      <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                    <span className="text-zinc-400 flex items-center gap-2">
+                      <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
                       Dual-Device (2-Telefon):
                     </span>
                     {isDualDeviceCalibrated ? (
@@ -1057,7 +1057,7 @@ export const ContestParticipatePage: React.FC = () => {
                           e.stopPropagation();
                           setIsDualDeviceModalOpen(true);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-[11px] font-bold text-blue-300 hover:text-white cursor-pointer flex items-center gap-1 transition-all active:scale-95"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 hover:text-white cursor-pointer flex items-center gap-1 transition-all active:scale-95"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
                         <span>Sozlash va Kalibratsiya</span>
@@ -1069,7 +1069,7 @@ export const ContestParticipatePage: React.FC = () => {
 
               
               {isDateFinished ? (
-                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
+                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
                     <div>
@@ -1086,7 +1086,7 @@ export const ContestParticipatePage: React.FC = () => {
                   )}
                 </div>
               ) : timeLeftToStart && timeLeftToStart > 0 ? (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center space-y-2">
+                <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center space-y-2">
                   <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-center gap-2">
                     <Clock className="w-4 h-4 animate-spin" />
                     Olimpiada boshlanishiga qolgan vaqt:
@@ -1094,16 +1094,16 @@ export const ContestParticipatePage: React.FC = () => {
                   <div className="text-3xl font-black text-amber-300 font-mono tracking-widest">
                     {formatCountdown(timeLeftToStart)}
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-zinc-400">
                     Boshlanish vaqti: <strong>{olympiad.startDate}</strong>. Vaqt yetganda boshlash tugmasi faollashadi.
                   </p>
                 </div>
               ) : (
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div className="text-xs">
                     <span className="font-bold text-emerald-300">Olimpiada ochiq va topshirishga tayyor!</span>
-                    <p className="text-slate-400 mt-0.5">
+                    <p className="text-zinc-400 mt-0.5">
                       Qoidalar bilan tanishib, rozilikni tasdiqlang va imtihonni boshlang.
                     </p>
                   </div>
@@ -1112,21 +1112,21 @@ export const ContestParticipatePage: React.FC = () => {
 
               
               {isRetake && (
-                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between text-xs text-blue-300">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
                   <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 text-cyan-400 shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
+                    <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
                     <span>
                       <strong>Qayta topshirish rejimi:</strong> Siz bu testni <strong>{attemptsUsed + 1}-marta</strong> topshiryapsiz (Jami: {maxAttempts} ta urinish ruxsat etilgan).
                     </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold text-[10px]">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">
                     {attemptsUsed + 1} / {maxAttempts} Urinish
                   </span>
                 </div>
               )}
 
               {!canAttempt && attemptsUsed > 0 && (
-                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
+                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>
@@ -1145,24 +1145,24 @@ export const ContestParticipatePage: React.FC = () => {
               <div
                 onClick={() => isRegistered && canAttempt && !isDateFinished && setRulesAccepted(!rulesAccepted)}
                 className={clsx(
-                  "p-3.5 rounded-xl border flex items-start gap-3 transition-all select-none",
+                  "p-4 rounded-xl border flex items-start gap-3 transition-all select-none",
                   isRegistered && canAttempt && !isDateFinished
-                    ? "bg-[#0B1120] border-[#1E293B] hover:border-blue-500/50 cursor-pointer"
-                    : "bg-[#0B1120]/50 border-slate-800 opacity-60 cursor-not-allowed"
+                    ? "bg-zinc-950/70 border-white/10 hover:border-emerald-500/50 cursor-pointer"
+                    : "bg-zinc-950/40 border-white/5 opacity-60 cursor-not-allowed"
                 )}
               >
                 <button
                   type="button"
                   disabled={!isRegistered || !canAttempt || isDateFinished}
-                  className="mt-0.5 text-blue-500 hover:text-blue-400 shrink-0"
+                  className="mt-0.5 text-emerald-400 hover:text-emerald-300 shrink-0"
                 >
                   {rulesAccepted ? (
-                    <CheckSquare className="w-5 h-5 text-blue-500" />
+                    <CheckSquare className="w-5 h-5 text-emerald-400" />
                   ) : (
-                    <Square className="w-5 h-5 text-slate-500" />
+                    <Square className="w-5 h-5 text-zinc-500" />
                   )}
                 </button>
-                <span className="text-xs text-slate-300 font-medium leading-relaxed">
+                <span className="text-xs text-zinc-300 font-medium leading-relaxed">
                   Men barcha qoidalar, halollik kodeksi va texnik talablar bilan to'liq tanishdim. Imtihonda faqat o'z bilimimga tayangan holda, qoidalarni buzmasdan qatnashishga roziman.
                 </span>
               </div>
@@ -1174,7 +1174,7 @@ export const ContestParticipatePage: React.FC = () => {
                   variant="ghost"
                   size="md"
                   onClick={() => setCurrentStep('registration')}
-                  className="w-full sm:w-auto text-slate-400 hover:text-white"
+                  className="w-full sm:w-auto text-zinc-400 hover:text-white"
                   leftIcon={<ChevronLeft className="w-4 h-4" />}
                 >
                   1-Qadam (Ma'lumotlar)ga qaytish
@@ -1185,7 +1185,7 @@ export const ContestParticipatePage: React.FC = () => {
                     <Button
                       variant="primary"
                       size="lg"
-                      className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-emerald-600 hover:bg-emerald-500"
+                      className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600"
                       rightIcon={<ArrowRight className="w-4 h-4" />}
                     >
                       Natijani Ko'rish 📊
@@ -1198,12 +1198,12 @@ export const ContestParticipatePage: React.FC = () => {
                     disabled={!isRegistered || !rulesAccepted || isDateFinished || (!!timeLeftToStart && timeLeftToStart > 0)}
                     onClick={handleStartExam}
                     className={clsx(
-                      "w-full sm:w-auto font-black shadow-lg px-8 transition-all",
+                      "w-full sm:w-auto font-black shadow-xl px-8 transition-all active:scale-95",
                       isDateFinished
-                        ? "bg-slate-700 opacity-60 cursor-not-allowed text-slate-400"
+                        ? "bg-zinc-800 opacity-60 cursor-not-allowed text-zinc-500"
                         : timeLeftToStart && timeLeftToStart > 0
                         ? "bg-amber-600/80 opacity-80 cursor-not-allowed text-white"
-                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 text-white"
+                        : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25 text-white"
                     )}
                     rightIcon={<ArrowRight className="w-4 h-4" />}
                   >
@@ -1230,7 +1230,7 @@ export const ContestParticipatePage: React.FC = () => {
               proceedToStartExam();
             }}
             examId={id || 'exam-demo'}
-            examTitle={olympiad?.title || 'NextOlymp Imtihon'}
+            examTitle={olympiad?.title || 'Ibn Sino Imtihon'}
             examStartTime={olympiad?.startDate}
             examEndTime={olympiad?.endDate}
             studentId={user?.id || 'student-demo'}
@@ -1270,23 +1270,23 @@ export const ContestParticipatePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col justify-between">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between font-sans">
       
-      <header className="sticky top-0 z-30 bg-accent-950 text-white border-b border-accent-800 px-4 sm:px-8 h-16 flex items-center justify-between shadow-lg">
+      <header className="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md text-zinc-100 border-b border-white/10 px-4 sm:px-8 h-16 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center font-bold text-white text-xs">
-            NO
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-emerald-500/20">
+            IS
           </div>
           <div className="flex flex-col">
-            <h2 className="text-sm font-bold truncate max-w-xs sm:max-w-md">{olympiad.title}</h2>
-            <span className="text-[10px] text-accent-400 font-mono">Anti-Cheat Active • Logged</span>
+            <h2 className="text-sm font-bold text-zinc-100 truncate max-w-xs sm:max-w-md">{olympiad.title}</h2>
+            <span className="text-[10px] text-emerald-400 font-mono">Ibn Sino Proctor Active • Server Verified</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           
           {allowedLangs.length > 1 && (
-            <div className="flex items-center bg-[#111827] border border-accent-800 rounded-lg p-0.5">
+            <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5">
               {allowedLangs.map((lang: string) => {
                 const isSelected = selectedExamLang === lang;
                 const shortCode = lang.includes("O'zbek") ? "UZ" : lang.includes("Rus") ? "RU" : lang.includes("Ingliz") ? "EN" : "QR";
@@ -1296,8 +1296,8 @@ export const ContestParticipatePage: React.FC = () => {
                     type="button"
                     onClick={() => handleLanguageChange(lang)}
                     className={clsx(
-                      "px-2 py-1 rounded text-[11px] font-bold transition-all cursor-pointer",
-                      isSelected ? "bg-primary-600 text-white shadow-xs" : "text-slate-400 hover:text-white"
+                      "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer active:scale-95",
+                      isSelected ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-xs" : "text-zinc-400 hover:text-white"
                     )}
                     title={`Til: ${lang}`}
                   >
@@ -1314,10 +1314,10 @@ export const ContestParticipatePage: React.FC = () => {
                 document.documentElement.requestFullscreen().catch(() => {});
               }
             }}
-            title="To'liq ekranga o'tish (ExamGuard)"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-900 border border-accent-800 text-accent-300 hover:text-white text-xs transition-colors"
+            title="To'liq ekranga o'tish (DualProctor)"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white text-xs transition-colors cursor-pointer"
           >
-            <Maximize className="w-3.5 h-3.5" />
+            <Maximize className="w-3.5 h-3.5 text-emerald-400" />
             <span>To'liq Ekran</span>
           </button>
           <Timer />
@@ -1326,6 +1326,7 @@ export const ContestParticipatePage: React.FC = () => {
             variant="danger"
             onClick={() => setShowConfirmModal(true)}
             leftIcon={<CheckCircle2 className="w-4 h-4" />}
+            className="shadow-lg shadow-rose-500/20"
           >
             {t('contest.submit')}
           </Button>
@@ -1339,7 +1340,7 @@ export const ContestParticipatePage: React.FC = () => {
           <QuestionCard question={currentQuestion} questionNumber={currentQuestionIndex + 1} />
 
           
-          <div className="flex items-center justify-between bg-white border border-border rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between bg-zinc-900/60 border border-white/10 rounded-2xl p-4 shadow-xl backdrop-blur-md">
             <Button
               variant="outline"
               size="sm"
@@ -1350,8 +1351,8 @@ export const ContestParticipatePage: React.FC = () => {
               {t('contest.prev')}
             </Button>
 
-            <span className="text-xs font-bold text-accent-600">
-              {t('contest.question')} {currentQuestionIndex + 1} {t('contest.of')} {questions.length}
+            <span className="text-xs font-bold text-zinc-300">
+              {t('contest.question')} <span className="text-emerald-400">{currentQuestionIndex + 1}</span> {t('contest.of')} {questions.length}
             </span>
 
             <Button
@@ -1367,21 +1368,21 @@ export const ContestParticipatePage: React.FC = () => {
         </div>
 
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           
-          <div className="bg-white border border-border rounded-xl p-3.5 space-y-2.5 shadow-xs">
-            <div className="flex items-center justify-between text-xs font-bold text-accent-800">
+          <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-4 space-y-3 shadow-xl backdrop-blur-md">
+            <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
               <span className="flex items-center gap-1.5">
-                <Camera className="w-3.5 h-3.5 text-blue-600" />
+                <Camera className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Jonli Kamera Nazorati</span>
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300 bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Faol
               </span>
             </div>
             
-            <div className="relative aspect-video rounded-lg bg-slate-950 overflow-hidden border border-slate-200 flex items-center justify-center">
+            <div className="relative aspect-video rounded-xl bg-zinc-950 overflow-hidden border border-white/10 flex items-center justify-center">
               <video
                 ref={videoRef}
                 autoPlay
@@ -1389,37 +1390,37 @@ export const ContestParticipatePage: React.FC = () => {
                 muted
                 className="w-full h-full object-cover mirror scale-x-[-1]"
               />
-              <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[10px] text-white/90 font-mono">
-                ExamGuard • AI Live
+              <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-[10px] text-emerald-300 font-mono border border-white/10">
+                DualProctor • AI Live
               </div>
             </div>
           </div>
 
           <QuestionPalette />
 
-          <div className="bg-white border border-border rounded-xl p-4 space-y-3 shadow-xs">
+          <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-5 space-y-4 shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-accent-700">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>ExamGuard Xavfsizlik</span>
+              <div className="flex items-center gap-2 text-xs font-bold text-zinc-100">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>DualProctor Xavfsizlik</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 Himoyalangan
               </span>
             </div>
 
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-surface border border-border">
-                <span className="text-accent-600">Tab Switch soni:</span>
-                <strong className={`font-mono ${tabSwitchCount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/70 border border-white/10">
+                <span className="text-zinc-400">Tab Switch soni:</span>
+                <strong className={`font-mono ${tabSwitchCount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                   {tabSwitchCount} / 3 ta
                 </strong>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-lg bg-surface border border-border">
-                <span className="text-accent-600">Admin monitoring:</span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/70 border border-white/10">
+                <span className="text-zinc-400">AI monitoring:</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Suratlar yuborilmoqda
                 </span>
               </div>
@@ -1433,12 +1434,12 @@ export const ContestParticipatePage: React.FC = () => {
 
       
       <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title={t('contest.confirmSubmitTitle')}>
-        <div className="space-y-4 text-center">
-          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto animate-pulse" />
-          <p className="text-sm text-accent-700 leading-relaxed">
+        <div className="space-y-5 text-center">
+          <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto animate-pulse" />
+          <p className="text-sm text-zinc-300 leading-relaxed">
             {t('contest.confirmSubmitBody')}
           </p>
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <Button variant="ghost" onClick={() => setShowConfirmModal(false)}>
               Bekor qilish
             </Button>
@@ -1452,26 +1453,26 @@ export const ContestParticipatePage: React.FC = () => {
       
       <Modal isOpen={!!submissionResult} onClose={() => navigate('/results')} title="Musobaqa Yakunlandi!" size="md">
         <div className="text-center p-4 space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 mx-auto flex items-center justify-center">
             <Trophy className="w-10 h-10" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-black text-accent-900">Tabriklaymiz!</h3>
-            <p className="text-sm text-accent-600">Siz olimpiada masalalarini muvaffaqiyatli topshirdingiz.</p>
+            <h3 className="text-2xl font-black text-zinc-100">Tabriklaymiz!</h3>
+            <p className="text-sm text-zinc-400">Siz olimpiada masalalarini muvaffaqiyatli topshirdingiz.</p>
           </div>
-          <div className="p-5 bg-surface rounded-2xl border border-border text-center space-y-2">
-            <span className="text-xs font-bold text-accent-500 uppercase tracking-wider">To'plangan Ball</span>
-            <div className="text-4xl font-black text-primary font-mono">
-              {submissionResult?.score} <span className="text-xl text-accent-400 font-sans">/ {submissionResult?.maxScore || 100} ball</span>
+          <div className="p-6 bg-zinc-950/80 rounded-2xl border border-white/10 text-center space-y-2">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">To'plangan Ball</span>
+            <div className="text-4xl font-black text-emerald-400 font-mono">
+              {submissionResult?.score} <span className="text-xl text-zinc-400 font-sans">/ {submissionResult?.maxScore || 100} ball</span>
             </div>
-            <div className="flex items-center justify-center gap-3 text-xs font-semibold text-accent-700 pt-1 border-t border-border/50 mt-2">
-              <span className="text-emerald-600 font-bold">✓ {submissionResult?.correctAnswersCount ?? 0} ta to'g'ri</span>
-              <span className="text-slate-300">|</span>
-              <span className="text-rose-500 font-bold">
+            <div className="flex items-center justify-center gap-3 text-xs font-semibold text-zinc-300 pt-2 border-t border-white/10 mt-2">
+              <span className="text-emerald-400 font-bold">✓ {submissionResult?.correctAnswersCount ?? 0} ta to'g'ri</span>
+              <span className="text-zinc-600">|</span>
+              <span className="text-rose-400 font-bold">
                 ✗ {Math.max(0, (submissionResult?.totalQuestions ?? 0) - (submissionResult?.correctAnswersCount ?? 0))} ta xato
               </span>
-              <span className="text-slate-300">|</span>
-              <span className="text-blue-600 font-bold">Jami: {submissionResult?.totalQuestions ?? 0} ta savol</span>
+              <span className="text-zinc-600">|</span>
+              <span className="text-teal-400 font-bold">Jami: {submissionResult?.totalQuestions ?? 0} ta savol</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -1505,7 +1506,7 @@ export const ContestParticipatePage: React.FC = () => {
           proceedToStartExam();
         }}
         examId={id || 'exam-demo'}
-        examTitle={olympiad?.title || 'NextOlymp Imtihon'}
+        examTitle={olympiad?.title || 'Ibn Sino Imtihon'}
         examStartTime={olympiad?.startDate}
         examEndTime={olympiad?.endDate}
         studentId={user?.id || 'student-demo'}

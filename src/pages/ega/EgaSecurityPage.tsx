@@ -172,7 +172,7 @@ export const EgaSecurityPage: React.FC = () => {
 
   const [serverHostStats, setServerHostStats] = useState({
     hostingAccountsCount: 1,
-    currentAccount: 'user1477 (nextolymp.uz)',
+    currentAccount: 'ibnsino_adm (ibnsino.uz)',
     accountRamLimit: '1024 MiB',
     accountDiskQuota: '25 GB NVMe SSD',
     serverNode: 'UZCLOUD Cloud DC - Toshkent'
@@ -491,7 +491,7 @@ export const EgaSecurityPage: React.FC = () => {
                     <Users className="w-4 h-4 text-amber-400" />
                     <div>
                       <span className="font-bold text-xs">Olimpiada Platformasi Foydalanuvchilari</span>
-                      <span className="block text-[9px] text-slate-400 font-mono">MySQL Database (nextolymp)</span>
+                      <span className="block text-[9px] text-slate-400 font-mono">Backend Database (ibnsino)</span>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">

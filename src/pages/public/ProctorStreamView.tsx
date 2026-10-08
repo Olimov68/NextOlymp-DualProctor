@@ -25,7 +25,7 @@ import { DualDeviceProctorGateway } from '../../services/setupProctor.service';
 export const ProctorStreamView: React.FC = () => {
   const [searchParams] = useSearchParams();
   const rawSessionId = searchParams.get('sessionId');
-  const sessionId = rawSessionId || (typeof window !== 'undefined' ? localStorage.getItem('nextolymp_active_proctor_session') || 'proctor-local-session' : 'proctor-local-session');
+  const sessionId = rawSessionId || (typeof window !== 'undefined' ? localStorage.getItem('ibnsino_active_proctor_session') || localStorage.getItem('nextolymp_active_proctor_session') || 'proctor-local-session' : 'proctor-local-session');
   const token = searchParams.get('token') || 'token-' + sessionId;
 
   
@@ -134,7 +134,7 @@ export const ProctorStreamView: React.FC = () => {
       ctx.fillRect(0, 0, 640, 480);
 
       
-      ctx.strokeStyle = '#1e293b';
+      ctx.strokeStyle = '#27272a';
       ctx.lineWidth = 1;
       for (let y = 300; y < 480; y += 30) {
         ctx.beginPath();
@@ -143,8 +143,7 @@ export const ProctorStreamView: React.FC = () => {
         ctx.stroke();
       }
 
-      
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = '#27272a';
       ctx.strokeStyle = '#334155';
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -171,7 +170,7 @@ export const ProctorStreamView: React.FC = () => {
       ctx.fillRect(285, 225, 70, 45); 
       ctx.fillStyle = '#93c5fd';
       ctx.font = '10px monospace';
-      ctx.fillText('NextOlymp', 290, 250);
+      ctx.fillText('Ibn Sino', 290, 250);
 
       
       const handOffset = Math.sin(tick * 0.08) * 3;
@@ -378,56 +377,51 @@ export const ProctorStreamView: React.FC = () => {
 
   return (
     <div className={`fixed inset-0 w-full h-full flex flex-col justify-between overflow-hidden transition-colors duration-300 ${
-      isPowerSavingMode ? 'bg-black text-slate-500' : 'bg-slate-950 text-white'
+      isPowerSavingMode ? 'bg-zinc-950 text-zinc-500' : 'bg-zinc-950 text-zinc-100'
     }`}>
-      
-      
       <canvas ref={canvasRef} className="hidden" />
 
-      
       {snapshotFlash && (
         <div className="absolute inset-0 bg-white/70 z-50 pointer-events-none transition-opacity duration-150" />
       )}
 
-      
+      {/* Top status bar */}
       <div className={`relative z-20 px-4 py-3 flex items-center justify-between backdrop-blur-md border-b ${
-        isPowerSavingMode ? 'bg-black/90 border-neutral-900' : 'bg-slate-900/80 border-slate-800'
+        isPowerSavingMode ? 'bg-zinc-950/90 border-white/5' : 'bg-zinc-900/80 border-white/10'
       }`}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
             <Smartphone className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-white tracking-wide">NextOlymp Proctor</span>
+              <span className="text-xs font-bold text-zinc-100 tracking-wide">Ibn Sino Proctor</span>
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             </div>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-zinc-400">
               {cameraStatus === 'virtual' ? 'Virtual Nazorat Kamerasi (Test)' : '2-Telefon (Kamera Faol)'}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-mono bg-slate-800/80 border border-slate-700/60">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono bg-zinc-950/80 border border-white/10">
             {isCharging ? (
               <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" />
             ) : (
               <Battery className="w-3.5 h-3.5 text-emerald-400" />
             )}
-            <span className="text-slate-300 font-bold">
+            <span className="text-zinc-200 font-bold">
               {batteryLevel !== null ? `${batteryLevel}%` : '95%'}
             </span>
           </div>
 
-          
           <button
             onClick={() => setIsPowerSavingMode(!isPowerSavingMode)}
             className={`p-2 rounded-xl text-xs flex items-center gap-1 transition-all border ${
               isPowerSavingMode
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-800 text-slate-300 border-slate-700'
+                : 'bg-zinc-900 border-white/10 text-zinc-300 hover:text-white'
             }`}
             title="Batareyani tejash rejimi"
           >
@@ -436,9 +430,8 @@ export const ProctorStreamView: React.FC = () => {
         </div>
       </div>
 
-      
-      <div className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center bg-black">
-        
+      {/* Camera Viewport */}
+      <div className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center bg-zinc-950">
         <video
           ref={videoRef}
           autoPlay
@@ -449,25 +442,23 @@ export const ProctorStreamView: React.FC = () => {
           }`}
         />
 
-        
         <canvas
           ref={virtualCanvasRef}
           className={`w-full h-full object-cover ${cameraStatus === 'virtual' ? 'block' : 'hidden'}`}
         />
 
-        
         {cameraStatus === 'error' && (
-          <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-30">
-            <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+          <div className="absolute inset-0 bg-zinc-950/95 flex flex-col items-center justify-center p-6 text-center z-30">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
               <AlertTriangle className="w-7 h-7" />
             </div>
             <h3 className="text-base font-bold text-white mb-2">Fizik kamera topilmadi</h3>
-            <p className="text-xs text-slate-400 max-w-xs mb-4 leading-relaxed">
+            <p className="text-xs text-zinc-400 max-w-xs mb-4 leading-relaxed">
               Lokal test rejimida ishlash uchun Virtual Nazorat Kamerasini yoqishingiz mumkin.
             </p>
             <button
               onClick={startVirtualCamera}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
             >
               <Zap className="w-4 h-4" />
               Virtual Kamerani Yoqish
@@ -475,7 +466,6 @@ export const ProctorStreamView: React.FC = () => {
           </div>
         )}
 
-        
         {!isPowerSavingMode && cameraStatus !== 'error' && (
           <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between">
             <div className="flex justify-between items-start">
@@ -484,7 +474,7 @@ export const ProctorStreamView: React.FC = () => {
             </div>
 
             <div className="text-center">
-              <div className="inline-block px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md text-[11px] text-white/90 border border-white/10 shadow-lg">
+              <div className="inline-block px-3.5 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md text-[11px] text-zinc-200 border border-white/10 shadow-lg">
                 45° burchak • Stol, ikkala qo'l va noutbuk kadrda bo'lishi lozim
               </div>
             </div>
@@ -496,49 +486,46 @@ export const ProctorStreamView: React.FC = () => {
           </div>
         )}
 
-        
         {isPowerSavingMode && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 pointer-events-none">
-            <Moon className="w-8 h-8 text-neutral-600 mb-2" />
-            <p className="text-xs text-neutral-500 font-medium">
+            <Moon className="w-8 h-8 text-zinc-600 mb-2" />
+            <p className="text-xs text-zinc-500 font-medium">
               Batareyani tejash rejimi faol
             </p>
-            <p className="text-[10px] text-neutral-600 mt-1">
+            <p className="text-[10px] text-zinc-600 mt-1">
               Kamera to'liq sifatda uzatishni davom ettirmoqda
             </p>
           </div>
         )}
       </div>
 
-      
+      {/* Bottom control bar */}
       <div className={`relative z-20 p-4 border-t ${
-        isPowerSavingMode ? 'bg-black border-neutral-900' : 'bg-slate-900/90 border-slate-800'
+        isPowerSavingMode ? 'bg-zinc-950 border-white/5' : 'bg-zinc-900/90 border-white/10 backdrop-blur-md'
       }`}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
             <div className="text-left">
-              <span className="text-xs font-semibold text-white block">
+              <span className="text-xs font-semibold text-zinc-100 block">
                 {isConnectedToPrimary ? "Asosiy qurilmaga ulandi ✓" : "Ulanish tekshirilmoqda..."}
               </span>
-              <span className="text-[10px] text-slate-400 block font-mono">
+              <span className="text-[10px] text-zinc-400 block font-mono">
                 {lastSnapshotTime ? `Oxirgi kadr: ${lastSnapshotTime}` : `Oqim faol (${framesSentCount} kadr)`}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            
             <button
               onClick={handleForceConnect}
-              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
               title="Asosiy qurilmaga ulanish signalini qayta yuborish"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Signal yuborish</span>
             </button>
 
-            
             <button
               onClick={() => {
                 const snap = captureSnapshot();
@@ -546,7 +533,7 @@ export const ProctorStreamView: React.FC = () => {
                   gatewayRef.current.emit(PROCTOR_SOCKET_EVENTS.SNAPSHOT_READY, { imageBase64: snap });
                 }
               }}
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-blue-500/25 active:scale-95 transition-all"
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
             >
               <Camera className="w-3.5 h-3.5" />
               <span>Snapshot</span>

@@ -53,28 +53,27 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
   return (
     <aside
       className={clsx(
-        "h-screen sticky top-0 shrink-0 flex flex-col justify-between z-30 shadow-xl overflow-x-hidden overflow-y-auto custom-scrollbar font-sans select-none bg-[#0B1120] border-r border-[#1E293B] text-[#F1F5F9]",
+        "h-screen sticky top-0 shrink-0 flex flex-col justify-between z-30 shadow-2xl overflow-x-hidden overflow-y-auto custom-scrollbar font-sans select-none bg-zinc-950 border-r border-white/10 text-zinc-100",
         isCollapsed ? "w-20 p-3" : "w-[260px] p-4"
       )}
     >
       <div className="space-y-6">
-        
         <div
           className={clsx(
-            "pb-3 border-b border-[#1E293B] flex items-center",
+            "pb-3.5 border-b border-white/10 flex items-center",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >
           <Link to="/ega" className="flex items-center gap-3 overflow-hidden group">
-            <div className="w-9 h-9 rounded-xl bg-[#F59E0B] text-slate-950 font-black flex items-center justify-center text-sm shadow-md shrink-0">
-              <ShieldCheck className="w-5 h-5 text-slate-950" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
+              <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-extrabold tracking-wider text-[#F59E0B] uppercase leading-none truncate">
+                <span className="text-sm font-extrabold tracking-wider bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent uppercase leading-none truncate">
                   KHISO ADMIN
                 </span>
-                <span className="text-[10px] font-bold tracking-widest uppercase mt-1 text-[#94A3B8] truncate">
+                <span className="text-[10px] font-bold tracking-widest uppercase mt-1 text-zinc-400 truncate">
                   Control System
                 </span>
               </div>
@@ -82,12 +81,11 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
           </Link>
         </div>
 
-        
         <div className="space-y-5">
           {menuGroups.map((group, idx) => (
             <div key={idx} className="space-y-1">
               {!isCollapsed && (
-                <div className="px-3 text-[10px] uppercase font-bold tracking-widest mb-1.5 text-[#64748B]">
+                <div className="px-3 text-[10px] uppercase font-bold tracking-widest mb-1.5 text-zinc-400">
                   {group.title}
                 </div>
               )}
@@ -101,14 +99,14 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
                     to={item.path}
                     title={isCollapsed ? item.label : undefined}
                     className={clsx(
-                      "flex items-center gap-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150",
+                      "flex items-center gap-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150",
                       isCollapsed ? "px-0 justify-center" : "px-3",
                       active
-                        ? "bg-[#3B82F6] text-white font-bold shadow-md shadow-[#3B82F6]/20"
-                        : "text-[#94A3B8] hover:bg-[#111827] hover:text-[#F1F5F9]"
+                        ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20"
+                        : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100"
                     )}
                   >
-                    <Icon className={clsx("w-4 h-4 shrink-0", active ? "text-white" : "text-[#94A3B8]")} />
+                    <Icon className={clsx("w-4 h-4 shrink-0", active ? "text-white" : "text-zinc-400")} />
                     {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
@@ -118,13 +116,12 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
         </div>
       </div>
 
-      
-      <div className="pt-4 border-t border-[#1E293B]">
+      <div className="pt-4 border-t border-white/10">
         <button
           onClick={logout}
           title={isCollapsed ? translateText('Chiqish', currentLang) : undefined}
           className={clsx(
-            "w-full flex items-center gap-3 py-2 rounded-lg text-xs font-semibold text-[#94A3B8] hover:bg-[#EF4444]/10 hover:text-[#EF4444] transition-colors cursor-pointer",
+            "w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors cursor-pointer",
             isCollapsed ? "px-0 justify-center" : "px-3"
           )}
         >

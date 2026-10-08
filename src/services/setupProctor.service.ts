@@ -4,7 +4,7 @@ import { AIPlacementEvaluation, CalibrationElement, DualDeviceSession, PROCTOR_S
 import { io, Socket } from 'socket.io-client';
 
 const PROCTOR_VISION_SYSTEM_PROMPT = `
-Siz NextOlymp onlayn imtihon tizimining Computer Vision va Proktorlik bo'yicha qat'iy AI inspektorisiz.
+Siz Ibn Sino onlayn imtihon tizimining Computer Vision va Proktorlik bo'yicha qat'iy AI inspektorisiz.
 O'quvchi 2-telefon kamerasini stolning yon/orqa tomoniga (45 gradus burchak ostida, 1.5 metr masofada) o'rnatgan.
 Sizga ushbu 2-telefon orqa kamerasidan olingan nazorat kadri (snapshot) taqdim etiladi.
 
@@ -229,7 +229,7 @@ export class DualDeviceProctorGateway {
     
     if ('BroadcastChannel' in window) {
       try {
-        this.channel = new BroadcastChannel('nextolymp_proctor_signaling');
+        this.channel = new BroadcastChannel('ibnsino_proctor_signaling');
         this.channel.onmessage = (event) => {
           const { type, sessionId, payload } = event.data || {};
           if (!this.sessionId || !sessionId || sessionId === this.sessionId) {
@@ -243,7 +243,7 @@ export class DualDeviceProctorGateway {
 
     
     this.storageListener = (e: StorageEvent) => {
-      if (e.key === 'nextolymp_proctor_bus' && e.newValue) {
+      if (e.key === 'ibnsino_proctor_bus' && e.newValue) {
         try {
           const data = JSON.parse(e.newValue);
           if (data && data.type) {
@@ -259,7 +259,7 @@ export class DualDeviceProctorGateway {
     
     this.messageListener = (e: MessageEvent) => {
       const data = e.data;
-      if (data && data.source === 'nextolymp_proctor' && data.type) {
+      if (data && data.source === 'ibnsino_proctor' && data.type) {
         if (!this.sessionId || !data.sessionId || data.sessionId === this.sessionId) {
           this.emitLocal(data.type, data.payload);
         }
@@ -280,7 +280,7 @@ export class DualDeviceProctorGateway {
 
     
     if (typeof window !== 'undefined') {
-      localStorage.setItem('nextolymp_active_proctor_session', config.sessionId);
+      localStorage.setItem('ibnsino_active_proctor_session', config.sessionId);
     }
 
     const serverUrl = config.serverUrl || (import.meta as any).env?.VITE_WS_URL || 'http://localhost:5000';
@@ -347,7 +347,7 @@ export class DualDeviceProctorGateway {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(
-          'nextolymp_proctor_bus',
+          'ibnsino_proctor_bus',
           JSON.stringify({
             type: event,
             sessionId: this.sessionId,
@@ -361,7 +361,7 @@ export class DualDeviceProctorGateway {
       try {
         if (window.opener) {
           window.opener.postMessage(
-            { source: 'nextolymp_proctor', type: event, sessionId: this.sessionId, payload },
+            { source: 'ibnsino_proctor', type: event, sessionId: this.sessionId, payload },
             '*'
           );
         }
@@ -407,7 +407,7 @@ export function createDualDeviceSession(examId: string, studentId: string): Dual
   const token = 'jwt_' + btoa(JSON.stringify({ s: sessionId, e: examId, u: studentId, exp: Date.now() + 1000 * 60 * 180 }));
 
   if (typeof window !== 'undefined') {
-    localStorage.setItem('nextolymp_active_proctor_session', sessionId);
+    localStorage.setItem('ibnsino_active_proctor_session', sessionId);
   }
 
   return {

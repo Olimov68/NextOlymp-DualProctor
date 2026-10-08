@@ -23,12 +23,12 @@ export const Navbar: React.FC = () => {
     { to: '/', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { to: '/olympiads', label: 'Olympiads', icon: <Trophy className="w-4 h-4" /> },
     { to: '/leaderboard', label: 'Leaderboard', icon: <Award className="w-4 h-4" /> },
-    { to: '/verify/NO-2026-MATH-8921', label: 'Verify Certificate', icon: <CheckCircle className="w-4 h-4" /> },
+    { to: '/verify/IS-2026-MED-8921', label: 'Verify Certificate', icon: <CheckCircle className="w-4 h-4" /> },
     { to: '/about', label: 'About Us', icon: <Info className="w-4 h-4" /> },
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0B1120] border-b border-[#1E293B] text-[#F1F5F9] select-none">
+    <header className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-white/10 text-zinc-100 select-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         
@@ -48,8 +48,8 @@ export const Navbar: React.FC = () => {
                 to={link.to}
                 className={`text-sm font-medium transition-colors duration-150 py-1 ${
                   active
-                    ? 'text-[#3B82F6] font-semibold border-b-2 border-[#3B82F6]'
-                    : 'text-[#94A3B8] hover:text-[#F1F5F9]'
+                    ? 'text-emerald-400 font-semibold border-b-2 border-emerald-500'
+                    : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 {link.label}
@@ -69,14 +69,13 @@ export const Navbar: React.FC = () => {
                 <Button
                   size="sm"
                   variant="primary"
-                  className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium"
                   leftIcon={<LayoutDashboard className="w-4 h-4" />}
                 >
                   Dashboard
                 </Button>
               </Link>
 
-              <div className="flex items-center gap-2.5 pl-3 border-l border-[#1E293B]">
+              <div className="flex items-center gap-2.5 pl-3 border-l border-white/10">
                 
                 <Link to="/profile" title={user.fullName || 'User Profile'}>
                   <Avatar name={user.fullName || 'User'} src={user.avatarUrl} size="sm" />
@@ -84,7 +83,7 @@ export const Navbar: React.FC = () => {
                 <button
                   onClick={logout}
                   title="Logout"
-                  className="p-2 rounded-lg text-[#94A3B8] hover:text-[#EF4444] hover:bg-[#1E293B] transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-zinc-400 hover:text-rose-400 hover:bg-zinc-800/80 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -96,7 +95,6 @@ export const Navbar: React.FC = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#1E293B]"
                 >
                   Kirish
                 </Button>
@@ -105,7 +103,6 @@ export const Navbar: React.FC = () => {
                 <Button
                   size="sm"
                   variant="primary"
-                  className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium"
                 >
                   Ro'yxatdan o'tish
                 </Button>
@@ -120,16 +117,16 @@ export const Navbar: React.FC = () => {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-2 rounded-lg border border-[#1E293B] bg-[#111827] text-[#F1F5F9] hover:bg-[#1E293B] transition-colors cursor-pointer"
+            className="p-2 rounded-xl border border-white/10 bg-zinc-900/60 text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 text-[#F59E0B]" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-16 bg-[#0B1120]/95 backdrop-blur-xl border-b border-[#1E293B] p-5 space-y-4 max-h-[calc(100vh-4rem)] overflow-y-auto z-50">
+        <div className="lg:hidden fixed inset-x-0 top-16 bg-zinc-950/95 backdrop-blur-xl border-b border-white/10 p-5 space-y-4 max-h-[calc(100vh-4rem)] overflow-y-auto z-50">
           <div className="space-y-1">
             {navLinks.map((link) => {
               const active = isActive(link.to);
@@ -138,10 +135,10 @@ export const Navbar: React.FC = () => {
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     active
-                      ? 'bg-[#1E293B] text-[#3B82F6] font-semibold'
-                      : 'text-[#94A3B8] hover:bg-[#111827] hover:text-[#F1F5F9]'
+                      ? 'bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/20'
+                      : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-100'
                   }`}
                 >
                   {link.icon}
@@ -152,11 +149,11 @@ export const Navbar: React.FC = () => {
           </div>
 
           {isAuthenticated && user ? (
-            <div className="pt-3 border-t border-[#1E293B] space-y-2">
+            <div className="pt-3 border-t border-white/10 space-y-2">
               <Link
                 to="/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#3B82F6]/10 text-[#3B82F6] border border-[#3B82F6]/30 text-sm font-semibold"
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm font-semibold"
               >
                 <div className="flex items-center gap-2.5">
                   <LayoutDashboard className="w-4 h-4" />
@@ -167,7 +164,7 @@ export const Navbar: React.FC = () => {
               <Link
                 to="/profile"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[#94A3B8] hover:bg-[#111827] hover:text-[#F1F5F9]"
+                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
               >
                 <span>Profil Sozlamalari</span>
               </Link>
@@ -185,7 +182,7 @@ export const Navbar: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <div className="pt-3 border-t border-[#1E293B] flex flex-col gap-2">
+            <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
               <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)}>
                 <Button size="sm" variant="outline" className="w-full">
                   Kirish

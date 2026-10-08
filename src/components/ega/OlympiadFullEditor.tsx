@@ -314,7 +314,7 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
   const [format, setFormat] = useState<'online' | 'offline'>(olympiad.format);
   const [status, setStatus] = useState<'ochiq' | 'yopiq'>(olympiad.status);
   const [location, setLocation] = useState(olympiad.location || '');
-  const [organizer, setOrganizer] = useState(olympiad.organizer || 'NextOlymp Akademik Kengashi');
+  const [organizer, setOrganizer] = useState(olympiad.organizer || 'Ibn Sino Akademik Kengashi');
   const [image, setImage] = useState(olympiad.image);
   const [description, setDescription] = useState(olympiad.description);
 
@@ -1575,7 +1575,7 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
                   <div className="flex items-center gap-2.5">
                     <Wallet className="w-4 h-4 text-purple-400 shrink-0" />
                     <div>
-                      <div>{t("Hamyon (NextOlymp Shaxsiy Balansi)")}</div>
+                      <div>{t("Hamyon (Ibn Sino Shaxsiy Balansi)")}</div>
                       <div className="text-[10px] text-slate-400 font-normal">{t("Foydalanuvchining shaxsiy hamyonidagi mablag'dan yechish")}</div>
                     </div>
                   </div>
@@ -3764,14 +3764,14 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
 
             
             {selectedParticipantDetail && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-                <div className="bg-[#0B1120] border border-[#1E293B] rounded-3xl p-6 max-w-2xl w-full text-white space-y-4 shadow-2xl overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+                <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-2xl w-full text-zinc-100 space-y-4 shadow-2xl overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
                     <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-amber-400" />
+                      <Award className="w-5 h-5 text-emerald-400" />
                       <div>
-                        <h3 className="text-base font-bold text-white">{selectedParticipantDetail.name} — Test Natijasi</h3>
-                        <p className="text-[11px] text-slate-400 font-mono">
+                        <h3 className="text-base font-bold text-zinc-100">{selectedParticipantDetail.name} — Test Natijasi</h3>
+                        <p className="text-[11px] text-zinc-400 font-mono">
                           {selectedParticipantDetail.school} ({selectedParticipantDetail.grade}-sinf) · ID: {selectedParticipantDetail.id}
                         </p>
                       </div>
@@ -3779,63 +3779,61 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
                     <button
                       type="button"
                       onClick={() => setSelectedParticipantDetail(null)}
-                      className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 font-bold cursor-pointer"
+                      className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-zinc-300 font-bold cursor-pointer"
                     >
                       ✕
                     </button>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30">
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">To'plangan Ball</div>
-                      <div className="text-xl font-black text-blue-400 font-mono mt-0.5">{selectedParticipantDetail.score || 0} ball</div>
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="text-[10px] text-zinc-400 uppercase font-semibold">To'plangan Ball</div>
+                      <div className="text-xl font-black text-emerald-400 font-mono mt-0.5">{selectedParticipantDetail.score || 0} ball</div>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">To'g'ri Javoblar</div>
-                      <div className="text-xl font-black text-emerald-400 font-mono mt-0.5">
+                    <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20">
+                      <div className="text-[10px] text-zinc-400 uppercase font-semibold">To'g'ri Javoblar</div>
+                      <div className="text-xl font-black text-teal-400 font-mono mt-0.5">
                         {selectedParticipantDetail.correctAnswers || 0} / {selectedParticipantDetail.totalQuestions || 25}
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30">
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Natija Foizi</div>
+                    <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                      <div className="text-[10px] text-zinc-400 uppercase font-semibold">Natija Foizi</div>
                       <div className="text-xl font-black text-cyan-400 font-mono mt-0.5">{selectedParticipantDetail.percentage || 0}%</div>
                     </div>
                   </div>
 
-                  
-                  <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-xs text-purple-200 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-200 flex items-center justify-between">
                     <span>
                       🔒 <strong>Admin ko'rinish rejimida:</strong> Natijalar o'quvchilarga e'lon qilinmagan bo'lsa ham, adminlar ushbu ko'rinishda to'liq tekshirishlari mumkin.
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-purple-500 text-white font-bold text-[10px]">E'lon Xabari: {showResultsToStudent ? "Ochiq" : "Yashirin"}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold text-[10px]">E'lon Xabari: {showResultsToStudent ? "Ochiq" : "Yashirin"}</span>
                   </div>
 
-                  
-                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar border-t border-[#1E293B] pt-3">
-                    <h4 className="text-xs font-bold text-slate-300">Savollar tahlili va ko'rsatkichlar:</h4>
-                    <div className="p-3 rounded-xl bg-[#111827] border border-[#1E293B] text-xs space-y-2">
-                      <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                        <span className="text-slate-400">Sertifikat holati:</span>
+                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar border-t border-white/10 pt-3">
+                    <h4 className="text-xs font-bold text-zinc-300">Savollar tahlili va ko'rsatkichlar:</h4>
+                    <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 text-xs space-y-2">
+                      <div className="flex justify-between border-b border-white/5 pb-1.5">
+                        <span className="text-zinc-400">Sertifikat holati:</span>
                         <span className="font-bold text-emerald-400">{selectedParticipantDetail.certificateType || "Ishtirok Sertifikati"}</span>
                       </div>
-                      <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                        <span className="text-slate-400">Anti-Cheat Holati:</span>
-                        <span className="font-bold text-slate-200">Qoidabuzarliklar qayd etilmadi (0 ta)</span>
+                      <div className="flex justify-between border-b border-white/5 pb-1.5">
+                        <span className="text-zinc-400">Anti-Cheat Holati:</span>
+                        <span className="font-bold text-zinc-200">Qoidabuzarliklar qayd etilmadi (0 ta)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Imtihon topshirilgan vaqt:</span>
+                        <span className="text-zinc-400">Imtihon topshirilgan vaqt:</span>
                         <span className="font-mono text-amber-300">{selectedParticipantDetail.submittedAt || "2026-09-22 14:00"}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-2 border-t border-[#1E293B]">
+                  <div className="flex justify-end pt-2 border-t border-white/10">
                     <button
                       type="button"
                       onClick={() => setSelectedParticipantDetail(null)}
-                      className="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs cursor-pointer"
+                      className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 text-white font-bold rounded-xl text-xs cursor-pointer active:scale-95 transition-all"
                     >
                       Yopish
                     </button>

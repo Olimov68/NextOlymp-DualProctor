@@ -19,7 +19,6 @@ import { TermsPage } from '../pages/public/TermsPage';
 import { PrivacyPage } from '../pages/public/PrivacyPage';
 import { RulesPage } from '../pages/public/RulesPage';
 import { BaholashPage } from '../pages/public/BaholashPage';
-import { SwaggerPage } from '../pages/public/SwaggerPage';
 import { ProctorStreamView } from '../pages/public/ProctorStreamView';
 
 import { StudentDashboard } from '../pages/student/StudentDashboard';
@@ -77,9 +76,6 @@ export const AppRouter: React.FC = () => {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/rules" element={<RulesPage />} />
-        <Route path="/swagger" element={<SwaggerPage />} />
-        <Route path="/api-docs" element={<SwaggerPage />} />
-        <Route path="/api/docs" element={<SwaggerPage />} />
 
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<RegisterPage />} />

@@ -32,7 +32,7 @@ export const EgaLoginPage: React.FC = () => {
     }
 
     try {
-      const adminRes = adminAuthService.createAdminSession(trimmedEmail, trimmedPass);
+      const adminRes = await adminAuthService.createAdminSession(trimmedEmail, trimmedPass);
       if (!adminRes.success) {
         setError(adminRes.error || "Noto'g'ri Admin Email yoki Parol kiritildi.");
         return;
@@ -85,7 +85,7 @@ export const EgaLoginPage: React.FC = () => {
                   setEmail(e.target.value);
                   if (error) setError('');
                 }}
-                placeholder="admin@nextolymp.uz"
+                placeholder="admin@ibnsino.uz"
                 required
                 autoComplete="email"
                 style={{

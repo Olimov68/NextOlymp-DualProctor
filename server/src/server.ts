@@ -2,49 +2,49 @@ import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
+import { PORT, ALLOWED_ORIGINS } from './config/constants';
+import { AuthController } from './controllers/auth.controller';
+import { ExamController } from './controllers/exam.controller';
+import { UserController } from './controllers/user.controller';
+import { SubmissionController } from './controllers/submission.controller';
+import { CertificateController } from './controllers/certificate.controller';
 import { ProctorController } from './controllers/proctor.controller';
 import { setupProctorSockets } from './sockets/proctorSocketHandler';
+import { authenticateJWT, optionalAuth, requireRole } from './middleware/auth.middleware';
 
 const app = express();
 const server = http.createServer(app);
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://127.0.0.1:3000',
-  'https://nextolymp.uz',
-  'https://www.nextolymp.uz'
-];
-
+// CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://192.168.') || origin.startsWith('http://10.')) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://192.168.') || origin.startsWith('http://10.') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
       callback(null, true);
     } else {
-      callback(null, true);
+      callback(new Error('CORS xavfsizlik cheklovi: Ruxsatsiz domen'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
+// Security headers
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   next();
 });
 
+// In-memory rate limiting with safe IP resolution
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 120;
+const MAX_REQUESTS_PER_WINDOW = 240;
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  const clientIp = req.socket.remoteAddress || '127.0.0.1';
   const now = Date.now();
   const record = rateLimitMap.get(clientIp);
 
@@ -64,30 +64,86 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
+// Socket.io for dual-device real-time proctoring
 const io = new Server(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
   },
-  maxHttpBufferSize: 1e8,
+  maxHttpBufferSize: 5e7,
 });
 
+// --- API Endpoints ---
+
+// 1. Auth routes
+app.post('/api/auth/login', AuthController.login);
+app.post('/api/auth/register', AuthController.register);
+app.get('/api/auth/me', authenticateJWT, AuthController.me);
+
+// 2. Exam routes
+app.get('/api/exams/active', ExamController.getActiveExams);
+app.get('/api/exams', ExamController.getActiveExams);
+app.get('/api/exams/:id', ExamController.getExamById);
+app.get('/api/exams/:id/questions', ExamController.getExamQuestions); // SECURED: answers hidden!
+app.post('/api/exams/:id/start', optionalAuth, ExamController.startExam);
+app.post('/api/exams/:id/answer', optionalAuth, ExamController.submitAnswer);
+app.post('/api/exams/:id/finish', optionalAuth, ExamController.finishExam); // SECURED: server-side grading!
+app.get('/api/exams/:id/result', optionalAuth, ExamController.getExamResult);
+app.post('/api/exams/:id/proctor-event', optionalAuth, ExamController.recordProctorEvent);
+
+// Legacy aliases for backward compatibility
+app.get('/api/olympiads', ExamController.getActiveExams);
+app.get('/api/olympiads/:id', ExamController.getExamById);
+app.get('/api/national-exams', ExamController.getActiveExams);
+app.post('/api/anticheat', optionalAuth, (req, res) => ExamController.recordProctorEvent(req, res));
+
+// 3. Submissions & Leaderboard
+app.get('/api/submissions', optionalAuth, SubmissionController.getSubmissions);
+app.get('/api/submissions/:id', optionalAuth, SubmissionController.getSubmissionById);
+app.get('/api/leaderboard', SubmissionController.getLeaderboard);
+
+// 4. Users (Admin protected)
+app.get('/api/users', authenticateJWT, requireRole(['admin']), UserController.getUsers);
+app.get('/api/users/:id', authenticateJWT, UserController.getUserById);
+app.put('/api/users/:id', authenticateJWT, UserController.updateUser);
+app.delete('/api/users/:id', authenticateJWT, requireRole(['admin']), UserController.deleteUser);
+
+// 5. Certificate Verification
+app.get('/api/certificates/:code', CertificateController.verifyCertificate);
+app.get('/api/verify/:code', CertificateController.verifyCertificate);
+
+// 6. Dual-Device Proctoring
 app.post('/api/proctor/session/create', ProctorController.createSession);
 app.post('/api/proctor/calibrate', ProctorController.calibrate);
 app.get('/api/proctor/check-gatekeeper/:sessionId', ProctorController.checkGatekeeper);
 
+// Health check
 app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'NextOlymp Proctoring Core', timestamp: new Date() });
+  res.json({
+    status: 'ok',
+    service: 'Ibn Sino Mock Exam & Olympiad Core API',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+  });
 });
 
+// Setup sockets
 setupProctorSockets(io);
 
-const PORT = process.env.PORT || 5000;
+// Global error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('[API Error]:', err.message);
+  res.status(err.status || 500).json({
+    error: err.message || 'Ichki server xatoligi yuz berdi',
+  });
+});
+
 server.listen(PORT, () => {
-  console.log(`🚀 NextOlymp Dual-Device Proctoring Server ${PORT}-portda ishga tushdi`);
+  console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda muvaffaqiyatli ishga tushdi`);
+  console.log(`🔗 REST API: http://localhost:${PORT}/api/health`);
 });
 
 export { app, server, io };

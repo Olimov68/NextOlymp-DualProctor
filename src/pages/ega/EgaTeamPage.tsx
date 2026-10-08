@@ -46,7 +46,7 @@ export const EgaTeamPage: React.FC = () => {
       {
         id: currentUser?.id || 'adm-01',
         fullName: currentUser?.fullName || 'Super Admin',
-        email: currentUser?.email || 'admin@nextolymp.uz',
+        email: currentUser?.email || 'admin@ibnsino.uz',
         role: 'super_admin',
         roleTitle: 'Super Admin (Ega)',
         status: 'active',
@@ -336,7 +336,7 @@ export const EgaTeamPage: React.FC = () => {
                   <input
                     type="email"
                     required
-                    placeholder="sardor@nextolymp.uz"
+                    placeholder="sardor@ibnsino.uz"
                     value={newAdmin.email}
                     onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 bg-slate-50"

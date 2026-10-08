@@ -316,7 +316,7 @@ export class ExamGuard {
     const secStore = useSecurityStore.getState();
 
     const userName = user?.fullName || 'Ishtirokchi';
-    const userEmail = user?.email || 'student@nextolymp.uz';
+    const userEmail = user?.email || 'student@ibnsino.uz';
 
     
     procStore.addFlag({

@@ -3,7 +3,7 @@ import { OlympiadItem } from '../data/initialOlympiads';
 import { apiClient } from '../services/api';
 import { submissionService } from '../services/submissionService';
 
-const STORAGE_KEY = 'next_olymp_olympiads';
+const STORAGE_KEY = 'ibn_sino_exams';
 
 const getStoredOlympiads = (): OlympiadItem[] => {
   if (typeof window === 'undefined') return [];
@@ -49,7 +49,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
   fetchFromApi: async () => {
     set({ loading: true });
     try {
-      const json = await apiClient.get('/olympiads.php');
+      const json = await apiClient.get('/exams');
       const data = Array.isArray(json) ? json : (json?.data || []);
       if (Array.isArray(data) && data.length > 0) {
         persistOlympiads(data);
@@ -67,7 +67,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
   fetchOlympiads: async () => {
     set({ loading: true });
     try {
-      const data = await apiClient.get('/olympiads.php');
+      const data = await apiClient.get('/exams');
       const list = Array.isArray(data) ? data : (data?.data || []);
       if (Array.isArray(list) && list.length > 0) {
         persistOlympiads(list);
@@ -87,8 +87,8 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
     set({ olympiads: updated });
 
     try {
-      await apiClient.post('/olympiads.php', data);
-      const res = await apiClient.get('/olympiads.php');
+      await apiClient.post('/exams', data);
+      const res = await apiClient.get('/exams');
       const list = Array.isArray(res) ? res : (res?.data || []);
       if (Array.isArray(list) && list.length > 0) {
         persistOlympiads(list);
@@ -119,7 +119,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
     set({ olympiads: updated });
 
     
-    apiClient.post('/olympiads.php', olympiad).catch((e) => console.warn('API sync warning:', e));
+    apiClient.post('/exams', olympiad).catch((e) => console.warn('API sync warning:', e));
 
     return olympiad;
   },
@@ -131,7 +131,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
 
     const itemToSync = updated.find((o) => o.id === id);
     if (itemToSync) {
-      apiClient.post('/olympiads.php', itemToSync).catch((e) => console.warn('API sync warning:', e));
+      apiClient.post('/exams', itemToSync).catch((e) => console.warn('API sync warning:', e));
     }
   },
 
@@ -144,7 +144,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
     submissionService.deleteOlympiadData(id);
 
     
-    apiClient.delete(`/olympiads.php?id=${encodeURIComponent(id)}`).catch((e) => console.warn('API delete warning:', e));
+    apiClient.delete(`/exams?id=${encodeURIComponent(id)}`).catch((e) => console.warn('API delete warning:', e));
   },
 
   togglePinOlympiad: (id) => {
@@ -154,7 +154,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
 
     const itemToSync = updated.find((o) => o.id === id);
     if (itemToSync) {
-      apiClient.post('/olympiads.php', itemToSync).catch((e) => console.warn('API sync warning:', e));
+      apiClient.post('/exams', itemToSync).catch((e) => console.warn('API sync warning:', e));
     }
   },
 
@@ -172,7 +172,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
 
     const itemToSync = updated.find((o) => o.id === id);
     if (itemToSync) {
-      apiClient.post('/olympiads.php', itemToSync).catch((e) => console.warn('API sync warning:', e));
+      apiClient.post('/exams', itemToSync).catch((e) => console.warn('API sync warning:', e));
     }
   },
 

@@ -87,14 +87,14 @@ export const NationalExamSimulator: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="p-5 rounded-xl bg-[#111827] border border-[#1E293B] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-md shadow-xl">
         <div>
-          <div className="flex items-center gap-2 text-[#3B82F6] text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
             <Award className="w-4 h-4" />
             <span>Milliy Sertifikat Diagnostika Testi (Faqat Test Yechish)</span>
           </div>
-          <h3 className="text-lg font-bold text-[#F1F5F9] mt-1">Kimyo va Mutaxassislik Fanlari Sinovi</h3>
-          <p className="text-xs text-[#94A3B8]">
+          <h3 className="text-lg font-bold text-zinc-100 mt-1">Kimyo va Mutaxassislik Fanlari Sinovi</h3>
+          <p className="text-xs text-zinc-400">
             Testni yeching va milliy sertifikat shkalasi bo'yicha darajangizni darhol bilib oling.
           </p>
         </div>
@@ -112,32 +112,32 @@ export const NationalExamSimulator: React.FC = () => {
       </div>
 
       {isSubmitted && (
-        <Card className="p-6 bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827] border-2 border-[#10B981]/50 shadow-xl space-y-4">
+        <Card className="p-6 bg-zinc-900/80 border border-emerald-500/40 shadow-2xl space-y-4 rounded-2xl backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-black uppercase tracking-wider text-[#F1F5F9]">Sinov Natijasi</h4>
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/40">
+            <h4 className="text-sm font-black uppercase tracking-wider text-zinc-100">Sinov Natijasi</h4>
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
               {grade} Daraja
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-3.5 rounded-lg bg-[#0B1120] border border-[#1E293B] text-center">
-              <div className="text-xs text-[#94A3B8]">To'plangan Xom Ball</div>
-              <div className="text-2xl font-mono font-bold text-[#F1F5F9] mt-1">
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 text-center">
+              <div className="text-xs text-zinc-400">To'plangan Xom Ball</div>
+              <div className="text-2xl font-mono font-bold text-zinc-100 mt-1">
                 {totalRaw.toFixed(1)} / {maxExamRaw.toFixed(1)}
               </div>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-[#0B1120] border border-[#1E293B] text-center">
-              <div className="text-xs text-[#94A3B8]">Standartlashtirilgan Ball</div>
-              <div className="text-2xl font-mono font-bold text-[#3B82F6] mt-1">
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 text-center">
+              <div className="text-xs text-zinc-400">Standartlashtirilgan Ball</div>
+              <div className="text-2xl font-mono font-bold text-emerald-400 mt-1">
                 {stdScore} ball
               </div>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-[#0B1120] border border-[#1E293B] text-center">
-              <div className="text-xs text-[#94A3B8]">Olingan Daraja</div>
-              <div className="text-2xl font-mono font-bold text-[#10B981] mt-1">
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 text-center">
+              <div className="text-xs text-zinc-400">Olingan Daraja</div>
+              <div className="text-2xl font-mono font-bold text-teal-400 mt-1">
                 {grade}
               </div>
             </div>
@@ -145,18 +145,17 @@ export const NationalExamSimulator: React.FC = () => {
         </Card>
       )}
 
-      
       <div className="space-y-4">
         {SAMPLE_QUESTIONS.map((q, idx) => {
           const selected = selectedAnswers[q.id];
           return (
-            <Card key={q.id} className="p-6 bg-[#111827] border border-[#1E293B] space-y-4">
+            <Card key={q.id} className="p-6 bg-zinc-900/60 border border-white/10 space-y-4 rounded-2xl backdrop-blur-md shadow-lg">
               <div className="flex items-start justify-between gap-4">
-                <h4 className="text-sm font-bold text-[#F1F5F9] leading-relaxed">
-                  <span className="text-[#3B82F6] font-mono mr-2">{idx + 1}-savol.</span>
+                <h4 className="text-sm font-bold text-zinc-100 leading-relaxed">
+                  <span className="text-emerald-400 font-mono mr-2">{idx + 1}-savol.</span>
                   {q.text}
                 </h4>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-[#94A3B8] bg-[#0B1120] border border-[#1E293B] shrink-0">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono text-zinc-400 bg-zinc-950/80 border border-white/10 shrink-0">
                   {q.points} b
                 </span>
               </div>
@@ -174,21 +173,21 @@ export const NationalExamSimulator: React.FC = () => {
                       disabled={isSubmitted}
                       onClick={() => handleSelect(q.id, optIdx)}
                       className={clsx(
-                        "p-3 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer flex items-center justify-between",
+                        "p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer flex items-center justify-between active:scale-95",
                         isCorrect
-                          ? "bg-[#10B981]/15 border-[#10B981] text-[#34D399]"
+                          ? "bg-emerald-500/15 border-emerald-500 text-emerald-300"
                           : isWrong
-                          ? "bg-[#EF4444]/15 border-[#EF4444] text-[#F87171]"
+                          ? "bg-rose-500/15 border-rose-500 text-rose-300"
                           : isOptSelected
-                          ? "bg-[#3B82F6]/15 border-[#3B82F6] text-white"
-                          : "bg-[#0B1120] border-[#1E293B] text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#1E293B]/60"
+                          ? "bg-emerald-500/20 border-emerald-500 text-white shadow-md shadow-emerald-500/10 ring-1 ring-emerald-500/30"
+                          : "bg-zinc-950/80 border-white/10 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
                       )}
                     >
                       <span>
                         <strong className="font-mono mr-2">{String.fromCharCode(65 + optIdx)})</strong>
                         {opt}
                       </span>
-                      {isCorrect && <CheckCircle2 className="w-4 h-4 text-[#10B981]" />}
+                      {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                     </button>
                   );
                 })}
@@ -205,7 +204,7 @@ export const NationalExamSimulator: React.FC = () => {
             variant="primary"
             onClick={handleFinish}
             disabled={Object.keys(selectedAnswers).length === 0}
-            className="font-bold shadow-lg shadow-[#3B82F6]/20"
+            className="font-bold shadow-lg shadow-emerald-500/20"
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
             Testni Yakunlash va Baholash

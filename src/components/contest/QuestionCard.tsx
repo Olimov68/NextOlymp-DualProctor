@@ -68,14 +68,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
   };
 
   return (
-    <div className="bg-white border border-border rounded-2xl p-6 shadow-xs space-y-6">
+    <div className="rounded-2xl bg-zinc-900/70 backdrop-blur-md border border-white/10 p-6 sm:p-8 shadow-xl shadow-black/30 space-y-6 text-zinc-100">
       
-      <div className="flex items-center justify-between border-b border-border pb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary-700 font-bold flex items-center justify-center text-sm">
+      <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black flex items-center justify-center text-sm shadow-sm">
             #{questionNumber}
           </span>
-          <span className="text-xs uppercase font-bold text-accent-500 tracking-wider">
+          <span className="text-xs uppercase font-bold text-zinc-400 tracking-wider">
             {question.type === 'multiple_choice' ? 'Variantli Test' : question.type === 'open_text' ? 'Ochiq Savol' : question.type === 'code' ? 'Algoritmik Kod' : 'Fayl Yuklash'}
           </span>
         </div>
@@ -83,35 +83,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
         <div className="flex items-center gap-2">
           
           <div className={clsx(
-            "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors",
-            secondsOnQuestion < 5 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-slate-50 text-slate-600 border-slate-200"
+            "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+            secondsOnQuestion < 5 ? "bg-amber-500/15 text-amber-300 border-amber-500/30" : "bg-zinc-800/60 text-zinc-300 border-white/10"
           )}>
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-3.5 h-3.5 text-zinc-400" />
             <span>Sarflandi: {secondsOnQuestion}s</span>
           </div>
 
-          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 font-bold text-xs rounded-full border border-blue-200">
+          <span className="px-3 py-1 bg-emerald-500/15 text-emerald-400 font-semibold text-xs rounded-full border border-emerald-500/30">
             {question.points} {t('contest.points')}
           </span>
         </div>
       </div>
 
       {speedWarning && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 text-xs flex items-center gap-2 animate-in fade-in">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2 animate-in fade-in">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
           <span>{speedWarning}</span>
         </div>
       )}
 
       
-      <div className="prose max-w-none text-accent-900 font-medium text-base leading-relaxed">
+      <div className="prose max-w-none text-zinc-100 font-medium text-base sm:text-lg leading-relaxed">
         <p className="whitespace-pre-line">{question.content}</p>
       </div>
 
       
-      <div className="pt-4 border-t border-border">
+      <div className="pt-4 border-t border-white/10">
         {question.type === 'multiple_choice' && question.options && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {question.options.map((option, idx) => {
               const selected = currentAnswer === option;
               const optionLetter = String.fromCharCode(65 + idx); 
@@ -121,22 +121,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
                   key={idx}
                   onClick={() => handleSelectOption(option)}
                   className={clsx(
-                    "flex items-center justify-between p-4 rounded-xl border text-left font-medium text-sm transition-all",
+                    "flex items-center justify-between p-4 rounded-xl border text-left font-medium text-sm transition-all duration-200 cursor-pointer active:scale-95",
                     selected
-                      ? "border-primary-600 bg-primary-50/70 text-primary-950 ring-2 ring-primary-500/20 shadow-xs"
-                      : "border-border bg-white text-accent-800 hover:border-accent-300 hover:bg-surface"
+                      ? "border-emerald-500 bg-emerald-500/15 text-white ring-2 ring-emerald-500/30 shadow-md shadow-emerald-500/10"
+                      : "border-white/10 bg-zinc-800/40 text-zinc-200 hover:border-emerald-500/40 hover:bg-zinc-800/80"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <span className={clsx(
-                      "w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center border",
-                      selected ? "bg-primary text-white border-primary" : "bg-surface border-border text-accent-600"
+                      "w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center border transition-colors",
+                      selected ? "bg-emerald-500 text-white border-emerald-500" : "bg-zinc-800 border-white/10 text-zinc-300"
                     )}>
                       {optionLetter}
                     </span>
                     <span>{option}</span>
                   </div>
-                  {selected && <CheckCircle2 className="w-5 h-5 text-primary-600 shrink-0" />}
+                  {selected && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
                 </button>
               );
             })}
@@ -145,7 +145,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
 
         {question.type === 'open_text' && (
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-accent-600">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
               Javobingizni kiriting (Matn yoki matematik qiymat):
             </label>
             <textarea
@@ -153,7 +153,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
               value={typeof currentAnswer === 'string' ? currentAnswer : ''}
               onChange={handleTextChange}
               placeholder="Javobingizni shu yerga yozing..."
-              className="w-full p-4 rounded-xl border border-border bg-white text-accent-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+              className="w-full p-4 rounded-xl border border-white/10 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-mono transition-all duration-200"
             />
           </div>
         )}

@@ -172,7 +172,16 @@ export const olympiadService = {
   },
 
   async getQuestionsByOlympiadId(olympiadId: string): Promise<Question[]> {
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    try {
+      const res = await apiClient.get(`/exams/${encodeURIComponent(olympiadId)}/questions`);
+      const list = res.questions || res.data || (Array.isArray(res) ? res : []);
+      if (Array.isArray(list) && list.length > 0) {
+        return list;
+      }
+    } catch (e) {
+      console.warn('API questions fetch notice:', e);
+    }
+
     try {
       const storeItem = useOlympiadStore.getState().olympiads?.find((o) => o.id === olympiadId);
       if (storeItem?.questions && storeItem.questions.length > 0) {
@@ -182,15 +191,14 @@ export const olympiadService = {
       if (examItem?.questions && examItem.questions.length > 0) {
         return examItem.questions;
       }
-    } catch {
-      
-    }
+    } catch {}
 
     if (MOCK_QUESTIONS[olympiadId] && MOCK_QUESTIONS[olympiadId].length > 0) {
       return MOCK_QUESTIONS[olympiadId];
     }
 
     return (
+      MOCK_QUESTIONS['IBN-MED-101'] ||
       MOCK_QUESTIONS['OLY-101'] ||
       DEFAULT_SAMPLE_QUESTIONS
     );

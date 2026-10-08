@@ -7,7 +7,6 @@ import { clsx } from 'clsx';
 export const ReferenceTables: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'spec' | 'lang'>('spec');
 
-  
   const spec1Data = [
     { raw: 93.00, std: 75.0, grade: 'A+', note: 'Maksimal ball' },
     { raw: 92.86, std: 64.9, grade: 'B+', note: 'B+ yuqori chegarasi' },
@@ -32,7 +31,6 @@ export const ReferenceTables: React.FC = () => {
     { raw: 44.58, std: 46.0, grade: 'C',  note: 'C minimal chegara' },
   ];
 
-  
   const langEntries = Object.entries(WRITING_MAP_24_75)
     .filter(([k]) => k.includes('.'))
     .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
@@ -40,14 +38,14 @@ export const ReferenceTables: React.FC = () => {
   return (
     <div className="space-y-6">
       
-      <div className="flex items-center gap-3 border-b border-[#1E293B] pb-4">
+      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
         <button
           onClick={() => setActiveTab('spec')}
           className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95",
             activeTab === 'spec'
-              ? "bg-[#3B82F6] text-white shadow-sm"
-              : "text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#111827]"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20"
+              : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
           )}
         >
           <BookOpen className="w-4 h-4" />
@@ -57,10 +55,10 @@ export const ReferenceTables: React.FC = () => {
         <button
           onClick={() => setActiveTab('lang')}
           className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95",
             activeTab === 'lang'
-              ? "bg-[#3B82F6] text-white shadow-sm"
-              : "text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#111827]"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20"
+              : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
           )}
         >
           <Languages className="w-4 h-4" />
@@ -71,20 +69,20 @@ export const ReferenceTables: React.FC = () => {
       {activeTab === 'spec' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          <Card className="p-5 bg-[#111827] border border-[#1E293B] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+          <Card className="p-5 bg-zinc-900/60 border border-white/10 space-y-4 rounded-2xl backdrop-blur-md shadow-xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h4 className="text-sm font-black text-[#F1F5F9]">1-FAN Tabaqalashtirilgan Shkalasi</h4>
-                <p className="text-xs text-[#94A3B8] mt-0.5">MAX = 93 ball | Formula: raw · 93 / 65</p>
+                <h4 className="text-sm font-black text-zinc-100">1-FAN Tabaqalashtirilgan Shkalasi</h4>
+                <p className="text-xs text-zinc-400 mt-0.5">MAX = 93 ball | Formula: raw · 93 / 65</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-[#3B82F6]/15 text-[#60A5FA] border border-[#3B82F6]/30 text-xs font-mono font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono font-bold">
                 A = 65.0+
               </span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0B1120] text-[#94A3B8] uppercase text-[10px] font-bold border-b border-[#1E293B]">
+                <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] font-bold border-b border-white/10">
                   <tr>
                     <th className="p-2.5">Xom Ball (raw)</th>
                     <th className="p-2.5 text-center">Standart Ball (std)</th>
@@ -92,17 +90,17 @@ export const ReferenceTables: React.FC = () => {
                     <th className="p-2.5">Izoh</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1E293B] text-[#F1F5F9] font-medium">
+                <tbody className="divide-y divide-white/5 text-zinc-100 font-medium">
                   {spec1Data.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-[#1E293B]/40 transition-colors">
+                    <tr key={idx} className="hover:bg-zinc-800/40 transition-colors">
                       <td className="p-2.5 font-mono font-bold">{row.raw}</td>
-                      <td className="p-2.5 text-center font-mono font-bold text-[#60A5FA]">{row.std}</td>
+                      <td className="p-2.5 text-center font-mono font-bold text-emerald-400">{row.std}</td>
                       <td className="p-2.5 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#3B82F6]/15 text-[#60A5FA] border border-[#3B82F6]/30">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                           {row.grade}
                         </span>
                       </td>
-                      <td className="p-2.5 text-[#94A3B8] text-[11px]">{row.note}</td>
+                      <td className="p-2.5 text-zinc-400 text-[11px]">{row.note}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -111,20 +109,20 @@ export const ReferenceTables: React.FC = () => {
           </Card>
 
           
-          <Card className="p-5 bg-[#111827] border border-[#1E293B] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+          <Card className="p-5 bg-zinc-900/60 border border-white/10 space-y-4 rounded-2xl backdrop-blur-md shadow-xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h4 className="text-sm font-black text-[#F1F5F9]">2-FAN Tabaqalashtirilgan Shkalasi</h4>
-                <p className="text-xs text-[#94A3B8] mt-0.5">MAX = 63 ball | Formula: raw · 63 / 65</p>
+                <h4 className="text-sm font-black text-zinc-100">2-FAN Tabaqalashtirilgan Shkalasi</h4>
+                <p className="text-xs text-zinc-400 mt-0.5">MAX = 63 ball | Formula: raw · 63 / 65</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-[#3B82F6]/15 text-[#60A5FA] border border-[#3B82F6]/30 text-xs font-mono font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono font-bold">
                 A = 65.0+
               </span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0B1120] text-[#94A3B8] uppercase text-[10px] font-bold border-b border-[#1E293B]">
+                <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] font-bold border-b border-white/10">
                   <tr>
                     <th className="p-2.5">Xom Ball (raw)</th>
                     <th className="p-2.5 text-center">Standart Ball (std)</th>
@@ -132,17 +130,17 @@ export const ReferenceTables: React.FC = () => {
                     <th className="p-2.5">Izoh</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1E293B] text-[#F1F5F9] font-medium">
+                <tbody className="divide-y divide-white/5 text-zinc-100 font-medium">
                   {spec2Data.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-[#1E293B]/40 transition-colors">
+                    <tr key={idx} className="hover:bg-zinc-800/40 transition-colors">
                       <td className="p-2.5 font-mono font-bold">{row.raw}</td>
-                      <td className="p-2.5 text-center font-mono font-bold text-[#60A5FA]">{row.std}</td>
+                      <td className="p-2.5 text-center font-mono font-bold text-emerald-400">{row.std}</td>
                       <td className="p-2.5 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#3B82F6]/15 text-[#60A5FA] border border-[#3B82F6]/30">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                           {row.grade}
                         </span>
                       </td>
-                      <td className="p-2.5 text-[#94A3B8] text-[11px]">{row.note}</td>
+                      <td className="p-2.5 text-zinc-400 text-[11px]">{row.note}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -151,25 +149,24 @@ export const ReferenceTables: React.FC = () => {
           </Card>
         </div>
       ) : (
-        
-        <Card className="p-6 bg-[#111827] border border-[#1E293B] space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E293B] pb-4">
+        <Card className="p-6 bg-zinc-900/60 border border-white/10 space-y-4 rounded-2xl backdrop-blur-md shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-              <h4 className="text-sm font-black text-[#F1F5F9]">O'zbek / Rus / Qoraqalpoq Tili va Adabiyoti</h4>
-              <p className="text-xs text-[#94A3B8] mt-0.5">
+              <h4 className="text-sm font-black text-zinc-100">O'zbek / Rus / Qoraqalpoq Tili va Adabiyoti</h4>
+              <p className="text-xs text-zinc-400 mt-0.5">
                 Yozma ish bahosi (24 ballik mezon) → 75 ballik shkalaga o'tkazishning rasmiy BMBA mapping jadvali
               </p>
             </div>
-            <div className="text-xs text-[#94A3B8] font-mono">
-              Jami nuqtalar: <span className="font-bold text-[#F1F5F9]">{langEntries.length} ta</span>
+            <div className="text-xs text-zinc-400 font-mono">
+              Jami nuqtalar: <span className="font-bold text-zinc-100">{langEntries.length} ta</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 max-h-[480px] overflow-y-auto custom-scrollbar p-1">
             {langEntries.map(([ball24, ball75]) => (
-              <div key={ball24} className="p-2 rounded-lg bg-[#0B1120] border border-[#1E293B] text-center space-y-1">
-                <div className="text-[10px] text-[#94A3B8] uppercase">Xom {ball24} b</div>
-                <div className="text-sm font-mono font-black text-[#3B82F6]">→ {ball75} b</div>
+              <div key={ball24} className="p-2 rounded-xl bg-zinc-950/80 border border-white/10 text-center space-y-1">
+                <div className="text-[10px] text-zinc-400 uppercase">Xom {ball24} b</div>
+                <div className="text-sm font-mono font-black text-emerald-400">→ {ball75} b</div>
               </div>
             ))}
           </div>

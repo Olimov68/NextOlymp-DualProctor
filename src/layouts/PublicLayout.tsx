@@ -9,9 +9,9 @@ interface PublicLayoutProps {
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#0B1120] text-[#F1F5F9] font-sans">
+    <div className="min-h-screen flex flex-col justify-between bg-zinc-950 text-zinc-100 font-sans">
       <Navbar />
-      <main className="flex-1 w-full bg-[#0B1120]">
+      <main className="flex-1 w-full bg-zinc-950">
         {children || <Outlet />}
       </main>
       <Footer />

@@ -189,7 +189,7 @@ export const EgaCompetitionsPage: React.FC = () => {
       registrationStartDate: '2025-09-15 09:00',
       registrationEndDate: '2025-09-30 23:59',
       description: 'Musobaqa haqida batafsil ma\'lumot...',
-      organizer: 'NextOlymp Kengashi'
+      organizer: 'Ibn Sino Kengashi'
     });
     setSelectedOlympiadForEdit(created);
   };

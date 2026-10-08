@@ -67,7 +67,7 @@ export const PrivacyPage: React.FC = () => {
               4. Foydalanuvchining huquqlari
             </h2>
             <p>
-              Foydalanuvchilar o'z shaxsiy ma'lumotlarini ko'rish, tuzatish kiritish yoki platformadan akkauntni to'liq o'chirishni talab qilish huquqiga ega. Buning uchun <strong>privacy@nextolymp.uz</strong> manziliga so'rov yuborish kifoya.
+              Foydalanuvchilar o'z shaxsiy ma'lumotlarini ko'rish, tuzatish kiritish yoki platformadan akkauntni to'liq o'chirishni talab qilish huquqiga ega. Buning uchun <strong>privacy@ibnsino.uz</strong> manziliga so'rov yuborish kifoya.
             </p>
           </section>
         </div>

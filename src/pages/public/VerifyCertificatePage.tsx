@@ -42,23 +42,27 @@ export const VerifyCertificatePage: React.FC = () => {
   }, [routeCode]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10 bg-[#0B1120] text-[#F1F5F9]">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10 bg-zinc-950 text-zinc-100 font-sans">
       
       <div className="text-center space-y-3">
-        <div className="w-16 h-16 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] mx-auto flex items-center justify-center border border-[#3B82F6]/30 shadow-sm">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
           <ShieldCheck className="w-9 h-9" />
         </div>
-        <h1 className="text-3xl font-black text-[#F1F5F9] tracking-tight">{t('certificate.verifyTitle') || "Sertifikatni Tekshirish"}</h1>
-        <p className="text-[#94A3B8] text-sm max-w-md mx-auto">
-          Next Olymp sertifikatlari ustidagi verifikatsiya kodini kiriting va rasmiy ma'lumotlarni tekshiring.
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-100 tracking-tight">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">
+            {t('certificate.verifyTitle') || "Sertifikatni Tekshirish"}
+          </span>
+        </h1>
+        <p className="text-zinc-400 text-sm max-w-md mx-auto leading-relaxed">
+          Ibn Sino rasmiy sertifikatlari ustidagi verifikatsiya kodini kiriting va haqiqiyligini tekshiring.
         </p>
       </div>
 
       
-      <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-6 shadow-xs max-w-xl mx-auto space-y-4">
+      <div className="bg-zinc-900/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl shadow-black/30 max-w-xl mx-auto space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
-            placeholder={t('certificate.verifyInputPlaceholder') || "Masalan: NO-8921"}
+            placeholder={t('certificate.verifyInputPlaceholder') || "Masalan: IS-2026-BIOL-2671"}
             value={code}
             onChange={(e) => setCode(e.target.value)}
             className="font-mono uppercase font-bold"
@@ -67,7 +71,7 @@ export const VerifyCertificatePage: React.FC = () => {
             isLoading={isLoading}
             onClick={() => handleVerify(code)}
             leftIcon={<Search className="w-4 h-4" />}
-            className="shrink-0 font-bold"
+            className="shrink-0 font-bold px-6 shadow-md"
           >
             {t('certificate.verifyButton') || "Tekshirish"}
           </Button>
@@ -77,11 +81,11 @@ export const VerifyCertificatePage: React.FC = () => {
       
       {certificate && (
         <div className="space-y-6 animate-in fade-in">
-          <div className="p-4 bg-[#10B981]/15 border border-[#10B981]/40 rounded-xl flex items-center gap-3 text-[#34D399]">
-            <CheckCircle2 className="w-6 h-6 text-[#10B981] shrink-0" />
+          <div className="p-4 bg-emerald-500/15 border border-emerald-500/40 rounded-2xl flex items-center gap-3 text-emerald-300 shadow-lg shadow-emerald-500/10">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
               <h4 className="font-bold text-sm">{t('certificate.validCertificate') || "Haqiqiy Sertifikat"}</h4>
-              <p className="text-xs text-[#94A3B8]">Ushbu hujjat Next Olymp serverlarida rasman ro'yxatga olingan va tasdiqlangan.</p>
+              <p className="text-xs text-zinc-400">Ushbu hujjat Ibn Sino platformasi serverlarida rasman ro'yxatga olingan va tasdiqlangan.</p>
             </div>
           </div>
 
@@ -90,8 +94,8 @@ export const VerifyCertificatePage: React.FC = () => {
       )}
 
       {error && (
-        <div className="p-4 bg-[#EF4444]/15 border border-[#EF4444]/40 rounded-xl flex items-center gap-3 text-[#F87171] max-w-xl mx-auto">
-          <AlertCircle className="w-6 h-6 text-[#EF4444] shrink-0" />
+        <div className="p-4 bg-rose-500/15 border border-rose-500/40 rounded-2xl flex items-center gap-3 text-rose-300 max-w-xl mx-auto shadow-lg shadow-rose-950/30">
+          <AlertCircle className="w-6 h-6 text-rose-400 shrink-0" />
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}

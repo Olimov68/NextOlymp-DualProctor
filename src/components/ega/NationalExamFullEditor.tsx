@@ -1437,7 +1437,7 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
                   <div className="flex items-center gap-2.5">
                     <Wallet className="w-4 h-4 text-purple-400 shrink-0" />
                     <div>
-                      <div>{t("Hamyon (NextOlymp Shaxsiy Balansi)")}</div>
+                      <div>{t("Hamyon (Ibn Sino Shaxsiy Balansi)")}</div>
                       <div className="text-[10px] text-slate-400 font-normal">{t("Foydalanuvchining shaxsiy hamyonidan to'lov")}</div>
                     </div>
                   </div>

@@ -85,7 +85,7 @@ export const TermsPage: React.FC = () => {
               6. Bog'lanish va qo'llab-quvvatlash
             </h2>
             <p>
-              Foydalanish shartlari bo'yicha savollaringiz bo'lsa, <strong>support@nextolymp.uz</strong> yoki <strong>+998 99-174-99-33</strong> telefon raqami orqali bog'lanishingiz mumkin.
+              Foydalanish shartlari bo'yicha savollaringiz bo'lsa, <strong>support@ibnsino.uz</strong> yoki <strong>+998 71 200-00-55</strong> telefon raqami orqali bog'lanishingiz mumkin.
             </p>
           </section>
         </div>

@@ -113,11 +113,11 @@
   },
   "certificate": {
     "title": "Сертификаты и Достижения",
-    "subtitle": "Официальные документы Next Olymp",
+    "subtitle": "Официальные документы Платформы Ибн Сино",
     "verifyCode": "Код верификации",
     "downloadPdf": "Скачать PDF",
     "verifyTitle": "Проверка Подлинности Сертификата",
-    "verifyInputPlaceholder": "Например: NO-2026-MATH-8921",
+    "verifyInputPlaceholder": "Например: IS-2026-MED-8921",
     "verifyButton": "Проверить",
     "validCertificate": "Официально Подтвержденный Сертификат",
     "issuedTo": "Обладатель",
@@ -125,7 +125,7 @@
     "subject": "Предмет"
   },
   "auth": {
-    "loginTitle": "Вход в систему Next Olymp",
+    "loginTitle": "Вход в систему Ибн Сино",
     "registerTitle": "Регистрация",
     "emailLabel": "Ваш email",
     "passwordLabel": "Пароль",

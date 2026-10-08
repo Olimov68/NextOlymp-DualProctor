@@ -43,7 +43,7 @@ export const PayxPaymentModal: React.FC<PayxPaymentModalProps> = ({
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [customerName, setCustomerName] = useState('Azizbek Rahimov');
-  const [customerEmail, setCustomerEmail] = useState('student@nextolymp.uz');
+  const [customerEmail, setCustomerEmail] = useState('student@ibnsino.uz');
 
   const methods = [
     {

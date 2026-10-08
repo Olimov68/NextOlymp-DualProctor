@@ -273,6 +273,15 @@ export const submissionService = {
     const sessionId = `sess_${params.userId}_${params.olympiadId}`;
     ServerExamEngine.submitAnswer(sessionId, params.questionId, params.answer, Date.now());
 
+    // Send answer asynchronously to the unified server
+    apiClient.post(`/exams/${encodeURIComponent(params.olympiadId)}/answer`, {
+      questionId: params.questionId,
+      question_id: params.questionId,
+      selectedOption: params.answer,
+      selected_option: params.answer,
+      userId: params.userId,
+    }).catch(() => {});
+
     const key = `draft_ans_${params.userId}_${params.olympiadId}_${params.questionId}`;
     draftAnswersMap.set(key, params.answer);
     return true;
@@ -426,26 +435,39 @@ export const submissionService = {
     } catch {}
 
     
+    // 1. Submit to server-side evaluation engine
+    let serverGradingResult: any = null;
     try {
-      await apiClient.post('/submissions.php', submissionData);
+      const serverRes = await apiClient.post(`/exams/${encodeURIComponent(olympiadId)}/finish`, {
+        userId,
+        sessionId,
+        answers,
+      });
+      if (serverRes && serverRes.data) {
+        serverGradingResult = serverRes.data;
+      }
     } catch (e) {
-      console.warn('Backend submission save notice:', e);
+      console.warn('Backend server-side grading notice:', e);
     }
 
-    
+    // 2. Report proctor incidents to server
     if (cheatLogs.length > 0) {
       cheatLogs.forEach((log: any) => {
-        apiClient.post('/security.php', {
-          user_id: userId,
-          event_type: log.type || 'tab_switch',
+        apiClient.post(`/exams/${encodeURIComponent(olympiadId)}/proctor-event`, {
+          userId,
+          eventType: log.type || 'TAB_SWITCH',
           details: log.detail || log.message || 'Xavfsizlik ogohlantirishi',
-          severity: log.severity || 'medium'
+          severity: log.severity || 'medium',
         }).catch(() => {});
       });
     }
 
-    const isWinner = percentage >= 70;
+    const verifiedScore = serverGradingResult ? serverGradingResult.score : finalScore;
+    const verifiedMax = serverGradingResult ? serverGradingResult.maxScore : finalMaxScore;
+    const verifiedPct = serverGradingResult ? serverGradingResult.percentage : percentage;
+    const isWinner = verifiedPct >= 70;
     const certType: CertificateType = isWinner ? 'winner' : 'participant';
+    const verifyCode = serverGradingResult?.verificationCode || `IS-2026-MED-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const cert: Certificate = {
       id: `cert_${Date.now()}`,
@@ -456,9 +478,9 @@ export const submissionService = {
       subject,
       type: certType,
       issuedAt: new Date().toISOString(),
-      verificationCode: `NO-${Math.floor(1000 + Math.random() * 9000)}`,
-      score: finalScore,
-      maxScore: finalMaxScore,
+      verificationCode: verifyCode,
+      score: verifiedScore,
+      maxScore: verifiedMax,
       rank: isWinner ? 1 : 0,
       totalParticipants: 100,
       fontFamily: 'cinzel'
@@ -726,10 +748,10 @@ export const submissionService = {
     }
 
     
-    apiClient.post('/security.php', {
-      olympiad_id: olympiadId,
-      user_id: log.studentId || log.userId,
-      event_type: log.type || 'tab_switch',
+    apiClient.post(`/exams/${encodeURIComponent(olympiadId)}/proctor-event`, {
+      examId: olympiadId,
+      userId: log.studentId || log.userId,
+      eventType: log.type || 'TAB_SWITCH',
       details: log.detail || log.message || '',
       severity: log.severity || 'medium'
     }).catch(() => {});

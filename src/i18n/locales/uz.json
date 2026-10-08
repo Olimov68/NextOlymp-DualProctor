@@ -113,11 +113,11 @@
   },
   "certificate": {
     "title": "Sertifikatlar va Yutuqlar",
-    "subtitle": "Next Olymp tomonidan berilgan rasmiy hujjatlar",
+    "subtitle": "Ibn Sino Platformasi tomonidan berilgan rasmiy hujjatlar",
     "verifyCode": "Verifikatsiya kodi",
     "downloadPdf": "PDF yuklab olish",
     "verifyTitle": "Sertifikat Haqiqiyligini Tekshirish",
-    "verifyInputPlaceholder": "Masalan: NO-2026-MATH-8921",
+    "verifyInputPlaceholder": "Masalan: IS-2026-MED-8921",
     "verifyButton": "Tekshirish",
     "validCertificate": "Rasmiy Tasdiqlangan Sertifikat",
     "issuedTo": "Egasi",
@@ -125,7 +125,7 @@
     "subject": "Fan"
   },
   "auth": {
-    "loginTitle": "Next Olymp tizimiga kirish",
+    "loginTitle": "Ibn Sino tizimiga kirish",
     "registerTitle": "Ro'yxatdan o'tish",
     "emailLabel": "Email manzilingiz",
     "passwordLabel": "Parol",

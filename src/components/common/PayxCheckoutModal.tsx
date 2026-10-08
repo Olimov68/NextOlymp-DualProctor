@@ -48,7 +48,7 @@ export const PayxCheckoutModal: React.FC<PayxCheckoutModalProps> = ({
         orderId,
         olympiadId,
         olympiadTitle,
-        userEmail: 'user@nextolymp.uz',
+        userEmail: 'user@ibnsino.uz',
         userName: 'Foydalanuvchi',
         paymentMethod: selectedMethod,
       });

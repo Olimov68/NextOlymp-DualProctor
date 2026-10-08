@@ -439,17 +439,17 @@ export const RegisterPage: React.FC = () => {
   const availableDistricts = region ? UZBEKISTAN_DISTRICTS[region] || [] : [];
 
   return (
-    <div className="py-12 flex items-center justify-center p-4 font-sans bg-[#0B1120]">
-      <div className="w-full max-w-xl bg-[#111827] border border-[#1E293B] rounded-xl p-8 sm:p-10 shadow-xl space-y-6">
-        <div className="text-center space-y-2 border-b border-[#1E293B] pb-5">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] mb-1">
+    <div className="py-12 flex items-center justify-center p-4 font-sans bg-zinc-950 text-zinc-100">
+      <div className="w-full max-w-xl bg-zinc-900/70 backdrop-blur-md border border-white/10 rounded-2xl p-8 sm:p-10 shadow-2xl shadow-black/40 space-y-6">
+        <div className="text-center space-y-2 border-b border-white/10 pb-5">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 mb-1 shadow-sm">
             <GraduationCap className="w-7 h-7" />
           </div>
-          <h2 className="text-2xl font-black text-[#F1F5F9] tracking-tight">
+          <h2 className="text-2xl font-black text-zinc-100 tracking-tight">
             {t('auth.registerTitle') || "Ro'yxatdan o'tish"}
           </h2>
-          <p className="text-xs text-[#94A3B8] font-medium">
-            Next Olymp akademik musobaqalariga a'zo bo'ling va o'z bilimingizni sinang
+          <p className="text-xs text-zinc-400 font-medium">
+            Ibn Sino akademik musobaqalariga a'zo bo'ling va o'z bilimingizni sinang
           </p>
         </div>
 
@@ -494,8 +494,8 @@ export const RegisterPage: React.FC = () => {
                 className={clsx(
                   "py-2.5 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer select-none",
                   gender === 'male'
-                    ? "bg-[#3B82F6]/20 border-[#3B82F6] text-[#60A5FA] shadow-sm shadow-[#3B82F6]/30 ring-1 ring-[#3B82F6]"
-                    : "bg-[#0B1120] border-[#1E293B] text-[#94A3B8] hover:border-slate-700"
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-sm shadow-emerald-500/20 ring-1 ring-emerald-500"
+                    : "bg-zinc-950/70 border-white/10 text-zinc-400 hover:border-white/20"
                 )}
               >
                 <span className="text-base">👦</span>
@@ -507,8 +507,8 @@ export const RegisterPage: React.FC = () => {
                 className={clsx(
                   "py-2.5 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer select-none",
                   gender === 'female'
-                    ? "bg-[#EC4899]/20 border-[#EC4899] text-[#F472B6] shadow-sm shadow-[#EC4899]/30 ring-1 ring-[#EC4899]"
-                    : "bg-[#0B1120] border-[#1E293B] text-[#94A3B8] hover:border-slate-700"
+                    ? "bg-pink-500/20 border-pink-500 text-pink-300 shadow-sm shadow-pink-500/20 ring-1 ring-pink-500"
+                    : "bg-zinc-950/70 border-white/10 text-zinc-400 hover:border-white/20"
                 )}
               >
                 <span className="text-base">👧</span>
@@ -577,16 +577,16 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             <div className="space-y-1.5 flex flex-col">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 Sinfingiz *
               </label>
               <select
                 value={grade}
                 onChange={(e) => setGrade(Number(e.target.value))}
-                className="w-full py-2.5 px-3.5 text-sm border border-[#1E293B] rounded-lg bg-[#0B1120] text-[#F1F5F9] font-medium outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6]"
+                className="w-full py-2.5 px-3.5 text-sm border border-white/10 rounded-xl bg-zinc-950/70 text-zinc-100 font-medium outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all duration-200"
               >
                 {[5, 6, 7, 8, 9, 10, 11].map((g) => (
-                  <option key={g} value={g} className="bg-[#111827] text-[#F1F5F9]">{g}-sinf</option>
+                  <option key={g} value={g} className="bg-zinc-900 text-zinc-100">{g}-sinf</option>
                 ))}
               </select>
             </div>
@@ -596,34 +596,34 @@ export const RegisterPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
             <div className="space-y-1.5 flex flex-col">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-[#3B82F6]" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Viloyat / Shahar *</span>
               </label>
               <select
                 value={region}
                 onChange={handleRegionChange}
                 className={clsx(
-                  "w-full py-2.5 px-3.5 text-sm border rounded-lg bg-[#0B1120] text-[#F1F5F9] font-medium outline-none transition-all",
+                  "w-full py-2.5 px-3.5 text-sm border rounded-xl bg-zinc-950/70 text-zinc-100 font-medium outline-none transition-all duration-200",
                   errors.region
-                    ? "border-[#EF4444] focus:ring-2 focus:ring-[#EF4444]"
-                    : "border-[#1E293B] focus:ring-2 focus:ring-[#3B82F6]"
+                    ? "border-rose-500/80 focus:ring-2 focus:ring-rose-500/30"
+                    : "border-white/10 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                 )}
               >
-                <option value="" className="bg-[#111827] text-[#94A3B8]">-- Viloyatni tanlang --</option>
+                <option value="" className="bg-zinc-900 text-zinc-400">-- Viloyatni tanlang --</option>
                 {UZBEKISTAN_REGIONS.map((r) => (
-                  <option key={r} value={r} className="bg-[#111827] text-[#F1F5F9]">{r}</option>
+                  <option key={r} value={r} className="bg-zinc-900 text-zinc-100">{r}</option>
                 ))}
               </select>
               {errors.region && (
-                <span className="text-xs text-[#EF4444] font-medium">{errors.region}</span>
+                <span className="text-xs text-rose-400 font-medium">{errors.region}</span>
               )}
             </div>
 
             
             <div className="space-y-1.5 flex flex-col">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1">
-                <Building className="w-3.5 h-3.5 text-[#3B82F6]" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+                <Building className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Tuman / Shahar *</span>
               </label>
               <select
@@ -631,21 +631,21 @@ export const RegisterPage: React.FC = () => {
                 onChange={handleDistrictChange}
                 disabled={!region}
                 className={clsx(
-                  "w-full py-2.5 px-3.5 text-sm border rounded-lg bg-[#0B1120] text-[#F1F5F9] font-medium outline-none transition-all disabled:bg-[#0B1120]/50 disabled:text-[#64748B] disabled:cursor-not-allowed",
+                  "w-full py-2.5 px-3.5 text-sm border rounded-xl bg-zinc-950/70 text-zinc-100 font-medium outline-none transition-all duration-200 disabled:bg-zinc-950/40 disabled:text-zinc-600 disabled:cursor-not-allowed",
                   errors.district
-                    ? "border-[#EF4444] focus:ring-2 focus:ring-[#EF4444]"
-                    : "border-[#1E293B] focus:ring-2 focus:ring-[#3B82F6]"
+                    ? "border-rose-500/80 focus:ring-2 focus:ring-rose-500/30"
+                    : "border-white/10 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                 )}
               >
-                <option value="" className="bg-[#111827] text-[#94A3B8]">
+                <option value="" className="bg-zinc-900 text-zinc-400">
                   {region ? "-- Tumanni tanlang --" : "-- Avval viloyatni tanlang --"}
                 </option>
                 {availableDistricts.map((d) => (
-                  <option key={d} value={d} className="bg-[#111827] text-[#F1F5F9]">{d}</option>
+                  <option key={d} value={d} className="bg-zinc-900 text-zinc-100">{d}</option>
                 ))}
               </select>
               {errors.district && (
-                <span className="text-xs text-[#EF4444] font-medium">{errors.district}</span>
+                <span className="text-xs text-rose-400 font-medium">{errors.district}</span>
               )}
             </div>
           </div>
@@ -669,38 +669,37 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           
-          <div className="p-3 bg-[#0B1120] rounded-lg border border-[#1E293B] space-y-2">
-            <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#94A3B8] font-medium">
+          <div className="p-3.5 bg-zinc-950/80 rounded-xl border border-white/10 space-y-2">
+            <label className="flex items-start gap-2.5 cursor-pointer text-xs text-zinc-400 font-medium">
               <input
                 type="checkbox"
                 checked={parentConsent}
                 onChange={(e) => setParentConsent(e.target.checked)}
-                className="mt-0.5 rounded text-[#3B82F6] focus:ring-[#3B82F6] cursor-pointer"
+                className="mt-0.5 rounded text-emerald-500 focus:ring-emerald-500/50 cursor-pointer"
               />
               <span>{t('auth.parentConsentLabel') || "Ota-onam / vasiyim testda ishtirok etishimdan xabardor va rozilik beradi"}</span>
             </label>
           </div>
 
-          
-          <p className="text-[11px] text-[#64748B] text-center leading-relaxed">
+          <p className="text-[11px] text-zinc-500 text-center leading-relaxed">
             Ro'yxatdan o'tish orqali siz platformaning{' '}
-            <Link to="/terms" target="_blank" className="font-semibold text-[#3B82F6] hover:underline">Foydalanish shartlari</Link>,{' '}
-            <Link to="/privacy" target="_blank" className="font-semibold text-[#3B82F6] hover:underline">Maxfiylik siyosati</Link> hamda{' '}
-            <Link to="/rules" target="_blank" className="font-semibold text-[#3B82F6] hover:underline">Nizom va qoidalari</Link>ga rozilik bildirasiz.
+            <Link to="/terms" target="_blank" className="font-semibold text-emerald-400 hover:underline">Foydalanish shartlari</Link>,{' '}
+            <Link to="/privacy" target="_blank" className="font-semibold text-emerald-400 hover:underline">Maxfiylik siyosati</Link> hamda{' '}
+            <Link to="/rules" target="_blank" className="font-semibold text-emerald-400 hover:underline">Nizom va qoidalari</Link>ga rozilik bildirasiz.
           </p>
 
           <Button
             type="submit"
             isLoading={isLoading}
-            className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white font-bold py-3 text-sm rounded-lg shadow-md shadow-[#3B82F6]/20"
+            className="w-full text-white font-bold py-3 text-sm rounded-xl shadow-lg shadow-emerald-500/20"
           >
             {t('auth.registerBtn') || "Ro'yxatdan o'tish"}
           </Button>
         </form>
 
-        <p className="text-center text-xs text-[#94A3B8] border-t border-[#1E293B] pt-4">
+        <p className="text-center text-xs text-zinc-400 border-t border-white/10 pt-4">
           Allaqachon hisobingiz bormi?{' '}
-          <Link to="/auth/login" className="font-bold text-[#3B82F6] hover:underline">
+          <Link to="/auth/login" className="font-bold text-emerald-400 hover:underline">
             {t('auth.loginBtn') || "Kirish"}
           </Link>
         </p>

@@ -155,7 +155,7 @@ export const EgaLevelTestsPage: React.FC = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Daraja_Testlari');
-    XLSX.writeFile(workbook, `NextOlymp_Daraja_Testlari_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(workbook, `IbnSino_Daraja_Testlari_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const filteredTests = testSets.filter((t) => {
@@ -339,15 +339,15 @@ export const EgaLevelTestsPage: React.FC = () => {
 
         
         {filteredTests.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-[#111827] border border-[#1E293B] space-y-3">
-            <Brain className="w-12 h-12 text-slate-500 mx-auto opacity-60" />
-            <h3 className="text-base font-bold text-white">Daraja testlari topilmadi</h3>
-            <p className="text-xs text-slate-400">Yangi daraja testi qo'shish uchun yuqoridagi tugmani bosing</p>
+          <div className="p-12 text-center rounded-2xl bg-zinc-900/60 border border-white/10 space-y-3">
+            <Brain className="w-12 h-12 text-zinc-500 mx-auto opacity-60" />
+            <h3 className="text-base font-bold text-zinc-100">Daraja testlari topilmadi</h3>
+            <p className="text-xs text-zinc-400">Yangi daraja testi qo'shish uchun yuqoridagi tugmani bosing</p>
           </div>
         ) : viewMode === 'table' ? (
-          <div className="rounded-xl border border-[#1E293B] bg-[#111827] overflow-x-auto shadow-lg">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-[#0B1120] text-slate-400 uppercase text-[10px] font-bold border-b border-[#1E293B]">
+          <div className="rounded-2xl border border-white/10 bg-zinc-900/60 overflow-x-auto shadow-xl">
+            <table className="w-full text-left text-xs text-zinc-300">
+              <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] font-bold border-b border-white/10">
                 <tr>
                   <th className="py-3.5 px-4">Test Nomi</th>
                   <th className="py-3.5 px-4">Fan & Sinf</th>
@@ -357,39 +357,39 @@ export const EgaLevelTestsPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-right">Amallar</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1E293B]">
+              <tbody className="divide-y divide-white/5">
                 {filteredTests.map((test) => (
-                  <tr key={test.id} className="hover:bg-[#1E293B]/40 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap">
+                  <tr key={test.id} className="hover:bg-zinc-800/30 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-zinc-100 whitespace-nowrap">
                       {test.title}
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 uppercase mr-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase mr-2">
                         {test.subject}
                       </span>
                       <span className="text-amber-400 font-bold">{test.grade}-sinf</span>
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-white whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-mono font-bold text-zinc-100 whitespace-nowrap">
                       {test.year}-yil
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-300 whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-mono text-zinc-300 whitespace-nowrap">
                       {test.questions.length} ta
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-300 whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-mono text-zinc-300 whitespace-nowrap">
                       {test.durationMinutes} daqiqa
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setViewingTest(test)}
-                          className="p-1.5 rounded-lg bg-[#0B1120] hover:bg-[#1E293B] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                          className="p-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                           title="Savollarni ko'rish"
                         >
-                          <Eye className="w-4 h-4 text-blue-400" />
+                          <Eye className="w-4 h-4 text-emerald-400" />
                         </button>
                         <button
                           onClick={() => deleteTestSet(test.id)}
-                          className="p-1.5 rounded-lg bg-[#0B1120] hover:bg-rose-500/20 text-rose-400 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-xl bg-zinc-950/80 hover:bg-rose-500/20 text-rose-400 transition-colors cursor-pointer"
                           title="O'chirish"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -404,32 +404,32 @@ export const EgaLevelTestsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTests.map((test) => (
-              <div key={test.id} className="p-5 rounded-2xl bg-[#111827] border border-[#1E293B] space-y-3 flex flex-col justify-between hover:border-blue-500/40 transition-all">
+              <div key={test.id} className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition-all shadow-xl">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
                       {test.subject} • {test.grade}-sinf
                     </span>
                     <span className="font-mono text-xs font-bold text-amber-400">{test.year}-yil</span>
                   </div>
-                  <h3 className="text-sm font-bold text-white">{test.title}</h3>
-                  <div className="text-xs text-slate-400 font-mono space-y-1">
+                  <h3 className="text-sm font-bold text-zinc-100">{test.title}</h3>
+                  <div className="text-xs text-zinc-400 font-mono space-y-1">
                     <div>Savollar soni: <strong className="text-emerald-400">{test.questions.length} ta</strong></div>
-                    <div>Vaqt sohasi: <strong className="text-purple-300">{test.durationMinutes} daqiqa</strong></div>
+                    <div>Vaqt sohasi: <strong className="text-teal-300">{test.durationMinutes} daqiqa</strong></div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1E293B]">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
                   <button
                     onClick={() => setViewingTest(test)}
-                    className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-slate-700 text-xs font-bold text-blue-300 transition-all flex items-center gap-1 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-xs font-bold text-emerald-300 transition-all flex items-center gap-1 cursor-pointer border border-white/10"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Ko'rish</span>
                   </button>
                   <button
                     onClick={() => deleteTestSet(test.id)}
-                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all cursor-pointer"
+                    className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -439,44 +439,43 @@ export const EgaLevelTestsPage: React.FC = () => {
           </div>
         )}
 
-        
+        {/* Modal: Yangi Test Qo'shish */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto">
-            <div className="bg-[#0B1120] border border-[#1E293B] rounded-3xl p-6 sm:p-8 max-w-3xl w-full text-white space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-4">
-                <h2 className="text-xl font-black text-white flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-amber-400" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto">
+            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-3xl w-full text-zinc-100 space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <h2 className="text-xl font-black text-zinc-100 flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-emerald-400" />
                   Yangi Daraja Testi / O'tgan Yillar Savoli Qo'shish
                 </h2>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-1.5 rounded-lg bg-[#111827] hover:bg-[#1E293B] text-slate-400 hover:text-white cursor-pointer"
+                  className="p-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer border border-white/10"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSaveNewTest} className="space-y-5 text-xs">
-                
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Test Sarlavhasi (Nomi)</label>
+                  <label className="font-bold text-zinc-300">Test Sarlavhasi (Nomi)</label>
                   <input
                     type="text"
                     required
                     placeholder="masalan: 2025-yil 9-sinf Matematika Respublika Savollari"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full p-2.5 bg-[#111827] border border-[#1E293B] rounded-xl text-white outline-none focus:border-blue-500 font-medium"
+                    className="w-full p-2.5 bg-zinc-950/80 border border-white/10 rounded-xl text-zinc-100 outline-none focus:border-emerald-500 font-medium"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Fan</label>
+                    <label className="font-bold text-zinc-300 block mb-1">Fan</label>
                     <select
                       value={subject}
                       onChange={(e) => setSubject(e.target.value as any)}
-                      className="w-full p-2 bg-[#111827] border border-[#1E293B] rounded-xl text-white outline-none font-bold"
+                      className="w-full p-2 bg-zinc-950/80 border border-white/10 rounded-xl text-zinc-100 outline-none font-bold"
                     >
                       <option value="math">Matematika</option>
                       <option value="physics">Fizika</option>
@@ -487,21 +486,21 @@ export const EgaLevelTestsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Yil</label>
+                    <label className="font-bold text-zinc-300 block mb-1">Yil</label>
                     <input
                       type="number"
                       value={year}
                       onChange={(e) => setYear(Number(e.target.value))}
-                      className="w-full p-2 bg-[#111827] border border-[#1E293B] rounded-xl text-white outline-none font-mono font-bold"
+                      className="w-full p-2 bg-zinc-950/80 border border-white/10 rounded-xl text-zinc-100 outline-none font-mono font-bold"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Sinf</label>
+                    <label className="font-bold text-zinc-300 block mb-1">Sinf</label>
                     <select
                       value={grade}
                       onChange={(e) => setGrade(Number(e.target.value))}
-                      className="w-full p-2 bg-[#111827] border border-[#1E293B] rounded-xl text-white outline-none font-bold"
+                      className="w-full p-2 bg-zinc-950/80 border border-white/10 rounded-xl text-zinc-100 outline-none font-bold"
                     >
                       {[5, 6, 7, 8, 9, 10, 11].map((g) => (
                         <option key={g} value={g}>{g}-sinf</option>
@@ -510,33 +509,32 @@ export const EgaLevelTestsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Vaqt (daqiqa)</label>
+                    <label className="font-bold text-zinc-300 block mb-1">Vaqt (daqiqa)</label>
                     <input
                       type="number"
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                      className="w-full p-2 bg-[#111827] border border-[#1E293B] rounded-xl text-white outline-none font-mono font-bold"
+                      className="w-full p-2 bg-zinc-950/80 border border-white/10 rounded-xl text-zinc-100 outline-none font-mono font-bold"
                     />
                   </div>
                 </div>
 
-                
-                <div className="pt-4 border-t border-[#1E293B] space-y-4">
+                <div className="pt-4 border-t border-white/10 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="font-extrabold text-sm text-amber-400">Savollar Ro'yxati ({questions.length} ta)</h3>
                     <button
                       type="button"
                       onClick={handleAddQuestionField}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 rounded-xl font-bold text-xs cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" /> Savol Qo'shish
                     </button>
                   </div>
 
                   {questions.map((q, qIdx) => (
-                    <div key={qIdx} className="p-4 bg-[#111827] border border-[#1E293B] rounded-2xl space-y-3 relative">
+                    <div key={qIdx} className="p-4 bg-zinc-950/80 border border-white/10 rounded-2xl space-y-3 relative">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-300">Savol #{qIdx + 1}</span>
+                        <span className="font-bold text-zinc-300">Savol #{qIdx + 1}</span>
                         {questions.length > 1 && (
                           <button
                             type="button"
@@ -553,22 +551,21 @@ export const EgaLevelTestsPage: React.FC = () => {
                         placeholder="Savol matnini kiriting..."
                         value={q.questionText}
                         onChange={(e) => handleQuestionChange(qIdx, 'questionText', e.target.value)}
-                        className="w-full p-2 bg-[#0B1120] border border-[#1E293B] rounded-xl text-white font-medium"
+                        className="w-full p-2 bg-zinc-900 border border-white/10 rounded-xl text-zinc-100 font-medium"
                       />
 
-                      
                       <div className="grid grid-cols-2 gap-2">
                         {q.options.map((opt, optIdx) => {
                           const letter = String.fromCharCode(65 + optIdx);
                           return (
                             <div key={optIdx} className="flex items-center gap-2">
-                              <span className="font-bold text-slate-400 w-4">{letter})</span>
+                              <span className="font-bold text-zinc-400 w-4">{letter})</span>
                               <input
                                 type="text"
                                 placeholder={`Variant ${letter}`}
                                 value={opt}
                                 onChange={(e) => handleOptionChange(qIdx, optIdx, e.target.value)}
-                                className="w-full p-2 bg-[#0B1120] border border-[#1E293B] rounded-xl text-white text-xs"
+                                className="w-full p-2 bg-zinc-900 border border-white/10 rounded-xl text-zinc-100 text-xs"
                               />
                             </div>
                           );
@@ -581,7 +578,7 @@ export const EgaLevelTestsPage: React.FC = () => {
                           <select
                             value={q.correctAnswer}
                             onChange={(e) => handleQuestionChange(qIdx, 'correctAnswer', e.target.value)}
-                            className="w-full p-2 bg-[#0B1120] border border-[#1E293B] rounded-xl text-emerald-400 font-bold"
+                            className="w-full p-2 bg-zinc-900 border border-white/10 rounded-xl text-emerald-400 font-bold"
                           >
                             <option value="A">A varianti</option>
                             <option value="B">B varianti</option>
@@ -591,13 +588,13 @@ export const EgaLevelTestsPage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="font-bold text-slate-300 block mb-1">Yechim izohi / Tahlili</label>
+                          <label className="font-bold text-zinc-300 block mb-1">Yechim izohi / Tahlili</label>
                           <input
                             type="text"
                             placeholder="Yechim tushuntirishi..."
                             value={q.explanation}
                             onChange={(e) => handleQuestionChange(qIdx, 'explanation', e.target.value)}
-                            className="w-full p-2 bg-[#0B1120] border border-[#1E293B] rounded-xl text-white text-xs"
+                            className="w-full p-2 bg-zinc-900 border border-white/10 rounded-xl text-zinc-100 text-xs"
                           />
                         </div>
                       </div>
@@ -605,18 +602,17 @@ export const EgaLevelTestsPage: React.FC = () => {
                   ))}
                 </div>
 
-                
-                <div className="pt-4 border-t border-[#1E293B] flex items-center justify-end gap-3">
+                <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-[#111827] text-slate-300 font-bold rounded-xl hover:bg-[#1E293B] cursor-pointer"
+                    className="px-4 py-2 bg-zinc-950/80 text-zinc-300 font-bold rounded-xl hover:bg-zinc-800 cursor-pointer border border-white/10"
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md cursor-pointer"
+                    className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/25 cursor-pointer active:scale-95 transition-all"
                   >
                     Saqlash va Nashr Etish
                   </button>
@@ -626,31 +622,31 @@ export const EgaLevelTestsPage: React.FC = () => {
           </div>
         )}
 
-        
+        {/* Modal: Savollarni ko'rish */}
         {viewingTest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto">
-            <div className="bg-[#0B1120] border border-[#1E293B] rounded-3xl p-6 sm:p-8 max-w-2xl w-full text-white space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto">
+            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-2xl w-full text-zinc-100 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div>
                   <span className="text-[10px] font-mono text-amber-400 font-bold">{viewingTest.subject.toUpperCase()} • {viewingTest.grade}-sinf ({viewingTest.year})</span>
-                  <h3 className="text-base font-bold text-white">{viewingTest.title}</h3>
+                  <h3 className="text-base font-bold text-zinc-100">{viewingTest.title}</h3>
                 </div>
                 <button
                   onClick={() => setViewingTest(null)}
-                  className="p-1.5 rounded-lg bg-[#111827] hover:bg-[#1E293B] text-slate-400 hover:text-white"
+                  className="p-1.5 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/10"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="space-y-4">
-                <div className="text-xs font-bold text-slate-300">Savollar ro'yxati ({viewingTest.questions.length} ta):</div>
+                <div className="text-xs font-bold text-zinc-300">Savollar ro'yxati ({viewingTest.questions.length} ta):</div>
                 {viewingTest.questions.map((q, idx) => (
-                  <div key={q.id} className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] space-y-2">
-                    <div className="font-bold text-white text-xs">
+                  <div key={q.id} className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 space-y-2">
+                    <div className="font-bold text-zinc-100 text-xs">
                       #{idx + 1}. {q.questionText}
                     </div>
-                    <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-300">
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px] text-zinc-300">
                       {q.options.map((opt, optIdx) => {
                         const letter = String.fromCharCode(65 + optIdx);
                         const isCorrect = q.correctAnswer === letter;
@@ -659,7 +655,7 @@ export const EgaLevelTestsPage: React.FC = () => {
                             key={optIdx}
                             className={clsx(
                               "p-1.5 rounded-lg border",
-                              isCorrect ? "bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold" : "bg-[#0B1120] border-[#1E293B]"
+                              isCorrect ? "bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold" : "bg-zinc-900 border-white/10"
                             )}
                           >
                             {letter}) {opt} {isCorrect && "✓"}
@@ -668,7 +664,7 @@ export const EgaLevelTestsPage: React.FC = () => {
                       })}
                     </div>
                     {q.explanation && (
-                      <div className="text-[11px] text-blue-300 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+                      <div className="text-[11px] text-teal-300 bg-teal-500/10 p-2 rounded-lg border border-teal-500/20">
                         💡 Tahlil: {q.explanation}
                       </div>
                     )}
@@ -676,10 +672,10 @@ export const EgaLevelTestsPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="flex justify-end pt-3 border-t border-[#1E293B]">
+              <div className="flex justify-end pt-3 border-t border-white/10">
                 <button
                   onClick={() => setViewingTest(null)}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
+                  className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 text-white font-bold rounded-xl active:scale-95 transition-all"
                 >
                   Yopish
                 </button>

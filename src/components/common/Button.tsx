@@ -21,15 +21,15 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0B1120] disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer";
+  const baseStyles = "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none select-none cursor-pointer";
 
   const variants = {
-    primary: "bg-[#3B82F6] hover:bg-[#2563EB] text-white focus:ring-[#3B82F6] shadow-sm hover:shadow active:scale-[0.98]",
-    secondary: "bg-[#1E293B] hover:bg-[#334155] text-[#F1F5F9] border border-[#334155] focus:ring-[#3B82F6] shadow-sm active:scale-[0.98]",
-    accent: "bg-[#F59E0B] hover:bg-amber-600 text-slate-950 font-bold focus:ring-[#F59E0B] shadow-sm active:scale-[0.98]",
-    ghost: "bg-transparent text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#1E293B] focus:ring-[#3B82F6]",
-    outline: "border border-[#1E293B] bg-[#111827] text-[#F1F5F9] hover:bg-[#1E293B] hover:border-[#334155] focus:ring-[#3B82F6]",
-    danger: "bg-[#EF4444] hover:bg-rose-600 text-white focus:ring-[#EF4444] shadow-sm active:scale-[0.98]",
+    primary: "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-sm hover:shadow-emerald-500/20 hover:shadow-lg focus:ring-emerald-500/30 border border-emerald-400/20 font-semibold",
+    secondary: "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-100 border border-white/10 focus:ring-emerald-500/30 shadow-sm",
+    accent: "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-semibold focus:ring-cyan-500/30 shadow-sm",
+    ghost: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 focus:ring-emerald-500/30",
+    outline: "border border-white/10 bg-zinc-900/40 text-zinc-200 hover:bg-zinc-800/80 hover:border-white/20 focus:ring-emerald-500/30 backdrop-blur-sm",
+    danger: "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-sm focus:ring-rose-500/30",
   };
 
   const sizes = {

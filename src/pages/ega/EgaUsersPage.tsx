@@ -524,7 +524,7 @@ export const EgaUsersPage: React.FC = () => {
 
                         {visibleColumns.email && (
                           <td className={clsx("py-2.5 px-3 font-mono text-[11px]", isDark ? "text-cyan-400" : "text-cyan-700")}>
-                            {u.email || (u.phone ? `${u.phone.replace(/\D/g, '')}@nextolymp.uz` : 'user@nextolymp.uz')}
+                            {u.email || (u.phone ? `${u.phone.replace(/\D/g, '')}@ibnsino.uz` : 'user@ibnsino.uz')}
                           </td>
                         )}
 

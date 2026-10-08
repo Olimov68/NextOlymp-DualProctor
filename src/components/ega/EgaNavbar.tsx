@@ -85,37 +85,34 @@ export const EgaNavbar: React.FC<EgaNavbarProps> = ({ isCollapsed, onToggleColla
   const PageIcon = pageInfo.icon;
 
   return (
-    <header className="sticky top-0 z-20 w-full h-16 px-6 flex items-center justify-between shadow-md font-sans bg-[#0B1120] border-b border-[#1E293B] text-[#F1F5F9] shrink-0">
+    <header className="sticky top-0 z-20 w-full h-16 px-6 flex items-center justify-between shadow-md font-sans bg-zinc-900/80 backdrop-blur-md border-b border-white/10 text-zinc-100 shrink-0">
       
       <div className="flex items-center gap-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider border bg-[#111827] border-[#1E293B] text-[#F59E0B]">
-          <PageIcon className="w-4 h-4 text-[#F59E0B]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+          <PageIcon className="w-4 h-4 text-emerald-400" />
           <span>{pageInfo.title}</span>
         </div>
       </div>
 
-      
       <div className="flex items-center gap-3">
-        
         <button
           onClick={onToggleCollapse}
-          className="p-2 rounded-lg border border-[#1E293B] bg-[#111827] hover:bg-[#1E293B] text-[#94A3B8] hover:text-[#F1F5F9] transition-colors cursor-pointer"
+          className="p-2 rounded-xl border border-white/10 bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
           title="Menyuni ko'rsatish / berkitish"
         >
           {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
 
-        
-        <div className="inline-flex items-center p-1 rounded-lg border border-[#1E293B] bg-[#111827] text-xs font-semibold">
+        <div className="inline-flex items-center p-1 rounded-xl border border-white/10 bg-zinc-950/80 text-xs font-semibold">
           {(['UZ', 'EN', 'RU'] as const).map((l) => (
             <button
               key={l}
               onClick={() => changeLanguage(l)}
               className={clsx(
-                "px-2 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer",
+                "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
                 currentLang === l
-                  ? "bg-[#3B82F6] text-white"
-                  : "text-[#94A3B8] hover:text-[#F1F5F9]"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-100"
               )}
             >
               {l}
@@ -123,9 +120,8 @@ export const EgaNavbar: React.FC<EgaNavbarProps> = ({ isCollapsed, onToggleColla
           ))}
         </div>
 
-        
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#1E293B] bg-[#111827] text-xs font-bold text-[#F1F5F9]">
-          <User className="w-4 h-4 text-[#F59E0B]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-white/10 bg-zinc-950/80 text-xs font-bold text-zinc-100">
+          <User className="w-4 h-4 text-emerald-400" />
           <span>{user?.fullName || 'Admin'}</span>
         </div>
       </div>

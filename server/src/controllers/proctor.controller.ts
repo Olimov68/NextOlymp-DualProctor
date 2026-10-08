@@ -2,10 +2,9 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { validatePlacementSnapshot } from '../services/setupProctor.service';
+import { JWT_SECRET } from '../config/constants';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'nextolymp_proctor_secret_2026';
-
-export const activeSessions = new Map<string, {
+export const activeProctorSessions = new Map<string, {
   sessionId: string;
   token: string;
   examId: string;
@@ -14,6 +13,7 @@ export const activeSessions = new Map<string, {
   calibrated: boolean;
   examStartTime: number;
   examEndTime: number;
+  lastHeartbeat: number;
 }>();
 
 function sanitizeString(str: any): string {
@@ -32,7 +32,8 @@ function verifySessionAuth(req: Request, sessionId: string): boolean {
     token = tokenParam;
   }
 
-  if (!token) return true;
+  // FIXED: Must require valid token!
+  if (!token) return false;
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
@@ -60,14 +61,14 @@ export class ProctorController {
       const token = jwt.sign(
         { sessionId, examId, studentId, studentName: studentName || "O'quvchi" },
         JWT_SECRET,
-        { expiresIn: '3h' }
+        { expiresIn: '4h' }
       );
 
       const now = Date.now();
       const examStartTime = req.body.examStartTime ? new Date(req.body.examStartTime).getTime() : now;
       const examEndTime = req.body.examEndTime ? new Date(req.body.examEndTime).getTime() : now + (120 * 60 * 1000);
 
-      activeSessions.set(sessionId, {
+      activeProctorSessions.set(sessionId, {
         sessionId,
         token,
         examId,
@@ -76,10 +77,11 @@ export class ProctorController {
         calibrated: false,
         examStartTime,
         examEndTime,
+        lastHeartbeat: now,
       });
 
-      const host = req.get('host') || 'nextolymp.uz';
-      const protocol = req.protocol || 'https';
+      const host = req.get('host') || 'localhost:3000';
+      const protocol = req.protocol || 'http';
       const streamUrl = `${protocol}://${host}/proctor/stream?sessionId=${sessionId}&token=${token}`;
 
       return res.status(201).json({
@@ -108,15 +110,16 @@ export class ProctorController {
       }
 
       if (!verifySessionAuth(req, sessionId)) {
-        return res.status(403).json({ error: "Ruxsatsiz murojaat (IDOR / Invalid Session Token)" });
+        return res.status(403).json({ error: "Ruxsatsiz murojaat (Yaroqsiz yoki mavjud bo'lmagan sessiya tokeni)" });
       }
 
       const evaluation = await validatePlacementSnapshot(imageBase64);
 
-      const session = activeSessions.get(sessionId);
+      const session = activeProctorSessions.get(sessionId);
       if (session) {
         session.calibrated = evaluation.valid_placement;
         session.status = evaluation.valid_placement ? 'CALIBRATED' : 'DEVICE_CONNECTED';
+        session.lastHeartbeat = Date.now();
       }
 
       return res.json({
@@ -134,10 +137,10 @@ export class ProctorController {
       const sessionId = sanitizeString(req.params.sessionId);
 
       if (!verifySessionAuth(req, sessionId)) {
-        return res.status(403).json({ error: "Ruxsatsiz murojaat (IDOR / Invalid Session Token)" });
+        return res.status(403).json({ error: "Ruxsatsiz murojaat (Yaroqsiz token)" });
       }
 
-      const session = activeSessions.get(sessionId);
+      const session = activeProctorSessions.get(sessionId);
 
       if (!session) {
         return res.status(404).json({ error: "Seans topilmadi" });

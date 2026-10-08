@@ -1,0 +1,501 @@
+{
+  "users": [
+    {
+      "id": "usr_bef91d4d",
+      "fullName": "Asilbek Olimov",
+      "email": "aoolimov68@gmail.com",
+      "phone": "+998 99 174 99 33",
+      "passwordHash": "$2a$10$P3iVdz6ODAJgROI2uvs/buwndZ2Boe9OvKkgjHNUuzigLvl6nR2Hu",
+      "role": "student",
+      "grade": 11,
+      "region": "Toshkent shahri",
+      "district": "Mirzo Ulug‘bek tumani",
+      "school": "1",
+      "score": 0,
+      "status": "active",
+      "createdAt": "2026-10-08T13:45:06.365Z"
+    },
+    {
+      "id": "usr-admin-01",
+      "fullName": "Ibn Sino Bosh Admin",
+      "phone": "+998901112233",
+      "email": "admin@ibnsino.uz",
+      "passwordHash": "$2a$10$w0AKUQrXpxOSaPhvDSOf4OJ9vfiofDNDFIg0mWJVb92siLkI.XDx6",
+      "role": "admin",
+      "grade": 11,
+      "region": "Toshkent shahri",
+      "district": "Mirobod tumani",
+      "school": "Ibn Sino Akademik Markazi",
+      "score": 100,
+      "status": "active",
+      "createdAt": "2026-10-08T13:14:31.894Z"
+    },
+    {
+      "id": "usr-student-01",
+      "fullName": "Azizbek Rahmonov",
+      "phone": "+998901234567",
+      "email": "azizbek@ibnsino.uz",
+      "passwordHash": "$2a$10$hddDD4.o4fXH4shoJQVDJuZcNBFOlxc3wdT0HDfbOK.r/kuHHCpFC",
+      "role": "student",
+      "grade": 10,
+      "region": "Samarqand viloyati",
+      "district": "Samarqand shahar",
+      "school": "1-sonli Ixtisoslashtirilgan Maktab",
+      "score": 84,
+      "status": "active",
+      "createdAt": "2026-10-08T13:14:31.896Z"
+    },
+    {
+      "id": "usr-student-02",
+      "fullName": "Mohira Karimova",
+      "phone": "+998912345678",
+      "email": "mohira@ibnsino.uz",
+      "passwordHash": "$2a$10$hddDD4.o4fXH4shoJQVDJuZcNBFOlxc3wdT0HDfbOK.r/kuHHCpFC",
+      "role": "student",
+      "grade": 11,
+      "region": "Buxoro viloyati",
+      "district": "G'ijduvon tumani",
+      "school": "Prezident Maktabi",
+      "score": 92,
+      "status": "active",
+      "createdAt": "2026-10-08T13:14:31.896Z"
+    }
+  ],
+  "exams": [
+    {
+      "id": "IBN-MED-101",
+      "title": "Ibn Sino Nomidagi Tibbiyot va Fiziologiya Olimpiadasi",
+      "subject": "Biologiya va Tibbiyot",
+      "category": "biology",
+      "format": "online",
+      "description": "Inson anatomiyasi, biokimyo va Ibn Sino tibbiy merosi bo'yicha saralash bosqichi.",
+      "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+      "startTime": "2026-10-08T12:14:31.896Z",
+      "endTime": "2026-10-15T13:14:31.896Z",
+      "durationMinutes": 60,
+      "price": 0,
+      "status": "active",
+      "maxScore": 100,
+      "totalQuestions": 10,
+      "registeredCount": 420,
+      "organizer": "Ibn Sino Ilmiy Akademiyasi",
+      "createdAt": "2026-10-08T13:14:31.896Z"
+    },
+    {
+      "id": "IBN-MATH-102",
+      "title": "Abu Ali ibn Sino Aniq Fanlar: Matematika & Mantiq",
+      "subject": "Matematika",
+      "category": "math",
+      "format": "online",
+      "description": "Yuqori sinf o'quvchilari uchun mantiqiy, geometrik va algebraik masalalar kompleksi.",
+      "image": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=800&q=80",
+      "startTime": "2026-10-08T12:14:31.896Z",
+      "endTime": "2026-10-18T13:14:31.896Z",
+      "durationMinutes": 60,
+      "price": 0,
+      "status": "active",
+      "maxScore": 100,
+      "totalQuestions": 10,
+      "registeredCount": 310,
+      "organizer": "Ibn Sino Fondi",
+      "createdAt": "2026-10-08T13:14:31.896Z"
+    },
+    {
+      "id": "IBN-CHEM-103",
+      "title": "Ibn Sino Farmatsevtika va Kimyo Milliy Imtihoni",
+      "subject": "Kimyo",
+      "category": "chemistry",
+      "format": "online",
+      "description": "Organik kimyo, dori vositalari sintezi va molekulyar biologiya nazariyasi.",
+      "image": "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80",
+      "startTime": "2026-10-08T12:14:31.896Z",
+      "endTime": "2026-10-13T13:14:31.896Z",
+      "durationMinutes": 45,
+      "price": 0,
+      "status": "active",
+      "maxScore": 100,
+      "totalQuestions": 10,
+      "registeredCount": 275,
+      "organizer": "O'zbekiston Kimyogarlar Jamiyati",
+      "createdAt": "2026-10-08T13:14:31.896Z"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-med-01",
+      "examId": "IBN-MED-101",
+      "question_text": "Abu Ali ibn Sino o'zining \"Tib qonunlari\" asarida inson qon aylanishining dastlabki belgilarini qaysi a'zo orqali tushuntirgan?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Yurak va tomirlarning puls urishi"
+        },
+        {
+          "id": "B",
+          "text": "Jigar va o't pufagi"
+        },
+        {
+          "id": "C",
+          "text": "Miya va asab tolalari"
+        },
+        {
+          "id": "D",
+          "text": "Buyrak va taloq"
+        }
+      ],
+      "correct_answer": "A",
+      "points": 10,
+      "orderNum": 1,
+      "explanation": "Ibn Sino puls orqali inson tanasining umumiy holatini va yurak-qon tomir faoliyatini aniqlashning 10 ta asosiy mezonini kashf qilgan."
+    },
+    {
+      "id": "q-med-02",
+      "examId": "IBN-MED-101",
+      "question_text": "Inson organizmida eritrotsitlar (qizil qon tanachalari) qayerda hosil bo'ladi?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Jigarda"
+        },
+        {
+          "id": "B",
+          "text": "Qizil ilikda (suyak ko'migi)"
+        },
+        {
+          "id": "C",
+          "text": "Taloqda"
+        },
+        {
+          "id": "D",
+          "text": "Ayrisimon bezda"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 2,
+      "explanation": "Eritropoez jarayoni asosan qizil suyak ko'migida sodir bo'ladi va eritropoetin gormoni orqali boshqariladi."
+    },
+    {
+      "id": "q-med-03",
+      "examId": "IBN-MED-101",
+      "question_text": "Quyidagi qaysi vitamin qon ivishi jarayonida (protrombin sintezida) hal qiluvchi rol o'ynaydi?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Vitamin C"
+        },
+        {
+          "id": "B",
+          "text": "Vitamin K"
+        },
+        {
+          "id": "C",
+          "text": "Vitamin D"
+        },
+        {
+          "id": "D",
+          "text": "Vitamin B12"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 3,
+      "explanation": "Vitamin K jigarda qon ivish omillari (jumladan protrombin) sintezi uchun zarurdir."
+    },
+    {
+      "id": "q-med-04",
+      "examId": "IBN-MED-101",
+      "question_text": "Mitoz bo'linishining qaysi fazasida xromosomalar ekvator tekisligida tiziladi?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Profaza"
+        },
+        {
+          "id": "B",
+          "text": "Metafaza"
+        },
+        {
+          "id": "C",
+          "text": "Anafaza"
+        },
+        {
+          "id": "D",
+          "text": "Telofaza"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 4,
+      "explanation": "Metafaza bosqichida xromosomalar hujayra markazida ekvatorial plastinkani hosil qiladi."
+    },
+    {
+      "id": "q-med-05",
+      "examId": "IBN-MED-101",
+      "question_text": "Neyronlar orasidagi kimyoviy signallarni uzatuvchi oraliq bo'shliq nima deb ataladi?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Akson"
+        },
+        {
+          "id": "B",
+          "text": "Sinaps"
+        },
+        {
+          "id": "C",
+          "text": "Dendrit"
+        },
+        {
+          "id": "D",
+          "text": "Miyelin qobiq"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 5,
+      "explanation": "Sinaps — neyronlar yoki neyron va ta'sir qiluvchi a'zo orasidagi mediatorlar orqali impuls o'tkazuvchi bog'lanishdir."
+    },
+    {
+      "id": "q-math-01",
+      "examId": "IBN-MATH-102",
+      "question_text": "Agar f(x) = 3x^2 - 4x + 5 bo'lsa, f'(2) hosilaning qiymatini toping.",
+      "options": [
+        {
+          "id": "A",
+          "text": "6"
+        },
+        {
+          "id": "B",
+          "text": "8"
+        },
+        {
+          "id": "C",
+          "text": "10"
+        },
+        {
+          "id": "D",
+          "text": "12"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 1,
+      "explanation": "f'(x) = 6x - 4. x = 2 bo'lganda: 6*(2) - 4 = 12 - 4 = 8."
+    },
+    {
+      "id": "q-math-02",
+      "examId": "IBN-MATH-102",
+      "question_text": "To'g'ri burchakli uchburchakning katetlari 5 sm va 12 sm bo'lsa, gipotenuzasini toping.",
+      "options": [
+        {
+          "id": "A",
+          "text": "13 sm"
+        },
+        {
+          "id": "B",
+          "text": "14 sm"
+        },
+        {
+          "id": "C",
+          "text": "15 sm"
+        },
+        {
+          "id": "D",
+          "text": "17 sm"
+        }
+      ],
+      "correct_answer": "A",
+      "points": 10,
+      "orderNum": 2,
+      "explanation": "c = sqrt(5^2 + 12^2) = sqrt(25 + 144) = sqrt(169) = 13 sm."
+    },
+    {
+      "id": "q-math-03",
+      "examId": "IBN-MATH-102",
+      "question_text": "Tenglamani yeching: 2^(x+1) + 2^x = 48.",
+      "options": [
+        {
+          "id": "A",
+          "text": "x = 3"
+        },
+        {
+          "id": "B",
+          "text": "x = 4"
+        },
+        {
+          "id": "C",
+          "text": "x = 5"
+        },
+        {
+          "id": "D",
+          "text": "x = 6"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 3,
+      "explanation": "2*2^x + 2^x = 3*2^x = 48 => 2^x = 16 => x = 4."
+    },
+    {
+      "id": "q-math-04",
+      "examId": "IBN-MATH-102",
+      "question_text": "Quyidagi logarifmik ifodaning qiymatini hisoblang: log_2(32) + log_3(81).",
+      "options": [
+        {
+          "id": "A",
+          "text": "7"
+        },
+        {
+          "id": "B",
+          "text": "8"
+        },
+        {
+          "id": "C",
+          "text": "9"
+        },
+        {
+          "id": "D",
+          "text": "10"
+        }
+      ],
+      "correct_answer": "C",
+      "points": 10,
+      "orderNum": 4,
+      "explanation": "log_2(32) = 5, log_3(81) = 4. 5 + 4 = 9."
+    },
+    {
+      "id": "q-math-05",
+      "examId": "IBN-MATH-102",
+      "question_text": "Arifmetik progressiyaning a_1 = 3, d = 4 bo'lsa, uning dastlabki 10 ta hadi yig'indisi (S_10) ni toping.",
+      "options": [
+        {
+          "id": "A",
+          "text": "190"
+        },
+        {
+          "id": "B",
+          "text": "210"
+        },
+        {
+          "id": "C",
+          "text": "230"
+        },
+        {
+          "id": "D",
+          "text": "250"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "orderNum": 5,
+      "explanation": "S_n = (n/2) * (2a_1 + (n-1)d) = 5 * (6 + 36) = 5 * 42 = 210."
+    }
+  ],
+  "sessions": [
+    {
+      "sessionId": "sess_usr-student-01_IBN-MED-101_1791465290161",
+      "userId": "usr-student-01",
+      "examId": "IBN-MED-101",
+      "startedAt": 1791465290161,
+      "expiresAt": 1791468890161,
+      "status": "COMPLETED",
+      "answers": {
+        "q-med-01": "A"
+      },
+      "submittedAt": "2026-10-08T13:14:50.309Z",
+      "score": 10,
+      "percentage": 20
+    }
+  ],
+  "submissions": [
+    {
+      "id": "sub_usr-student-01_IBN-MED-101_1791465290309",
+      "userId": "usr-student-01",
+      "userName": "Azizbek Rahmonov",
+      "examId": "IBN-MED-101",
+      "examTitle": "Ibn Sino Nomidagi Tibbiyot va Fiziologiya Olimpiadasi",
+      "subject": "Biologiya va Tibbiyot",
+      "score": 10,
+      "maxScore": 50,
+      "percentage": 20,
+      "raschTheta": -1.39,
+      "status": "completed",
+      "timeSpentMinutes": 1,
+      "submittedAt": "2026-10-08T13:14:50.309Z",
+      "certificateType": "Ishtirokchi Sertifikati",
+      "verificationCode": "IS-2026-BIOL-2671",
+      "analysis": [
+        {
+          "questionId": "q-med-01",
+          "questionNum": 1,
+          "questionText": "Abu Ali ibn Sino o'zining \"Tib qonunlari\" asarida inson qon aylanishining dastlabki belgilarini qaysi a'zo orqali tushuntirgan?",
+          "userAnswer": "A",
+          "correctAnswer": "A",
+          "isCorrect": true,
+          "points": 10,
+          "explanation": "Ibn Sino puls orqali inson tanasining umumiy holatini va yurak-qon tomir faoliyatini aniqlashning 10 ta asosiy mezonini kashf qilgan."
+        },
+        {
+          "questionId": "q-med-02",
+          "questionNum": 2,
+          "questionText": "Inson organizmida eritrotsitlar (qizil qon tanachalari) qayerda hosil bo'ladi?",
+          "userAnswer": "",
+          "correctAnswer": "B",
+          "isCorrect": false,
+          "points": 0,
+          "explanation": "Eritropoez jarayoni asosan qizil suyak ko'migida sodir bo'ladi va eritropoetin gormoni orqali boshqariladi."
+        },
+        {
+          "questionId": "q-med-03",
+          "questionNum": 3,
+          "questionText": "Quyidagi qaysi vitamin qon ivishi jarayonida (protrombin sintezida) hal qiluvchi rol o'ynaydi?",
+          "userAnswer": "",
+          "correctAnswer": "B",
+          "isCorrect": false,
+          "points": 0,
+          "explanation": "Vitamin K jigarda qon ivish omillari (jumladan protrombin) sintezi uchun zarurdir."
+        },
+        {
+          "questionId": "q-med-04",
+          "questionNum": 4,
+          "questionText": "Mitoz bo'linishining qaysi fazasida xromosomalar ekvator tekisligida tiziladi?",
+          "userAnswer": "",
+          "correctAnswer": "B",
+          "isCorrect": false,
+          "points": 0,
+          "explanation": "Metafaza bosqichida xromosomalar hujayra markazida ekvatorial plastinkani hosil qiladi."
+        },
+        {
+          "questionId": "q-med-05",
+          "questionNum": 5,
+          "questionText": "Neyronlar orasidagi kimyoviy signallarni uzatuvchi oraliq bo'shliq nima deb ataladi?",
+          "userAnswer": "",
+          "correctAnswer": "B",
+          "isCorrect": false,
+          "points": 0,
+          "explanation": "Sinaps — neyronlar yoki neyron va ta'sir qiluvchi a'zo orasidagi mediatorlar orqali impuls o'tkazuvchi bog'lanishdir."
+        }
+      ]
+    },
+    {
+      "id": "sub-sample-01",
+      "userId": "usr-student-02",
+      "userName": "Mohira Karimova",
+      "examId": "IBN-MED-101",
+      "examTitle": "Ibn Sino Nomidagi Tibbiyot va Fiziologiya Olimpiadasi",
+      "subject": "Biologiya va Tibbiyot",
+      "score": 90,
+      "maxScore": 100,
+      "percentage": 90,
+      "raschTheta": 2.2,
+      "status": "completed",
+      "timeSpentMinutes": 38,
+      "submittedAt": "2026-10-08T11:14:31.896Z",
+      "certificateType": "I darajali Diplom",
+      "verificationCode": "IS-2026-MED-8921"
+    }
+  ],
+  "proctorEvents": [],
+  "securityBlockedIps": []
+}

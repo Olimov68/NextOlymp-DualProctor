@@ -79,52 +79,51 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
   };
 
   const getGradeColor = (g: GradeLevel) => {
-    if (g === 'A+' || g === 'A') return 'bg-[#10B981]/15 text-[#34D399] border-[#10B981]/40';
-    if (g === 'B+' || g === 'B') return 'bg-[#3B82F6]/15 text-[#60A5FA] border-[#3B82F6]/40';
-    if (g === 'C+' || g === 'C') return 'bg-[#F59E0B]/15 text-[#FBBF24] border-[#F59E0B]/40';
-    return 'bg-[#EF4444]/15 text-[#F87171] border-[#EF4444]/40';
+    if (g === 'A+' || g === 'A') return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
+    if (g === 'B+' || g === 'B') return 'bg-teal-500/15 text-teal-300 border-teal-500/40';
+    if (g === 'C+' || g === 'C') return 'bg-amber-500/15 text-amber-300 border-amber-500/40';
+    return 'bg-rose-500/15 text-rose-300 border-rose-500/40';
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto text-[#F1F5F9] pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto text-zinc-100 pb-12">
       
-      <div className="relative overflow-hidden rounded-xl p-4 sm:p-5 bg-gradient-to-r from-[#0F172A] via-[#111827] to-[#1E293B] border border-[#1E293B] shadow-md">
+      <div className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-zinc-900/60 border border-white/10 backdrop-blur-md shadow-2xl">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#3B82F6]/20 border border-[#3B82F6]/40 text-[#60A5FA]">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               <ShieldCheck className="w-3 h-3" />
               BMBA Rasmiy Standartlashtirilgan Tizim
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-zinc-100 tracking-tight">
               Milliy Sertifikat Sinovlari
             </h1>
-            <p className="text-xs text-[#94A3B8] max-w-2xl leading-relaxed">
+            <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
               Mutaxassislik fanlari va til fanlari bo'yicha test va yozma ish topshiriqlarini yeching,
               Rasch modeli asosida standartlashtirilgan ball va rasmiy sertifikatingizni oling.
             </p>
           </div>
 
-          
-          <div className="p-3 rounded-lg bg-[#0B1120]/80 border border-[#1E293B] flex items-center gap-3 min-w-[200px]">
-            <div className="w-9 h-9 rounded-lg bg-[#3B82F6]/15 border border-[#3B82F6]/30 flex items-center justify-center text-[#60A5FA] shrink-0">
+          <div className="p-3 rounded-xl bg-zinc-950/80 border border-white/10 flex items-center gap-3 min-w-[200px]">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
               <Award className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] text-[#94A3B8]">Faol Sertifikat</div>
+              <div className="text-[10px] text-zinc-400">Faol Sertifikat</div>
               {userCert ? (
                 <>
-                  <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <div className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
                     <span>{userCert.finalScore} ball</span>
                     <span className={clsx("px-1.5 py-0.2 rounded text-[10px] font-bold border", getGradeColor(userCert.grade))}>
                       {userCert.grade}
                     </span>
                   </div>
-                  <div className="text-[10px] text-[#34D399]">Muddati: {userCert.validUntil || '2029-yilgacha'}</div>
+                  <div className="text-[10px] text-emerald-400">Muddati: {userCert.validUntil || '2029-yilgacha'}</div>
                 </>
               ) : (
                 <>
-                  <div className="text-xs font-bold text-[#CBD5E1]">Mavjud emas</div>
-                  <div className="text-[10px] text-[#94A3B8]">Sinov testini yechib oling</div>
+                  <div className="text-xs font-bold text-zinc-300">Mavjud emas</div>
+                  <div className="text-[10px] text-zinc-500">Sinov testini yechib oling</div>
                 </>
               )}
             </div>
@@ -132,16 +131,15 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#1E293B] pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
         <button
           type="button"
           onClick={() => setActiveTab('tests')}
           className={clsx(
-            "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer",
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95",
             activeTab === 'tests'
-              ? "bg-[#3B82F6] text-white shadow-md shadow-[#3B82F6]/25"
-              : "text-[#94A3B8] hover:text-white hover:bg-[#111827]"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800"
           )}
         >
           <BookOpen className="w-4 h-4" />
@@ -152,10 +150,10 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('certificates')}
           className={clsx(
-            "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer",
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95",
             activeTab === 'certificates'
-              ? "bg-[#3B82F6] text-white shadow-md shadow-[#3B82F6]/25"
-              : "text-[#94A3B8] hover:text-white hover:bg-[#111827]"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800"
           )}
         >
           <FileCheck2 className="w-4 h-4" />
@@ -166,10 +164,10 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('appeal')}
           className={clsx(
-            "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer",
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95",
             activeTab === 'appeal'
-              ? "bg-[#3B82F6] text-white shadow-md shadow-[#3B82F6]/25"
-              : "text-[#94A3B8] hover:text-white hover:bg-[#111827]"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800"
           )}
         >
           <HelpCircle className="w-4 h-4" />
@@ -180,10 +178,10 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('rules')}
           className={clsx(
-            "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer",
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95",
             activeTab === 'rules'
-              ? "bg-[#3B82F6] text-white shadow-md shadow-[#3B82F6]/25"
-              : "text-[#94A3B8] hover:text-white hover:bg-[#111827]"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800"
           )}
         >
           <TrendingUp className="w-4 h-4" />
@@ -191,21 +189,20 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
         </button>
       </div>
 
-      
       {activeTab === 'tests' && (
         <div className="space-y-6">
           {selectedExamForTest ? (
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[#111827] border border-[#1E293B]">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md">
                 <button
                   onClick={() => setSelectedExamForTest(null)}
-                  className="flex items-center gap-2 text-xs font-semibold text-[#94A3B8] hover:text-white transition-colors cursor-pointer"
+                  className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4 text-[#3B82F6]" />
+                  <ArrowLeft className="w-4 h-4 text-emerald-400" />
                   <span>Barcha milliy sinovlarga qaytish</span>
                 </button>
 
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/30 text-xs font-bold">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
                   <span>{selectedExamForTest.title} (Rasch Modeli)</span>
                 </div>
               </div>
@@ -214,16 +211,15 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              
-              <div className="p-4 rounded-xl bg-[#111827] border border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
                 <div className="relative w-full sm:w-80">
-                  <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Sinov nomi yoki fani bo'yicha qidirish..."
                     value={examSearchQuery}
                     onChange={(e) => setExamSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-[#0B1120] border border-[#1E293B] rounded-lg text-xs text-[#F1F5F9] placeholder-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                    className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-white/10 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
@@ -233,10 +229,10 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                       key={subj}
                       onClick={() => setExamSubjectFilter(subj)}
                       className={clsx(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer",
+                        "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
                         examSubjectFilter === subj
-                          ? "bg-[#3B82F6] text-white shadow-sm"
-                          : "bg-[#0B1120] text-[#94A3B8] hover:text-white border border-[#1E293B]"
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20"
+                          : "bg-zinc-950/80 text-zinc-400 hover:text-white border border-white/10"
                       )}
                     >
                       {subj === 'all' ? 'Barcha Fanlar' : subj}
@@ -257,12 +253,12 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
 
                 if (filteredExams.length === 0) {
                   return (
-                    <Card className="p-12 text-center bg-[#111827] border border-[#1E293B]">
-                      <div className="w-16 h-16 rounded-2xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 text-[#94A3B8]">
+                    <Card className="p-12 text-center bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+                      <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto mb-4 text-zinc-500">
                         <BookOpen className="w-8 h-8 opacity-40" />
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-2">Hozircha milliy sertifikat sinovlari mavjud emas</h3>
-                      <p className="text-sm text-[#94A3B8] max-w-md mx-auto">
+                      <h3 className="text-lg font-bold text-zinc-100 mb-2">Hozircha milliy sertifikat sinovlari mavjud emas</h3>
+                      <p className="text-sm text-zinc-400 max-w-md mx-auto">
                         Tizim administratori yangi sinovlarni e'lon qilganda ushbu bo'limda avtomatik paydo bo'ladi.
                       </p>
                     </Card>
@@ -274,67 +270,64 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                     {filteredExams.map((exam) => (
                       <Card
                         key={exam.id}
-                        className="overflow-hidden bg-[#111827] border border-[#1E293B] hover:border-[#3B82F6]/50 transition-all duration-200 flex flex-col justify-between shadow-lg group"
+                        className="overflow-hidden bg-zinc-900/60 border border-white/10 hover:border-emerald-500/40 transition-all duration-300 flex flex-col justify-between shadow-xl rounded-2xl group backdrop-blur-md"
                       >
                         <div>
-                          
-                          <div className="relative h-40 w-full overflow-hidden bg-[#0B1120]">
+                          <div className="relative h-40 w-full overflow-hidden bg-zinc-950">
                             <img
                               src={exam.image}
                               alt={exam.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/90 via-transparent to-transparent" />
 
                             <div className="absolute top-3 left-3 flex items-center gap-2">
                               <span className={clsx(
-                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                exam.format === 'online' ? "bg-[#3B82F6] text-white" : "bg-purple-600 text-white"
+                                "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                exam.format === 'online' ? "bg-emerald-500 text-white" : "bg-teal-600 text-white"
                               )}>
                                 {exam.format}
                               </span>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#10B981] text-white">
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-600 text-white">
                                 {exam.status === 'ochiq' ? 'Davom etmoqda' : 'Yopiq'}
                               </span>
                             </div>
 
                             <div className="absolute bottom-3 left-3">
-                              <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#F59E0B]/20 text-[#FBBF24] border border-[#F59E0B]/40">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                                 {exam.subject}
                               </span>
                             </div>
                           </div>
 
-                          
                           <div className="p-5 space-y-3">
-                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#3B82F6]/15 border border-[#3B82F6]/30 text-[#60A5FA] text-[10px] font-bold">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
                               <span>BMBA Rasch 75 ball shkalasi • A: 65+</span>
                             </div>
 
-                            <h3 className="font-bold text-base text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors leading-snug">
+                            <h3 className="font-bold text-base text-zinc-100 group-hover:text-emerald-400 transition-colors leading-snug">
                               {exam.title}
                             </h3>
 
-                            <p className="text-xs text-[#94A3B8] line-clamp-2 leading-relaxed">
+                            <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
                               {exam.description}
                             </p>
 
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#1E293B] text-xs text-[#94A3B8]">
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-xs text-zinc-400">
                               <div className="flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 text-[#3B82F6]" />
+                                <Clock className="w-3.5 h-3.5 text-emerald-400" />
                                 <span>{exam.durationMinutes} daqiqa</span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <HelpCircle className="w-3.5 h-3.5 text-[#3B82F6]" />
+                                <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
                                 <span>{exam.totalQuestions} ta savol</span>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        
-                        <div className="p-5 pt-0 border-t border-[#1E293B] mt-3 flex items-center justify-between">
-                          <div className="text-xs font-bold text-[#10B981] bg-[#10B981]/15 px-2.5 py-1 rounded-md border border-[#10B981]/30">
+                        <div className="p-5 pt-0 border-t border-white/10 mt-3 flex items-center justify-between">
+                          <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
                             Maks. {exam.maxScore} ball
                           </div>
 
@@ -362,14 +355,14 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
       {activeTab === 'certificates' && (
         <div className="space-y-6">
           {userCert ? (
-            <Card className="p-6 sm:p-8 bg-[#111827] border border-[#1E293B]">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#1E293B] pb-6">
+            <Card className="p-6 sm:p-8 bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Award className="w-5 h-5 text-[#10B981]" />
+                  <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-emerald-400" />
                     Davlat Standartidagi Milliy Sertifikat
                   </h3>
-                  <p className="text-xs text-[#94A3B8]">
+                  <p className="text-xs text-zinc-400">
                     Ushbu sertifikat Oliy ta'lim muassasalariga kirish imtihonlarida maksimal yoki tabaqalashtirilgan imtiyoz beradi.
                   </p>
                 </div>
@@ -386,82 +379,79 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              
-              <div className="mt-8 relative p-8 sm:p-12 rounded-2xl bg-gradient-to-br from-[#0B1120] via-[#0F172A] to-[#1E293B] border-2 border-[#3B82F6]/40 shadow-2xl overflow-hidden">
-                
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#3B82F6]/5 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#10B981]/5 rounded-full blur-3xl pointer-events-none" />
+              <div className="mt-8 relative p-8 sm:p-12 rounded-2xl bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-850 border border-emerald-500/30 shadow-2xl overflow-hidden backdrop-blur-xl">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                   <div className="space-y-4 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-mono text-[#3B82F6] font-bold">
+                    <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-mono text-emerald-400 font-bold">
                       <span>O'ZBEKISTON RESPUBLIKASI</span>
                       <span>•</span>
                       <span>BMBA MILLIY SERTIFIKATI</span>
                     </div>
 
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-wide text-white">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-wide text-zinc-100">
                       {user?.fullName || 'Foydalanuvchi'}
                     </h2>
 
-                    <p className="text-sm text-[#94A3B8]">
-                      bilimni baholash agentligining milliy sertifikat sinovlarida <span className="text-white font-bold">{userCert.subject}</span> bo'yicha
+                    <p className="text-sm text-zinc-400">
+                      bilimni baholash agentligining milliy sertifikat sinovlarida <span className="text-zinc-100 font-bold">{userCert.subject}</span> bo'yicha
                       muvaffaqiyatli ishtirok etib, quyidagi standart ball va darajaga ega bo'ldi:
                     </p>
 
                     <div className="grid grid-cols-3 gap-3 max-w-md pt-2">
-                      <div className="p-3 rounded-lg bg-[#111827] border border-[#1E293B]">
-                        <div className="text-[11px] text-[#94A3B8]">Test Balli</div>
-                        <div className="text-base font-bold text-white">{userCert.testStdScore}</div>
+                      <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10">
+                        <div className="text-[11px] text-zinc-400">Test Balli</div>
+                        <div className="text-base font-bold text-zinc-100">{userCert.testStdScore}</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-[#111827] border border-[#1E293B]">
-                        <div className="text-[11px] text-[#94A3B8]">Yozma Ish</div>
-                        <div className="text-base font-bold text-white">{userCert.writingStdScore}</div>
+                      <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10">
+                        <div className="text-[11px] text-zinc-400">Yozma Ish</div>
+                        <div className="text-base font-bold text-zinc-100">{userCert.writingStdScore}</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-[#111827] border border-[#10B981]/40">
-                        <div className="text-[11px] text-[#34D399]">Umumiy Ball</div>
-                        <div className="text-base font-bold text-[#34D399]">{userCert.finalScore}</div>
+                      <div className="p-3 rounded-xl bg-zinc-900/80 border border-emerald-500/40">
+                        <div className="text-[11px] text-emerald-400">Umumiy Ball</div>
+                        <div className="text-base font-bold text-emerald-400">{userCert.finalScore}</div>
                       </div>
                     </div>
                   </div>
 
-                  
-                  <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-[#111827]/90 border border-[#1E293B] text-center min-w-[200px]">
+                  <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-zinc-900/90 border border-white/10 text-center min-w-[200px] shadow-xl">
                     <div className={clsx("text-4xl font-black px-6 py-2 rounded-xl border mb-3", getGradeColor(userCert.grade))}>
                       {userCert.grade}
                     </div>
-                    <div className="text-xs font-bold text-white">DARAJASI</div>
-                    <div className="text-[11px] text-[#94A3B8] mb-4">Maksimal ball imtiyozi</div>
+                    <div className="text-xs font-bold text-zinc-100">DARAJASI</div>
+                    <div className="text-[11px] text-zinc-400 mb-4">Maksimal ball imtiyozi</div>
 
-                    
-                    <div className="w-24 h-24 bg-white p-2 rounded-lg flex items-center justify-center shadow-inner">
-                      <QrCode className="w-20 h-20 text-[#0B1120]" />
+                    <div className="w-24 h-24 bg-white p-2 rounded-xl flex items-center justify-center shadow-inner">
+                      <QrCode className="w-20 h-20 text-zinc-950" />
                     </div>
-                    <div className="text-[10px] font-mono text-[#94A3B8] mt-2">
+                    <div className="text-[10px] font-mono text-zinc-400 mt-2">
                       № {userCert.id}
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 pt-4 border-t border-[#1E293B] flex flex-col sm:flex-row items-center justify-between text-xs text-[#94A3B8] gap-2">
-                  <div>Berilgan sana: <span className="text-white">{userCert.issueDate}</span></div>
-                  <div>Amal qilish muddati: <span className="text-white">{userCert.validUntil} (3 yil)</span></div>
-                  <div className="font-mono text-[11px] text-[#3B82F6]">Tasdiqlash kodi: {userCert.id}</div>
+                <div className="mt-8 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-400 gap-2">
+                  <div>Berilgan sana: <span className="text-zinc-100">{userCert.issueDate}</span></div>
+                  <div>Amal qilish muddati: <span className="text-zinc-100">{userCert.validUntil} (3 yil)</span></div>
+                  <div className="font-mono text-[11px] text-emerald-400">Tasdiqlash kodi: {userCert.id}</div>
                 </div>
               </div>
             </Card>
           ) : (
-            <Card className="p-12 text-center bg-[#111827] border border-[#1E293B]">
-              <div className="w-16 h-16 rounded-2xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 text-[#94A3B8]">
+            <Card className="p-12 text-center bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+              <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto mb-4 text-zinc-500">
                 <Award className="w-8 h-8 opacity-40" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Hozircha rasmiy sertifikat mavjud emas</h3>
-              <p className="text-sm text-[#94A3B8] max-w-md mx-auto mb-6">
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">Hozircha rasmiy sertifikat mavjud emas</h3>
+              <p className="text-sm text-zinc-400 max-w-md mx-auto mb-6">
                 Milliy sertifikat sinov simulyatorida qatnashib test va yozma topshiriqlarni topshiring. Natijalaringiz Rasch modeli bo'yicha baholanib, darajangiz bo'yicha sertifikat shu yerda aks etadi.
               </p>
               <Button
+                variant="primary"
                 onClick={() => setActiveTab('tests')}
-                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold px-6 py-2.5"
+                className="px-6 py-2.5"
               >
                 Sinov simulyatorlariga o'tish
               </Button>
@@ -473,16 +463,15 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
       
       {activeTab === 'appeal' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
           <div className="lg:col-span-6 space-y-6">
-            <Card className="p-6 bg-[#111827] border border-[#1E293B]">
-              <h3 className="text-base font-bold text-white border-b border-[#1E293B] pb-3 mb-4 flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-[#3B82F6]" />
+            <Card className="p-6 bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+              <h3 className="text-base font-bold text-zinc-100 border-b border-white/10 pb-3 mb-4 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-emerald-400" />
                 Yozma Ish Bo'yicha E'tiroz Bildirish
               </h3>
 
               {appealSuccessMsg && (
-                <div className="mb-4 p-4 rounded-xl bg-[#10B981]/15 border border-[#10B981]/40 text-[#34D399] text-xs flex items-center gap-2">
+                <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   {appealSuccessMsg}
                 </div>
@@ -490,21 +479,21 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
 
               <form onSubmit={handleAppealSubmit} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-[#94A3B8] uppercase">Topshiriq raqami</label>
+                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Topshiriq raqami</label>
                   <select
                     value={appealTaskNo}
                     onChange={(e) => setAppealTaskNo(Number(e.target.value))}
-                    className="w-full mt-1.5 px-3 py-2 rounded-lg bg-[#0B1120] border border-[#1E293B] text-white text-xs focus:outline-none focus:border-[#3B82F6]"
+                    className="w-full mt-1.5 px-3 py-2 rounded-xl bg-zinc-950/80 border border-white/10 text-zinc-100 text-xs focus:outline-none focus:border-emerald-500/50 transition-colors"
                   >
-                    <option value={41}>41-topshiriq (Maksimal 25 ball)</option>
-                    <option value={42}>42-topshiriq (Maksimal 25 ball)</option>
-                    <option value={43}>43-topshiriq (Maksimal 25 ball)</option>
+                    <option value={41} className="bg-zinc-900 text-zinc-100">41-topshiriq (Maksimal 25 ball)</option>
+                    <option value={42} className="bg-zinc-900 text-zinc-100">42-topshiriq (Maksimal 25 ball)</option>
+                    <option value={43} className="bg-zinc-900 text-zinc-100">43-topshiriq (Maksimal 25 ball)</option>
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-[#94A3B8] uppercase">Qo'yilgan ball</label>
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Qo'yilgan ball</label>
                     <Input
                       type="number"
                       value={originalScore}
@@ -515,7 +504,7 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-[#94A3B8] uppercase">Talab qilinayotgan ball</label>
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Talab qilinayotgan ball</label>
                     <Input
                       type="number"
                       value={demandedScore}
@@ -528,18 +517,18 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#94A3B8] uppercase">E'tirozning batafsil asosi</label>
+                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">E'tirozning batafsil asosi</label>
                   <textarea
                     rows={5}
                     value={appealReason}
                     onChange={(e) => setAppealReason(e.target.value)}
                     placeholder="Qaysi formula, tenglama yoki hisoblash bosqichi ekspert tomonidan to'liq hisobga olinmaganligini aniq bayon qiling..."
-                    className="w-full mt-1.5 px-3 py-2 rounded-lg bg-[#0B1120] border border-[#1E293B] text-white text-xs focus:outline-none focus:border-[#3B82F6] resize-none"
+                    className="w-full mt-1.5 px-3 py-2.5 rounded-xl bg-zinc-950/80 border border-white/10 text-zinc-100 text-xs focus:outline-none focus:border-emerald-500/50 transition-colors resize-none placeholder-zinc-500"
                     required
                   />
                 </div>
 
-                <Button type="submit" className="w-full flex items-center justify-center gap-2 text-xs">
+                <Button type="submit" className="w-full flex items-center justify-center gap-2 text-xs py-2.5">
                   <Send className="w-4 h-4" />
                   Apellyatsiya Arizasini Yuborish
                 </Button>
@@ -547,40 +536,39 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
             </Card>
           </div>
 
-          
           <div className="lg:col-span-6 space-y-6">
-            <Card className="p-6 bg-[#111827] border border-[#1E293B]">
-              <h3 className="text-base font-bold text-white border-b border-[#1E293B] pb-3 mb-4 flex items-center justify-between">
+            <Card className="p-6 bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+              <h3 className="text-base font-bold text-zinc-100 border-b border-white/10 pb-3 mb-4 flex items-center justify-between">
                 <span>Mening E'tirozlarim Tarixi</span>
-                <span className="text-xs font-normal text-[#94A3B8]">{appeals.length} ta ariza</span>
+                <span className="text-xs font-normal text-zinc-400">{appeals.length} ta ariza</span>
               </h3>
 
               <div className="space-y-4">
                 {appeals.map((app) => (
-                  <div key={app.id} className="p-4 rounded-xl bg-[#0B1120] border border-[#1E293B] space-y-2">
+                  <div key={app.id} className="p-4 rounded-xl bg-zinc-950/80 border border-white/10 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-bold text-white">
+                      <div className="text-xs font-bold text-zinc-100">
                         {app.taskNo}-topshiriq ({app.originalScore} ball → {app.demandedScore} ball)
                       </div>
                       <span className={clsx(
-                        "px-2 py-0.5 rounded text-[11px] font-bold border",
-                        app.status === 'accepted' && "bg-[#10B981]/15 text-[#34D399] border-[#10B981]/30",
-                        app.status === 'rejected' && "bg-[#EF4444]/15 text-[#F87171] border-[#EF4444]/30",
-                        app.status === 'pending' && "bg-[#F59E0B]/15 text-[#FBBF24] border-[#F59E0B]/30"
+                        "px-2.5 py-0.5 rounded-full text-[11px] font-bold border",
+                        app.status === 'accepted' && "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+                        app.status === 'rejected' && "bg-rose-500/15 text-rose-400 border-rose-500/30",
+                        app.status === 'pending' && "bg-amber-500/15 text-amber-400 border-amber-500/30"
                       )}>
                         {app.status === 'accepted' ? 'Qanoatlantirildi' : app.status === 'rejected' ? 'Rad etildi' : 'Kutilmoqda'}
                       </span>
                     </div>
 
-                    <p className="text-xs text-[#94A3B8] italic">"{app.reason}"</p>
+                    <p className="text-xs text-zinc-400 italic">"{app.reason}"</p>
 
                     {app.reviewerNotes && (
-                      <div className="p-2.5 rounded-lg bg-[#111827] border border-[#1E293B] text-[11px] text-[#60A5FA]">
-                        <span className="font-bold">Komissiya xulosasi:</span> {app.reviewerNotes}
+                      <div className="p-2.5 rounded-lg bg-zinc-900/90 border border-white/10 text-[11px] text-teal-300">
+                        <span className="font-bold text-zinc-200">Komissiya xulosasi:</span> {app.reviewerNotes}
                       </div>
                     )}
 
-                    <div className="text-[10px] text-[#64748B] flex items-center gap-1 pt-1">
+                    <div className="text-[10px] text-zinc-500 flex items-center gap-1 pt-1">
                       <Clock className="w-3 h-3" />
                       Yuborilgan vaqt: {app.createdAt} • ID: {app.id}
                     </div>
@@ -592,22 +580,20 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
         </div>
       )}
 
-      
       {activeTab === 'rules' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <Card className="p-6 bg-[#111827] border border-[#1E293B]">
-              <h4 className="text-sm font-bold text-white mb-2 flex items-center justify-between">
+            <Card className="p-6 bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+              <h4 className="text-sm font-bold text-zinc-100 mb-2 flex items-center justify-between">
                 <span>1-Fan: Asosiy Mutaxassislik (MAX = 93)</span>
-                <span className="text-xs text-[#3B82F6] font-mono">BMBA Rasch Logit</span>
+                <span className="text-xs text-emerald-400 font-mono">BMBA Rasch Logit</span>
               </h4>
-              <p className="text-xs text-[#94A3B8] mb-4">
+              <p className="text-xs text-zinc-400 mb-4">
                 Maksimal xom ball 93 ball bo'lib, rasmiy BMBA logit konversiyasiga ko'ra 75 ballik standart shkalaga o'tkaziladi:
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-[#0B1120] text-[#94A3B8] border-b border-[#1E293B]">
+                  <thead className="bg-zinc-950/80 text-zinc-400 border-b border-white/10">
                     <tr>
                       <th className="p-2.5">Xom Ball (Raw)</th>
                       <th className="p-2.5">Standart Ball</th>
@@ -615,17 +601,17 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                       <th className="p-2.5">Imtiyoz</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1E293B]/60">
+                  <tbody className="divide-y divide-white/5">
                     {SPEC_1_BENCHMARKS.filter(b => b.raw > 0).map((b, idx) => (
-                      <tr key={idx} className="hover:bg-[#0B1120]/40">
-                        <td className="p-2.5 font-bold text-white">{b.raw}</td>
-                        <td className="p-2.5 font-mono text-[#60A5FA]">{b.std}</td>
+                      <tr key={idx} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="p-2.5 font-bold text-zinc-100">{b.raw}</td>
+                        <td className="p-2.5 font-mono text-emerald-400 font-bold">{b.std}</td>
                         <td className="p-2.5">
-                          <span className={clsx("px-1.5 py-0.5 rounded text-[10px] font-bold border", getGradeColor(raschService.getGrade(b.std)))}>
+                          <span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-bold border", getGradeColor(raschService.getGrade(b.std)))}>
                             {raschService.getGrade(b.std)}
                           </span>
                         </td>
-                        <td className="p-2.5 text-[#94A3B8]">
+                        <td className="p-2.5 text-zinc-400">
                           {b.std >= 65 ? '100% Maksimal' : 'Proporsional'}
                         </td>
                       </tr>
@@ -635,18 +621,17 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
               </div>
             </Card>
 
-            
-            <Card className="p-6 bg-[#111827] border border-[#1E293B]">
-              <h4 className="text-sm font-bold text-white mb-2 flex items-center justify-between">
+            <Card className="p-6 bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+              <h4 className="text-sm font-bold text-zinc-100 mb-2 flex items-center justify-between">
                 <span>2-Fan: Qo'shimcha Mutaxassislik (MAX = 63)</span>
-                <span className="text-xs text-[#3B82F6] font-mono">BMBA Rasch Logit</span>
+                <span className="text-xs text-teal-400 font-mono">BMBA Rasch Logit</span>
               </h4>
-              <p className="text-xs text-[#94A3B8] mb-4">
+              <p className="text-xs text-zinc-400 mb-4">
                 Maksimal xom ball 63 ball bo'lib, rasmiy BMBA logit konversiyasiga ko'ra 75 ballik standart shkalaga o'tkaziladi:
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-[#0B1120] text-[#94A3B8] border-b border-[#1E293B]">
+                  <thead className="bg-zinc-950/80 text-zinc-400 border-b border-white/10">
                     <tr>
                       <th className="p-2.5">Xom Ball (Raw)</th>
                       <th className="p-2.5">Standart Ball</th>
@@ -654,17 +639,17 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
                       <th className="p-2.5">Imtiyoz</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1E293B]/60">
+                  <tbody className="divide-y divide-white/5">
                     {SPEC_2_BENCHMARKS.filter(b => b.raw > 0).map((b, idx) => (
-                      <tr key={idx} className="hover:bg-[#0B1120]/40">
-                        <td className="p-2.5 font-bold text-white">{b.raw}</td>
-                        <td className="p-2.5 font-mono text-[#60A5FA]">{b.std}</td>
+                      <tr key={idx} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="p-2.5 font-bold text-zinc-100">{b.raw}</td>
+                        <td className="p-2.5 font-mono text-teal-400 font-bold">{b.std}</td>
                         <td className="p-2.5">
-                          <span className={clsx("px-1.5 py-0.5 rounded text-[10px] font-bold border", getGradeColor(raschService.getGrade(b.std)))}>
+                          <span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-bold border", getGradeColor(raschService.getGrade(b.std)))}>
                             {raschService.getGrade(b.std)}
                           </span>
                         </td>
-                        <td className="p-2.5 text-[#94A3B8]">
+                        <td className="p-2.5 text-zinc-400">
                           {b.std >= 65 ? '100% Maksimal' : 'Proporsional'}
                         </td>
                       </tr>
@@ -675,19 +660,18 @@ export const MilliySertifikatDashboardPage: React.FC = () => {
             </Card>
           </div>
 
-          
-          <Card className="p-6 bg-[#111827] border border-[#1E293B]">
-            <h4 className="text-sm font-bold text-white mb-4">BMBA Rasmiy Darajalar Shkalasi</h4>
+          <Card className="p-6 bg-zinc-900/60 border border-white/10 rounded-2xl backdrop-blur-md shadow-xl">
+            <h4 className="text-sm font-bold text-zinc-100 mb-4">BMBA Rasmiy Darajalar Shkalasi</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {GRADE_BANDS.filter(g => g.grade !== 'Fail').map((b) => (
-                <div key={b.grade} className="p-3.5 rounded-xl bg-[#0B1120] border border-[#1E293B] text-center space-y-1">
-                  <div className={clsx("inline-block px-2 py-0.5 rounded text-xs font-black border", getGradeColor(b.grade))}>
+                <div key={b.grade} className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/10 text-center space-y-1 hover:border-white/20 transition-colors">
+                  <div className={clsx("inline-block px-2.5 py-0.5 rounded-full text-xs font-black border", getGradeColor(b.grade))}>
                     {b.grade}
                   </div>
-                  <div className="text-xs font-mono font-bold text-white">
+                  <div className="text-xs font-mono font-bold text-zinc-100">
                     {b.minStd} – {b.maxStd} ball
                   </div>
-                  <div className="text-[10px] text-[#94A3B8]">
+                  <div className="text-[10px] text-zinc-400">
                     {b.grade.startsWith('A') ? '100% Imtiyoz' : 'Proporsional ball'}
                   </div>
                 </div>

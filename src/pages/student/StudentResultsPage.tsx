@@ -90,21 +90,21 @@ export const StudentResultsPage: React.FC = () => {
   
   if (selectedResult) {
     return (
-      <div className="space-y-6 animate-in fade-in">
+      <div className="space-y-6 animate-in fade-in font-sans">
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E293B] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-5">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSelectedResult(null)}
-              className="p-2 rounded-xl bg-[#1E293B] hover:bg-[#334155] text-slate-200 transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+              className="p-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-white/10 text-zinc-200 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold active:scale-95"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 text-emerald-400" />
               <span>Natijalar ro'yxatiga qaytish</span>
             </button>
             <div>
-              <h1 className="text-xl font-black text-white">{selectedResult.olympiadTitle}</h1>
-              <p className="text-xs text-slate-400 font-medium">
-                Fan: <span className="text-amber-400 font-bold">{selectedResult.subject}</span> · Topshirilgan vaqt: <span className="font-mono text-slate-300">{selectedResult.completedAt}</span>
+              <h1 className="text-xl sm:text-2xl font-black text-zinc-100 tracking-tight">{selectedResult.olympiadTitle}</h1>
+              <p className="text-xs text-zinc-400 font-medium">
+                Fan: <span className="text-emerald-400 font-bold">{selectedResult.subject}</span> · Topshirilgan vaqt: <span className="font-mono text-zinc-300">{selectedResult.completedAt}</span>
               </p>
             </div>
           </div>
@@ -112,7 +112,7 @@ export const StudentResultsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Link
               to="/certificates"
-              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 active:scale-95"
             >
               <Award className="w-4 h-4" />
               <span>Sertifikatni Ko'rish</span>
@@ -123,19 +123,19 @@ export const StudentResultsPage: React.FC = () => {
         
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           
-          <div className="p-4 rounded-2xl bg-[#111827] border border-blue-500/30 text-center space-y-1">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">To'plangan Ball</div>
-            <div className="text-2xl font-black text-blue-400 font-mono">
-              {selectedResult.score} <span className="text-xs text-slate-400">/ {selectedResult.maxScore}</span>
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 text-center space-y-1 backdrop-blur-md">
+            <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">To'plangan Ball</div>
+            <div className="text-2xl font-black text-emerald-400 font-mono">
+              {selectedResult.score} <span className="text-xs text-zinc-400">/ {selectedResult.maxScore}</span>
             </div>
             <div className="text-[10px] text-emerald-400 font-bold">Natija: {selectedResult.percentage}%</div>
           </div>
 
           
-          <div className="p-4 rounded-2xl bg-[#111827] border border-emerald-500/30 text-center space-y-1">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">To'g'ri Javoblar</div>
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 text-center space-y-1 backdrop-blur-md">
+            <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">To'g'ri Javoblar</div>
             <div className="text-2xl font-black text-emerald-400 font-mono">
-              {selectedResult.correctAnswersCount} <span className="text-xs text-slate-400">ta</span>
+              {selectedResult.correctAnswersCount} <span className="text-xs text-zinc-400">ta</span>
             </div>
             <div className="text-[10px] text-emerald-300 font-medium">
               To'g'rilik: {selectedResult.totalQuestions > 0 ? Math.round((selectedResult.correctAnswersCount / selectedResult.totalQuestions) * 100) : 0}%
@@ -143,10 +143,10 @@ export const StudentResultsPage: React.FC = () => {
           </div>
 
           
-          <div className="p-4 rounded-2xl bg-[#111827] border border-rose-500/30 text-center space-y-1">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Xato Javoblar</div>
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 text-center space-y-1 backdrop-blur-md">
+            <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Xato Javoblar</div>
             <div className="text-2xl font-black text-rose-400 font-mono">
-              {selectedResult.wrongAnswersCount} <span className="text-xs text-slate-400">ta</span>
+              {selectedResult.wrongAnswersCount} <span className="text-xs text-zinc-400">ta</span>
             </div>
             <div className="text-[10px] text-rose-300 font-medium">
               Xatolik: {selectedResult.totalQuestions > 0 ? Math.round((selectedResult.wrongAnswersCount / selectedResult.totalQuestions) * 100) : 0}%
@@ -154,8 +154,8 @@ export const StudentResultsPage: React.FC = () => {
           </div>
 
           
-          <div className="p-4 rounded-2xl bg-[#111827] border border-amber-500/30 text-center space-y-1">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Egallangan O'rin</div>
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 text-center space-y-1 backdrop-blur-md">
+            <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Egallangan O'rin</div>
             <div className="text-2xl font-black text-amber-400 font-mono">
               {selectedResult.rank > 0 ? `${selectedResult.rank}-o'rin` : "Ishtirokchi"}
             </div>
@@ -163,35 +163,35 @@ export const StudentResultsPage: React.FC = () => {
           </div>
 
           
-          <div className="p-4 rounded-2xl bg-[#111827] border border-purple-500/30 text-center space-y-1 col-span-2 sm:col-span-1">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sarflangan Vaqt</div>
-            <div className="text-lg sm:text-xl font-black text-purple-300 font-mono">
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 text-center space-y-1 col-span-2 sm:col-span-1 backdrop-blur-md">
+            <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Sarflangan Vaqt</div>
+            <div className="text-lg sm:text-xl font-black text-teal-300 font-mono">
               {selectedResult.timeSpentFormatted || (
                 selectedResult.timeSpentSeconds
                   ? `${Math.floor(selectedResult.timeSpentSeconds / 60)} daq ${selectedResult.timeSpentSeconds % 60 > 0 ? `${selectedResult.timeSpentSeconds % 60} s` : ''}`
                   : `${selectedResult.timeSpentMinutes || 1} daq`
               )}
             </div>
-            <div className="text-[10px] text-purple-200 font-medium">Aniq sarflangan vaqt</div>
+            <div className="text-[10px] text-zinc-400 font-medium">Aniq sarflangan vaqt</div>
           </div>
         </div>
 
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111827] p-3 rounded-2xl border border-[#1E293B]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/60 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-blue-400 shrink-0" />
-            <span className="text-xs font-bold text-white">Savollar Tahlili:</span>
+            <Filter className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-xs font-bold text-zinc-100">Savollar Tahlili:</span>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
             <button
               type="button"
               onClick={() => setAnalysisFilter('all')}
               className={clsx(
-                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer active:scale-95",
                 analysisFilter === 'all'
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-[#1A2642] text-slate-300 hover:text-white"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-zinc-800 text-zinc-300 hover:text-white"
               )}
             >
               Barcha Savollar ({questionsList.length})
@@ -200,10 +200,10 @@ export const StudentResultsPage: React.FC = () => {
               type="button"
               onClick={() => setAnalysisFilter('wrong')}
               className={clsx(
-                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1",
+                "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
                 analysisFilter === 'wrong'
-                  ? "bg-rose-600 text-white shadow-xs"
-                  : "bg-[#1A2642] text-slate-300 hover:text-white"
+                  ? "bg-rose-600 text-white shadow-lg shadow-rose-500/20"
+                  : "bg-zinc-800 text-zinc-300 hover:text-white"
               )}
             >
               <XCircle className="w-3.5 h-3.5 text-rose-300" />
@@ -213,10 +213,10 @@ export const StudentResultsPage: React.FC = () => {
               type="button"
               onClick={() => setAnalysisFilter('correct')}
               className={clsx(
-                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1",
+                "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
                 analysisFilter === 'correct'
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-[#1A2642] text-slate-300 hover:text-white"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-zinc-800 text-zinc-300 hover:text-white"
               )}
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
@@ -227,9 +227,9 @@ export const StudentResultsPage: React.FC = () => {
 
         
         {filteredQuestions.length === 0 ? (
-          <div className="p-12 rounded-2xl bg-[#111827] border border-dashed border-[#1E293B] text-center space-y-2">
+          <div className="p-12 rounded-2xl bg-zinc-900/40 border border-dashed border-white/10 text-center space-y-2 backdrop-blur-md">
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-            <p className="text-sm font-bold text-white">Ushbu filtr bo'yicha savollar mavjud emas</p>
+            <p className="text-sm font-bold text-zinc-100">Ushbu filtr bo'yicha savollar mavjud emas</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -237,10 +237,10 @@ export const StudentResultsPage: React.FC = () => {
               <div
                 key={q.questionNum}
                 className={clsx(
-                  "p-5 rounded-2xl border transition-all space-y-3",
+                  "p-6 rounded-2xl border transition-all space-y-3 backdrop-blur-md",
                   q.isCorrect
-                    ? "bg-[#0B172A] border-emerald-500/30"
-                    : "bg-[#181124] border-rose-500/40"
+                    ? "bg-zinc-900/60 border-emerald-500/30"
+                    : "bg-zinc-900/60 border-rose-500/30"
                 )}
               >
                 
@@ -356,12 +356,12 @@ export const StudentResultsPage: React.FC = () => {
 
                 
                 {q.aiExplanation && (
-                  <div className="mt-3 p-3.5 rounded-xl bg-[#101935] border border-blue-500/30 text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 text-blue-400 font-bold">
-                      <Sparkles className="w-4 h-4 text-amber-400" />
+                  <div className="mt-3 p-4 rounded-xl bg-zinc-950/80 border border-emerald-500/30 text-xs space-y-1.5 backdrop-blur-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
                       <span>Ekspert Tahlili & AI Maslahati:</span>
                     </div>
-                    <p className="text-slate-300 leading-relaxed font-normal text-[11px] sm:text-xs">
+                    <p className="text-zinc-300 leading-relaxed font-normal text-[11px] sm:text-xs">
                       {q.aiExplanation}
                     </p>
                   </div>
@@ -375,26 +375,24 @@ export const StudentResultsPage: React.FC = () => {
   }
 
   
-  
-  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E293B] pb-5">
+    <div className="space-y-8 font-sans">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30">
-              <BarChart3 className="w-5 h-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <BarChart3 className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-black text-[#F1F5F9]">Natijalar Tarixi</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-zinc-100 tracking-tight">Natijalar Tarixi</h1>
           </div>
-          <p className="text-xs text-[#94A3B8]">
+          <p className="text-xs sm:text-sm text-zinc-400">
             Ishtirok etilgan olimpiadalar ro'yxati, to'plangan ballar va batafsil xatolar tahlili
           </p>
         </div>
 
         <Link
           to="/certificates"
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1E293B] hover:bg-[#334155] text-slate-200 text-xs font-bold transition-all shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold transition-all shrink-0 active:scale-95"
         >
           <Award className="w-4 h-4 text-amber-400" />
           <span>Sertifikatlarim</span>
@@ -402,13 +400,13 @@ export const StudentResultsPage: React.FC = () => {
       </div>
 
       {results.length === 0 ? (
-        <div className="p-12 rounded-2xl bg-[#111827] border border-dashed border-[#1E293B] text-center space-y-4 max-w-lg mx-auto mt-8">
-          <div className="w-14 h-14 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] mx-auto flex items-center justify-center">
+        <div className="p-12 rounded-2xl bg-zinc-900/40 border border-dashed border-white/10 text-center space-y-4 max-w-lg mx-auto mt-8 backdrop-blur-md">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center">
             <Trophy className="w-7 h-7" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-[#F1F5F9]">Hozircha natijalar mavjud emas</h3>
-            <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <h3 className="text-lg font-bold text-zinc-100">Hozircha natijalar mavjud emas</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
               Siz hali birorta ham olimpiadada ishtirok etmadingiz. Mavjud musobaqalarda qatnashing va birinchi ballaringizni qo'lga kiriting!
             </p>
           </div>
@@ -419,32 +417,32 @@ export const StudentResultsPage: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {results.map((r) => (
             <Card
               key={r.id}
               hoverEffect
-              className="p-5 border border-[#1E293B] bg-[#111827] space-y-4 flex flex-col justify-between"
+              className="p-6 border border-white/10 bg-zinc-900/60 rounded-2xl space-y-5 flex flex-col justify-between backdrop-blur-md shadow-xl"
             >
               <div className="space-y-3">
                 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase">
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
                     {r.subject}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-mono">{r.completedAt}</span>
+                  <span className="text-xs text-zinc-400 font-mono">{r.completedAt}</span>
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-white hover:text-blue-300 transition-colors">
+                  <h3 className="text-lg font-bold text-zinc-100 hover:text-emerald-300 transition-colors">
                     {r.olympiadTitle}
                   </h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold">
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
                       {r.certificateType}
                     </span>
                     {r.rank > 0 && (
-                      <span className="text-xs text-slate-300 font-bold font-mono">
+                      <span className="text-xs text-zinc-300 font-semibold font-mono">
                         🏆 {r.rank}-o'rin ({r.totalParticipants} ishtirokchi ichida)
                       </span>
                     )}
@@ -452,21 +450,21 @@ export const StudentResultsPage: React.FC = () => {
                 </div>
 
                 
-                <div className="p-3 rounded-xl bg-black/30 border border-white/5 grid grid-cols-3 gap-2 text-center">
+                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 grid grid-cols-3 gap-2 text-center backdrop-blur-xs">
                   <div>
-                    <div className="text-[9px] text-slate-400 uppercase">Ball</div>
-                    <div className="text-sm font-black text-amber-400 font-mono">{r.score} / {r.maxScore}</div>
+                    <div className="text-[10px] text-zinc-400 uppercase font-semibold">Ball</div>
+                    <div className="text-base font-black text-amber-400 font-mono">{r.score} / {r.maxScore}</div>
                   </div>
                   <div>
-                    <div className="text-[9px] text-slate-400 uppercase">To'g'ri / Xato</div>
-                    <div className="text-sm font-bold text-emerald-400 font-mono">
-                      {r.correctAnswersCount} <span className="text-slate-500">/</span> <span className="text-rose-400">{r.wrongAnswersCount}</span>
+                    <div className="text-[10px] text-zinc-400 uppercase font-semibold">To'g'ri / Xato</div>
+                    <div className="text-base font-bold text-emerald-400 font-mono">
+                      {r.correctAnswersCount} <span className="text-zinc-600">/</span> <span className="text-rose-400">{r.wrongAnswersCount}</span>
                     </div>
                   </div>
                   <div>
-                    <div className="text-[9px] text-slate-400 uppercase">Holati</div>
+                    <div className="text-[10px] text-zinc-400 uppercase font-semibold">Holati</div>
                     <div className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1 mt-0.5">
-                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                       <span>E'lon qilindi</span>
                     </div>
                   </div>
@@ -474,24 +472,24 @@ export const StudentResultsPage: React.FC = () => {
               </div>
 
               
-              <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+              <div className="flex items-center gap-2.5 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedResult(r);
                     setAnalysisFilter('all');
                   }}
-                  className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95"
                 >
-                  <FileText className="w-3.5 h-3.5" />
+                  <FileText className="w-4 h-4" />
                   <span>Batafsil Tahlil & Xatolar</span>
                 </button>
 
                 <Link
                   to="/certificates"
-                  className="px-3.5 py-2 bg-[#1E293B] hover:bg-[#334155] text-amber-300 font-bold rounded-xl text-xs transition-all shrink-0 flex items-center gap-1"
+                  className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-amber-300 font-bold rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border border-white/10 active:scale-95"
                 >
-                  <Award className="w-3.5 h-3.5" />
+                  <Award className="w-4 h-4" />
                   <span className="hidden sm:inline">Sertifikat</span>
                 </Link>
               </div>

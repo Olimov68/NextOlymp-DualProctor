@@ -1,14 +1,59 @@
-
+/**
+ * Ibn Sino Mock Exam & Olympiad Platform - Unified API Client
+ */
 
 const BASE_URL = '/api';
 
+const getToken = (): string => {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('ibn_sino_token') || localStorage.getItem('next_olymp_jwt') || '';
+};
+
+// Map legacy PHP paths to modern REST API endpoints
+const mapEndpoint = (endpoint: string): string => {
+  let clean = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  
+  if (clean.startsWith('/olympiads.php')) {
+    clean = clean.replace('/olympiads.php', '/exams');
+  } else if (clean.startsWith('/national-exams.php')) {
+    clean = clean.replace('/national-exams.php', '/exams');
+  } else if (clean.startsWith('/users.php')) {
+    clean = clean.replace('/users.php', '/users');
+  } else if (clean.startsWith('/submissions.php')) {
+    clean = clean.replace('/submissions.php', '/submissions');
+  } else if (clean.startsWith('/auth.php')) {
+    clean = clean.replace('/auth.php', '/auth/login');
+  } else if (clean.startsWith('/security.php') || clean.startsWith('/anticheat.php')) {
+    clean = clean.replace(/\/(security|anticheat)\.php/, '/exams/IBN-MED-101/proctor-event');
+  } else if (clean.startsWith('/logs.php')) {
+    clean = clean.replace('/logs.php', '/health');
+  }
+
+  return clean;
+};
+
+const getHeaders = (extraHeaders?: Record<string, string>): HeadersInit => {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    ...(extraHeaders || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
 const safeParseJson = async <T>(res: Response): Promise<T> => {
   const text = await res.text();
-  if (!text || text.trim().startsWith('<?php') || text.trim().startsWith('<!DOCTYPE')) {
+  if (!text) {
     return [] as unknown as T;
   }
   try {
-    return JSON.parse(text);
+    const json = JSON.parse(text);
+    return json;
   } catch {
     return [] as unknown as T;
   }
@@ -16,85 +61,87 @@ const safeParseJson = async <T>(res: Response): Promise<T> => {
 
 export const apiClient = {
   async get<T = any>(endpoint: string): Promise<T> {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const res = await fetch(`${BASE_URL}${cleanEndpoint}`, {
-      headers: {
-        'Accept': 'application/json'
-      }
+    const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
+    const res = await fetch(targetUrl, {
+      headers: getHeaders(),
     });
+
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Xatolik: ${res.status}`;
+      let errMsg = `Server xatoligi: ${res.status}`;
       try {
         const parsed = JSON.parse(errText);
-        if (parsed.message) errMsg = parsed.message;
+        if (parsed.error) errMsg = parsed.error;
+        else if (parsed.message) errMsg = parsed.message;
       } catch {}
       throw new Error(errMsg);
     }
+
     return safeParseJson<T>(res);
   },
 
   async post<T = any>(endpoint: string, data?: any): Promise<T> {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const res = await fetch(`${BASE_URL}${cleanEndpoint}`, {
+    const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
+    const res = await fetch(targetUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
       body: data !== undefined ? JSON.stringify(data) : undefined,
     });
+
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Xatolik: ${res.status}`;
+      let errMsg = `Server xatoligi: ${res.status}`;
       try {
         const parsed = JSON.parse(errText);
-        if (parsed.message) errMsg = parsed.message;
+        if (parsed.error) errMsg = parsed.error;
+        else if (parsed.message) errMsg = parsed.message;
       } catch {}
       throw new Error(errMsg);
     }
+
     return safeParseJson<T>(res);
   },
 
   async put<T = any>(endpoint: string, data?: any): Promise<T> {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const res = await fetch(`${BASE_URL}${cleanEndpoint}`, {
+    const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
+    const res = await fetch(targetUrl, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
       body: data !== undefined ? JSON.stringify(data) : undefined,
     });
+
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Xatolik: ${res.status}`;
+      let errMsg = `Server xatoligi: ${res.status}`;
       try {
         const parsed = JSON.parse(errText);
-        if (parsed.message) errMsg = parsed.message;
+        if (parsed.error) errMsg = parsed.error;
+        else if (parsed.message) errMsg = parsed.message;
       } catch {}
       throw new Error(errMsg);
     }
+
     return safeParseJson<T>(res);
   },
 
   async delete<T = any>(endpoint: string): Promise<T> {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const res = await fetch(`${BASE_URL}${cleanEndpoint}`, {
+    const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
+    const res = await fetch(targetUrl, {
       method: 'DELETE',
-      headers: {
-        'Accept': 'application/json'
-      }
+      headers: getHeaders(),
     });
+
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Xatolik: ${res.status}`;
+      let errMsg = `Server xatoligi: ${res.status}`;
       try {
         const parsed = JSON.parse(errText);
-        if (parsed.message) errMsg = parsed.message;
+        if (parsed.error) errMsg = parsed.error;
+        else if (parsed.message) errMsg = parsed.message;
       } catch {}
       throw new Error(errMsg);
     }
+
     return safeParseJson<T>(res);
   }
 };

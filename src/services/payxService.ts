@@ -71,10 +71,10 @@ const PAYX_CONFIG_KEY = 'payx_merchant_config';
 const PAYX_TRANSACTIONS_KEY = 'payx_transactions_history';
 
 const defaultConfig: PayxConfig = {
-  merchantId: 'PAYX-MERCHANT-NEXT-OLYMP-2026',
+  merchantId: 'PAYX-MERCHANT-IBN-SINO-2026',
   apiKey: 'payx_live_pk_892184912409124810294',
   secretKey: 'payx_live_sk_991824091824012984019284',
-  webhookUrl: 'https://api.nextolymp.uz/api/v1/payx/webhook',
+  webhookUrl: 'https://api.ibnsino.uz/api/v1/payx/webhook',
   mode: 'live',
   apiUrl: 'https://api.payx.uz/v1',
 };
@@ -94,7 +94,7 @@ let inMemoryTransactions: PayxTransaction[] = [
     status: 'completed',
     payxRefCode: 'PX-982410',
     customerName: 'Jasurbek Alimov',
-    customerEmail: 'jasur@nextolymp.uz',
+    customerEmail: 'jasur@ibnsino.uz',
     olympiadTitle: 'Respublika Matematika II Bosqich',
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },
@@ -105,7 +105,7 @@ let inMemoryTransactions: PayxTransaction[] = [
     status: 'completed',
     payxRefCode: 'PX-881294',
     customerName: 'Nilufar Usmonova',
-    customerEmail: 'nilufar@nextolymp.uz',
+    customerEmail: 'nilufar@ibnsino.uz',
     olympiadTitle: 'Informatika ICPC Final',
     createdAt: new Date(Date.now() - 7200000).toISOString(),
   },
@@ -178,7 +178,7 @@ export const payxService = {
     let amount = 35000;
     let paymentMethod: PayxPaymentMethod = 'payme';
     let customerName = 'Ishtirokchi';
-    let customerEmail = 'user@nextolymp.uz';
+    let customerEmail = 'user@ibnsino.uz';
     let olympiadTitle = 'Respublika Matematika II Bosqich';
 
     if (typeof params === 'object') {

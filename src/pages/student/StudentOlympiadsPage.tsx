@@ -99,44 +99,44 @@ export const StudentOlympiadsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 font-sans">
       
-      <div className="bg-[#111827] text-[#F1F5F9] rounded-xl p-4 sm:p-5 border border-[#1E293B] shadow-md space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <div className="bg-zinc-900/60 text-zinc-100 rounded-2xl p-6 border border-white/10 shadow-xl backdrop-blur-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#3B82F6]/15 border border-[#3B82F6]/30 flex items-center justify-center text-[#60A5FA] shrink-0">
-              <Trophy className="w-5 h-5 text-[#F59E0B]" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <Trophy className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black tracking-tight text-[#F1F5F9]">Olimpiadalar va Musobaqalar</h1>
-                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-[#3B82F6]/15 text-[#60A5FA] text-[10px] font-bold uppercase tracking-wider border border-[#3B82F6]/30">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-100">Olimpiadalar va Musobaqalar</h1>
+                <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold border border-emerald-500/30">
                   Kabinet
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#94A3B8] font-medium">
+              <p className="text-xs sm:text-sm text-zinc-400 font-normal">
                 Mavjud olimpiadalarga ro'yxatdan o'ting va jonli musobaqalarda bilimingizni sinang
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-xs font-semibold text-[#94A3B8] bg-[#0B1120] px-2.5 py-1 rounded-md border border-[#1E293B]">
-              Jami: <strong className="text-white">{olympiads.length}</strong> ta
+            <span className="text-xs font-semibold text-zinc-400 bg-zinc-950/80 px-3 py-1.5 rounded-xl border border-white/10">
+              Jami: <strong className="text-zinc-100 font-mono">{olympiads.length}</strong> ta
             </span>
           </div>
         </div>
 
         
-        <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
           <div className="relative flex-1 w-full">
-            <Search className="w-3.5 h-3.5 text-[#94A3B8] absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
             <input
               type="text"
               placeholder="Olimpiada nomi yoki fani bo'yicha izlash..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs border border-[#1E293B] bg-[#0B1120] text-[#F1F5F9] placeholder-[#64748B] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#3B82F6] font-medium"
+              className="w-full pl-10 pr-4 py-2.5 text-xs border border-white/10 bg-zinc-950/80 text-zinc-100 placeholder-zinc-500 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all"
             />
           </div>
 
@@ -144,7 +144,7 @@ export const StudentOlympiadsPage: React.FC = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as OlympiadStatus | 'all')}
-              className="w-full sm:w-40 px-2.5 py-1.5 sm:py-2 text-xs border border-[#1E293B] rounded-lg bg-[#0B1120] font-semibold text-[#F1F5F9] focus:outline-none focus:ring-1 focus:ring-[#3B82F6] cursor-pointer"
+              className="w-full sm:w-44 px-3 py-2.5 text-xs border border-white/10 rounded-xl bg-zinc-950/80 font-semibold text-zinc-100 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all"
             >
               <option value="all">Barcha holatlar</option>
               <option value="active">🟢 Faol (Ochiq)</option>
@@ -155,15 +155,15 @@ export const StudentOlympiadsPage: React.FC = () => {
         </div>
 
         
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {subjectsList.map((s) => (
             <button
               key={s.id}
               onClick={() => setSelectedSubject(s.id)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all shrink-0 cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer active:scale-95 ${
                 selectedSubject === s.id
-                  ? 'bg-[#3B82F6] text-white shadow-xs'
-                  : 'bg-[#0B1120] hover:bg-[#1E293B] text-[#94A3B8] border border-[#1E293B]'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
+                  : 'bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 border border-white/10'
               }`}
             >
               {s.name}
@@ -176,14 +176,14 @@ export const StudentOlympiadsPage: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-48 bg-[#111827] border border-[#1E293B] rounded-xl animate-pulse" />
+            <div key={i} className="h-56 bg-zinc-900/60 border border-white/10 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : !olympiads || olympiads.length === 0 ? (
-        <div className="p-12 text-center bg-[#111827] border border-[#1E293B] rounded-xl space-y-3">
-          <Trophy className="w-12 h-12 text-[#94A3B8] mx-auto" />
-          <h3 className="text-lg font-bold text-[#F1F5F9]">Musobaqalar topilmadi</h3>
-          <p className="text-xs text-[#94A3B8]">Qidiruv yoki filtr parametrlarini o'zgartirib ko'ring</p>
+        <div className="p-12 text-center bg-zinc-900/40 border border-dashed border-white/10 rounded-2xl space-y-3 backdrop-blur-md">
+          <Trophy className="w-12 h-12 text-zinc-600 mx-auto" />
+          <h3 className="text-lg font-bold text-zinc-100">Musobaqalar topilmadi</h3>
+          <p className="text-xs text-zinc-400">Qidiruv yoki filtr parametrlarini o'zgartirib ko'ring</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -198,23 +198,23 @@ export const StudentOlympiadsPage: React.FC = () => {
             const hasRemainingAttempts = retakeAllowed && attemptsCount > 0 && attemptsCount < maxAttempts;
             const isCompleted = attemptsCount > 0 && (!retakeAllowed || attemptsCount >= maxAttempts);
 
-                        return (
-              <Card key={o.id} hoverEffect className="p-0 overflow-hidden bg-[#111827] border border-[#1E293B] flex flex-col justify-between group">
+            return (
+              <Card key={o.id} hoverEffect className="p-0 overflow-hidden bg-zinc-900/60 border border-white/10 rounded-2xl flex flex-col justify-between group backdrop-blur-md shadow-xl">
                 <div>
                   
-                  <div className="relative h-40 w-full bg-[#0B1120] overflow-hidden">
+                  <div className="relative h-44 w-full bg-zinc-950 overflow-hidden">
                     <img
                       src={(o as any).imageUrl || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80'}
                       alt={o.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
                     
                     <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
                       <Badge subject={o.subject} />
                       {hasGradeFilter && (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/80 text-white text-[10px] font-bold flex items-center gap-1 backdrop-blur-xs">
-                          <GraduationCap className="w-3 h-3" />
+                        <span className="px-2.5 py-0.5 rounded-full bg-purple-500/80 text-white text-xs font-semibold flex items-center gap-1 backdrop-blur-xs">
+                          <GraduationCap className="w-3.5 h-3.5" />
                           {targetGrades.join(', ')}-sinf
                         </span>
                       )}
@@ -225,15 +225,15 @@ export const StudentOlympiadsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-5 space-y-3">
+                  <div className="p-6 space-y-3">
                     <div>
-                      <h3 className="font-bold text-lg text-[#F1F5F9] leading-snug group-hover:text-[#3B82F6] transition-colors">{o.title}</h3>
-                      <p className="text-xs text-[#94A3B8] line-clamp-2 mt-2 leading-relaxed">{o.description}</p>
+                      <h3 className="font-bold text-lg text-zinc-100 leading-snug group-hover:text-emerald-300 transition-colors">{o.title}</h3>
+                      <p className="text-xs text-zinc-400 line-clamp-2 mt-2 leading-relaxed">{o.description}</p>
                     </div>
 
                     
                     {!isGradeEligible && (
-                      <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-[11px] text-rose-300">
+                      <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-xs text-rose-300">
                         <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                         <span>
                           Faqat <strong>{targetGrades.join(', ')}-sinf</strong> o'quvchilari uchun. Siz: <strong>{studentGrade}-sinf</strong>.
@@ -243,7 +243,7 @@ export const StudentOlympiadsPage: React.FC = () => {
 
                     
                     {attemptsCount > 0 && (
-                      <div className={`p-2.5 rounded-lg border flex items-center justify-between text-[11px] ${
+                      <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs ${
                         hasRemainingAttempts 
                           ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' 
                           : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
@@ -261,20 +261,20 @@ export const StudentOlympiadsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-5 pt-0 space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-xs text-[#94A3B8] font-medium pt-3 border-t border-[#1E293B]">
+                <div className="p-6 pt-0 space-y-4">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400 font-medium pt-4 border-t border-white/10">
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-[#3B82F6]" />
+                      <Clock className="w-4 h-4 text-emerald-400" />
                       <span>{o.durationMinutes} daqiqa</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <HelpCircle className="w-4 h-4 text-[#3B82F6]" />
+                      <HelpCircle className="w-4 h-4 text-teal-400" />
                       <span>{o.totalQuestions} ta savol</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
-                    <div className="text-xs font-bold text-[#10B981] bg-[#10B981]/15 px-2.5 py-1 rounded-md border border-[#10B981]/30">
+                    <div className="text-xs font-bold text-emerald-400 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30">
                       Maks. {o.maxScore} ball
                     </div>
 
@@ -303,7 +303,7 @@ export const StudentOlympiadsPage: React.FC = () => {
                         size="sm"
                         variant="secondary"
                         disabled
-                        className="opacity-60 cursor-not-allowed text-xs bg-slate-800 text-slate-400 border border-slate-700"
+                        className="opacity-60 cursor-not-allowed text-xs bg-zinc-800 text-zinc-500 border border-white/5"
                       >
                         Musobaqa yakunlangan
                       </Button>
@@ -312,7 +312,7 @@ export const StudentOlympiadsPage: React.FC = () => {
                         size="sm"
                         variant="secondary"
                         disabled
-                        className="opacity-60 cursor-not-allowed text-xs bg-slate-800 text-slate-400 border border-slate-700"
+                        className="opacity-60 cursor-not-allowed text-xs bg-zinc-800 text-zinc-500 border border-white/5"
                       >
                         Ro'yxatdan o'tish yopilgan
                       </Button>

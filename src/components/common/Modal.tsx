@@ -57,10 +57,10 @@ export const Modal: React.FC<ModalProps> = ({
       
       <div
         className={clsx(
-          "relative w-full rounded-2xl border shadow-2xl z-10 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200",
+          "relative w-full rounded-2xl border shadow-2xl shadow-black/50 z-10 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200",
           isDark
-            ? "bg-[#111827] border-[#1E293B]"
-            : "bg-white border-border",
+            ? "bg-zinc-900/95 backdrop-blur-xl border-white/10 text-zinc-100"
+            : "bg-white border-slate-200 text-slate-900",
           sizes[size]
         )}
       >
@@ -68,21 +68,21 @@ export const Modal: React.FC<ModalProps> = ({
           <div className={clsx(
             "flex items-center justify-between px-6 py-4 border-b",
             isDark
-              ? "border-[#1E293B] bg-[#0D1832]"
-              : "border-border bg-surface"
+              ? "border-white/10 bg-zinc-900/70"
+              : "border-slate-200 bg-slate-50"
           )}>
             <h3 className={clsx(
               "text-lg font-bold tracking-tight",
-              isDark ? "text-white" : "text-accent-900"
+              isDark ? "text-white" : "text-slate-900"
             )}>{title}</h3>
             {showCloseButton && (
               <button
                 onClick={onClose}
                 className={clsx(
-                  "p-1 rounded-lg transition-colors",
+                  "p-1.5 rounded-lg transition-colors cursor-pointer",
                   isDark
-                    ? "text-slate-400 hover:text-white hover:bg-[#1E293B]"
-                    : "text-accent-400 hover:text-accent-700 hover:bg-accent-200/60"
+                    ? "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                 )}
               >
                 <X className="w-5 h-5" />

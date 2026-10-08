@@ -16,7 +16,6 @@ export const ForgotPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -27,7 +26,6 @@ export const ForgotPasswordPage: React.FC = () => {
       return;
     }
 
-    
     const registered = authService.getRegisteredUsers();
     const user = registered.find((u) => u.email.toLowerCase().trim() === trimmedEmail);
 
@@ -40,14 +38,12 @@ export const ForgotPasswordPage: React.FC = () => {
     await new Promise((r) => setTimeout(r, 400));
     setLoading(false);
 
-    
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
     setEnteredCode(code); 
     setStep('verify');
   };
 
-  
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -79,34 +75,32 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center p-4 bg-[#0B1120] text-[#F1F5F9]">
-      <div className="w-full max-w-md bg-[#111827] border border-[#1E293B] rounded-xl p-8 shadow-xl space-y-6">
-        
+    <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center p-4 bg-zinc-950 text-zinc-100">
+      <div className="w-full max-w-md bg-zinc-900/60 border border-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl space-y-6">
         
         <div>
           <Link
             to="/auth/login"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3B82F6] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Kirishga qaytish
           </Link>
         </div>
 
-        
         {step === 'email' && (
           <div className="space-y-5">
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] mx-auto flex items-center justify-center font-bold">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center font-bold">
                 <KeyRound className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-black text-[#F1F5F9] tracking-tight">Parolni Tiklash</h2>
-              <p className="text-xs text-[#94A3B8]">
+              <h2 className="text-2xl font-black text-zinc-100 tracking-tight">Parolni Tiklash</h2>
+              <p className="text-xs text-zinc-400">
                 Ro'yxatdan o'tgan email manzilingizni kiriting, tiklash kodini yuboramiz.
               </p>
             </div>
 
             {error && (
-              <div className="p-3.5 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg flex items-start gap-2.5 text-xs text-[#EF4444]">
+              <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start gap-2.5 text-xs text-rose-400">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="font-semibold leading-relaxed">{error}</span>
               </div>
@@ -116,7 +110,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <Input
                 label="Elektron pochta (Email)"
                 type="email"
-                placeholder="masalan: student@nextolymp.uz"
+                placeholder="masalan: student@ibnsino.uz"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Mail className="w-4 h-4" />}
@@ -125,8 +119,9 @@ export const ForgotPasswordPage: React.FC = () => {
 
               <Button
                 type="submit"
+                variant="primary"
                 isLoading={loading}
-                className="w-full font-bold bg-[#3B82F6] hover:bg-[#2563EB] text-white py-2.5"
+                className="w-full py-2.5 shadow-lg shadow-emerald-500/20"
               >
                 Tiklash Kodini Yuborish
               </Button>
@@ -134,21 +129,19 @@ export const ForgotPasswordPage: React.FC = () => {
           </div>
         )}
 
-        
         {step === 'verify' && (
           <div className="space-y-5">
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 text-indigo-400 mx-auto flex items-center justify-center font-bold">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center font-bold">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-black text-[#F1F5F9] tracking-tight">Kodni Tasdiqlash</h2>
-              <p className="text-xs text-[#94A3B8]">
-                <strong className="text-[#F1F5F9]">{email}</strong> manziliga yuborilgan 6 xonali kod va yangi parolni kiriting.
+              <h2 className="text-2xl font-black text-zinc-100 tracking-tight">Kodni Tasdiqlash</h2>
+              <p className="text-xs text-zinc-400">
+                <strong className="text-zinc-100">{email}</strong> manziliga yuborilgan 6 xonali kod va yangi parolni kiriting.
               </p>
             </div>
 
-            
-            <div className="p-3 bg-[#3B82F6]/10 border border-[#3B82F6]/30 rounded-lg text-center text-xs text-[#3B82F6]">
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center text-xs text-emerald-300">
               <span>Tasdiqlash kodi: </span>
               <strong className="tracking-widest font-mono text-sm font-black text-white ml-1">
                 {generatedCode}
@@ -156,7 +149,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-3.5 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg flex items-start gap-2.5 text-xs text-[#EF4444]">
+              <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start gap-2.5 text-xs text-rose-400">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="font-semibold leading-relaxed">{error}</span>
               </div>
@@ -195,8 +188,9 @@ export const ForgotPasswordPage: React.FC = () => {
 
               <Button
                 type="submit"
+                variant="primary"
                 isLoading={loading}
-                className="w-full font-bold bg-[#3B82F6] hover:bg-[#2563EB] text-white py-2.5"
+                className="w-full py-2.5 shadow-lg shadow-emerald-500/20"
               >
                 Parolni Saqlash
               </Button>
@@ -204,31 +198,31 @@ export const ForgotPasswordPage: React.FC = () => {
           </div>
         )}
 
-        
         {step === 'success' && (
           <div className="text-center space-y-5 py-3">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 mx-auto flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/20">
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-bold text-[#F1F5F9]">Parol muvaffaqiyatli yangilandi!</h3>
-              <p className="text-xs text-[#94A3B8]">
+              <h3 className="text-xl font-bold text-zinc-100">Parol muvaffaqiyatli yangilandi!</h3>
+              <p className="text-xs text-zinc-400">
                 Endi yangi parolingiz orqali platformaga bemalol kirishingiz mumkin.
               </p>
             </div>
             <Button
               onClick={() => navigate('/auth/login')}
-              className="w-full font-bold bg-[#3B82F6] hover:bg-[#2563EB] text-white py-2.5"
+              variant="primary"
+              className="w-full py-2.5 shadow-lg shadow-emerald-500/20"
             >
               Tizimga Kirish
             </Button>
           </div>
         )}
 
-        <div className="text-center text-xs text-[#94A3B8] border-t border-[#1E293B] pt-4">
+        <div className="text-center text-xs text-zinc-400 border-t border-white/10 pt-4">
           <p>
             Akkauntingiz yo'qmi?{' '}
-            <Link to="/auth/register" className="font-bold text-[#3B82F6] hover:underline">
+            <Link to="/auth/register" className="font-bold text-emerald-400 hover:text-emerald-300 hover:underline">
               Ro'yxatdan o'ting
             </Link>
           </p>

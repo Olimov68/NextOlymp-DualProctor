@@ -771,7 +771,7 @@ export const EgaDashboardPage: React.FC = () => {
               <Zap className="w-4 h-4 text-amber-400" />
               <span>{t("Bo'limlarga Tezkor O'tish va Boshqaruv Navigation")}</span>
             </h3>
-            <span className="text-[11px] text-slate-400 font-medium">NextOlymp Admin Module v2.5</span>
+            <span className="text-[11px] text-slate-400 font-medium">Ibn Sino Admin Module v2.5</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">

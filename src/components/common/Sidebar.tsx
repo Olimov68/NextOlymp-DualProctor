@@ -59,15 +59,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
   return (
     <aside
       className={clsx(
-        "sticky top-0 h-screen bg-[#0B1120] border-r border-[#1E293B] text-[#F1F5F9] p-4 flex flex-col justify-between shrink-0 shadow-xl transition-all duration-300 z-30 select-none overflow-x-hidden overflow-y-auto custom-scrollbar",
+        "sticky top-0 h-screen bg-zinc-950 border-r border-white/10 text-zinc-100 p-4 flex flex-col justify-between shrink-0 shadow-2xl transition-all duration-300 z-30 select-none overflow-x-hidden overflow-y-auto custom-scrollbar backdrop-blur-md",
         isCollapsed ? "w-20" : "w-[260px]"
       )}
     >
       <div className="space-y-4">
-        
+        {/* Brand & Toggle Header */}
         <div
           className={clsx(
-            "pb-3 border-b border-[#1E293B] flex items-center transition-all",
+            "pb-3 border-b border-white/10 flex items-center transition-all",
             isCollapsed ? "flex-col gap-2 justify-center text-center" : "justify-between"
           )}
         >
@@ -77,28 +77,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
               "flex items-center overflow-hidden hover:opacity-90 transition-opacity",
               isCollapsed ? "justify-center" : "gap-2"
             )}
-            title="Next Olymp Asosiy Sahifa"
+            title="Ibn Sino Platformasi Asosiy Sahifa"
           >
             <Logo showText={!isCollapsed} lightText size={isCollapsed ? "sm" : "md"} />
           </Link>
 
-          
+          {/* Collapse/Expand Toggle Button */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-7 h-7 rounded-lg bg-[#111827] hover:bg-[#1E293B] text-[#94A3B8] hover:text-[#F1F5F9] border border-[#1E293B] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title={isCollapsed ? "Menyuni kengaytirish" : "Menyuni kichraytirish"}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? (
-              <ChevronRight className="w-4 h-4 text-[#3B82F6]" />
+              <ChevronRight className="w-4 h-4 text-emerald-400" />
             ) : (
-              <ChevronLeft className="w-4 h-4 text-[#3B82F6]" />
+              <ChevronLeft className="w-4 h-4 text-emerald-400" />
             )}
           </button>
         </div>
 
-        
-        <nav className="space-y-1">
+        {/* Navigation Links */}
+        <nav className="space-y-1.5">
           {links.map((link) => {
             const Icon = link.icon;
             const active = location.pathname === link.path;
@@ -109,14 +109,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
                 onClick={onCloseMobile}
                 title={isCollapsed ? link.label : undefined}
                 className={clsx(
-                  "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150",
+                  "flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 active:scale-95",
                   isCollapsed ? "px-0 justify-center" : "px-3.5",
                   active
-                    ? "bg-[#3B82F6] text-white font-semibold shadow-md shadow-[#3B82F6]/20"
-                    : "text-[#94A3B8] hover:bg-[#111827] hover:text-[#F1F5F9]"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/20"
+                    : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100 hover:border-white/5"
                 )}
               >
-                <Icon className={clsx("w-4 h-4 shrink-0", active ? "text-white" : "text-[#94A3B8]")} />
+                <Icon className={clsx("w-4 h-4 shrink-0", active ? "text-white" : "text-zinc-400")} />
                 {!isCollapsed && <span className="truncate">{link.label}</span>}
               </Link>
             );
@@ -124,17 +124,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
         </nav>
       </div>
 
-      
-      <div className="space-y-1.5 pt-4 border-t border-[#1E293B] mt-auto">
+      {/* Footer Utility Links */}
+      <div className="space-y-1.5 pt-4 border-t border-white/10 mt-auto">
         <Link
           to="/"
           title={isCollapsed ? "Asosiy saytga qaytish" : undefined}
           className={clsx(
-            "flex items-center gap-3 py-2 rounded-lg text-xs font-medium text-[#94A3B8] hover:bg-[#111827] hover:text-[#F1F5F9] transition-colors",
+            "flex items-center gap-3 py-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100 transition-colors",
             isCollapsed ? "px-0 justify-center" : "px-3.5"
           )}
         >
-          <Home className="w-4 h-4 text-[#3B82F6] shrink-0" />
+          <Home className="w-4 h-4 text-emerald-400 shrink-0" />
           {!isCollapsed && <span>Asosiy sayt</span>}
         </Link>
 
@@ -142,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
           onClick={logout}
           title={isCollapsed ? "Tizimdan chiqish" : undefined}
           className={clsx(
-            "w-full flex items-center gap-3 py-2 rounded-lg text-xs font-medium text-[#94A3B8] hover:bg-[#EF4444]/10 hover:text-[#EF4444] transition-colors cursor-pointer",
+            "w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors cursor-pointer",
             isCollapsed ? "px-0 justify-center" : "px-3.5"
           )}
         >

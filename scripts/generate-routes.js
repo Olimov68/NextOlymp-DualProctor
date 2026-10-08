@@ -66,9 +66,7 @@ const routes = [
   'auth/register',
   'auth/forgot-password',
   'login',
-  'register',
-  'swagger',
-  'api-docs'
+  'register'
 ];
 
 routes.forEach((route) => {

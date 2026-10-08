@@ -89,7 +89,7 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
     const pkgCount = list.filter((p) => p.method === 'paket').length;
 
     return (
-      `📊 NEXTOLYMP MOLIYA VA TUSHUMLAR TAHLILI:\n\n` +
+      `📊 IBN SINO PLATFORMASI MOLIYA VA TUSHUMLAR TAHLILI:\n\n` +
       `1. JAMI TUSHUM: ${totalRev.toLocaleString()} UZS\n` +
       `2. KARTA ORQALI (Click / Payme / Uzum): ${cardRev.toLocaleString()} UZS\n` +
       `3. NAQD / BANK TRANSAKSIYASI: ${cashRev.toLocaleString()} UZS\n` +
