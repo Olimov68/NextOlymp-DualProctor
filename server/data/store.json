@@ -77,7 +77,7 @@
       "status": "active",
       "maxScore": 100,
       "totalQuestions": 10,
-      "registeredCount": 420,
+      "registeredCount": 0,
       "organizer": "Ibn Sino Ilmiy Akademiyasi",
       "createdAt": "2026-10-08T13:14:31.896Z"
     },
@@ -96,7 +96,7 @@
       "status": "active",
       "maxScore": 100,
       "totalQuestions": 10,
-      "registeredCount": 310,
+      "registeredCount": 0,
       "organizer": "Ibn Sino Fondi",
       "createdAt": "2026-10-08T13:14:31.896Z"
     },
@@ -115,7 +115,7 @@
       "status": "active",
       "maxScore": 100,
       "totalQuestions": 10,
-      "registeredCount": 275,
+      "registeredCount": 0,
       "organizer": "O'zbekiston Kimyogarlar Jamiyati",
       "createdAt": "2026-10-08T13:14:31.896Z"
     }

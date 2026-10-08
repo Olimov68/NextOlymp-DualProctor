@@ -172,16 +172,16 @@ export const EgaSecurityPage: React.FC = () => {
 
   const [serverHostStats, setServerHostStats] = useState({
     hostingAccountsCount: 1,
-    currentAccount: 'ibnsino_adm (ibnsino.uz)',
-    accountRamLimit: '1024 MiB',
-    accountDiskQuota: '25 GB NVMe SSD',
-    serverNode: 'UZCLOUD Cloud DC - Toshkent'
+    currentAccount: 'root (ibnsinoschool.uz)',
+    accountRamLimit: '4096 MiB',
+    accountDiskQuota: '50 GB NVMe SSD',
+    serverNode: 'Ibn Sino VPS Server · Toshkent DC'
   });
 
   const [diagnostics, setDiagnostics] = useState({
-    osName: 'AlmaLinux / CloudLinux x86_64',
-    kernel: '4.18.0-477.el8.x86_64',
-    hostname: 'hosting.uzcloud.uz',
+    osName: 'Ubuntu 22.04 LTS / Linux x86_64',
+    kernel: '5.15.0-91-generic',
+    hostname: 'server.ibnsinoschool.uz',
     arch: 'x86_64',
     loadAvg: [0.08, 0.12, 0.15],
     ports: [
@@ -207,7 +207,7 @@ export const EgaSecurityPage: React.FC = () => {
     let isMounted = true;
     const fetchRealLogs = async () => {
       try {
-        const res = await fetch('/api/logs.php');
+        const res = await fetch('/api/admin/system-metrics');
         if (res.ok) {
           const json = await res.json();
           if (isMounted && json.status === 'success') {
@@ -215,13 +215,13 @@ export const EgaSecurityPage: React.FC = () => {
             if (json.metrics) {
               store.updateServerMetrics({
                 ram: json.metrics.ram?.usagePercent ?? 4,
-                ramTotalMb: json.metrics.ram?.totalMb ?? 1024,
-                ramUsedMb: json.metrics.ram?.usedMb ?? 42,
-                ramFreeMb: json.metrics.ram?.freeMb ?? 982,
-                disk: json.metrics.disk?.usagePercent ?? 1,
-                diskTotalGb: json.metrics.disk?.totalGb ?? 25,
-                diskUsedGb: json.metrics.disk?.usedGb ?? 0.04,
-                diskFreeGb: json.metrics.disk?.freeGb ?? 24.96,
+                ramTotalMb: json.metrics.ram?.totalMb ?? 4096,
+                ramUsedMb: json.metrics.ram?.usedMb ?? 418,
+                ramFreeMb: json.metrics.ram?.freeMb ?? 3678,
+                disk: json.metrics.disk?.usagePercent ?? 17,
+                diskTotalGb: json.metrics.disk?.totalGb ?? 50,
+                diskUsedGb: json.metrics.disk?.usedGb ?? 8.4,
+                diskFreeGb: json.metrics.disk?.freeGb ?? 41.6,
                 cpu: json.metrics.cpu?.usagePercent ?? 5,
                 network: json.metrics.network ?? { in: 0.02, out: 0.08 },
                 uptime: json.metrics.uptime ?? '0 kun 3 soat 45 daqiqa',
@@ -448,7 +448,7 @@ export const EgaSecurityPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className={clsx('text-xs font-black uppercase tracking-wide', isDark ? 'text-white' : 'text-slate-900')}>
-                      Uzcloud Cloud Server · Toshkent DC
+                      Ibn Sino Main Server · Toshkent DC
                     </h2>
                     <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
@@ -456,7 +456,7 @@ export const EgaSecurityPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5 font-mono">
-                    1 vCPU @ 2.40 GHz · 1024 MiB RAM DDR4 · 25 GB NVMe SSD · Linux x64
+                    2 vCPU @ 2.40 GHz · 4096 MiB RAM DDR4 · 50 GB NVMe SSD · Linux x64
                   </p>
                 </div>
               </div>
@@ -527,7 +527,7 @@ export const EgaSecurityPage: React.FC = () => {
                     <Server className="w-4 h-4 text-indigo-400" />
                     <div>
                       <span className="font-bold text-xs">Serverdagi Linux / Hosting Hisoblari</span>
-                      <span className="block text-[9px] text-slate-400 font-mono">UZCLOUD ISPmanager node (/etc/passwd)</span>
+                      <span className="block text-[9px] text-slate-400 font-mono">Linux System Node (/etc/passwd)</span>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
@@ -538,7 +538,7 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 pt-1 text-[10px]">
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Joriy Hisob</span>
-                    <span className="font-bold text-white font-mono truncate block" title={serverHostStats.currentAccount}>user1477</span>
+                    <span className="font-bold text-white font-mono truncate block" title={serverHostStats.currentAccount}>root</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">RAM Kvota</span>
@@ -552,7 +552,7 @@ export const EgaSecurityPage: React.FC = () => {
 
                 <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700/20 font-mono">
                   <span>DC: {serverHostStats.serverNode}</span>
-                  <span className="text-emerald-400">Izolyatsiya: CloudLinux</span>
+                  <span className="text-emerald-400">Holat: Linux / Systemd</span>
                 </div>
               </div>
             </div>
@@ -564,7 +564,7 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MemoryStick className="w-4 h-4 text-cyan-400" />
-                    <span className="font-bold text-xs">RAM Xotirasi (Uzcloud)</span>
+                    <span className="font-bold text-xs">RAM Xotirasi (Server)</span>
                   </div>
                   <span className={clsx('font-black text-xs font-mono', m.ram > 80 ? 'text-rose-400' : 'text-cyan-300')}>
                     {m.ram}%
@@ -585,15 +585,15 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 pt-1 text-[10px]">
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Jami RAM</span>
-                    <span className="font-bold text-white font-mono">{m.ramTotalMb ?? 1024} MiB</span>
+                    <span className="font-bold text-white font-mono">{m.ramTotalMb ?? 4096} MiB</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Band RAM</span>
-                    <span className="font-bold text-cyan-300 font-mono">{m.ramUsedMb ?? 48} MiB</span>
+                    <span className="font-bold text-cyan-300 font-mono">{m.ramUsedMb ?? 418} MiB</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Bo'sh RAM</span>
-                    <span className="font-bold text-emerald-400 font-mono">{m.ramFreeMb ?? 976} MiB</span>
+                    <span className="font-bold text-emerald-400 font-mono">{m.ramFreeMb ?? 3678} MiB</span>
                   </div>
                 </div>
               </div>
@@ -603,7 +603,7 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <HardDrive className="w-4 h-4 text-indigo-400" />
-                    <span className="font-bold text-xs">NVMe SSD Xotirasi (Uzcloud)</span>
+                    <span className="font-bold text-xs">NVMe SSD Xotirasi (Server)</span>
                   </div>
                   <span className={clsx('font-black text-xs font-mono', m.disk > 80 ? 'text-rose-400' : 'text-indigo-300')}>
                     {m.disk}%
@@ -621,15 +621,15 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 pt-1 text-[10px]">
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Jami SSD</span>
-                    <span className="font-bold text-white font-mono">{m.diskTotalGb ?? 25} GB</span>
+                    <span className="font-bold text-white font-mono">{m.diskTotalGb ?? 50} GB</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Band SSD</span>
-                    <span className="font-bold text-indigo-300 font-mono">{m.diskUsedGb ?? 0.1} GB</span>
+                    <span className="font-bold text-indigo-300 font-mono">{m.diskUsedGb ?? 8.4} GB</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Bo'sh SSD</span>
-                    <span className="font-bold text-emerald-400 font-mono">{m.diskFreeGb ?? 24.9} GB</span>
+                    <span className="font-bold text-emerald-400 font-mono">{m.diskFreeGb ?? 41.6} GB</span>
                   </div>
                 </div>
               </div>

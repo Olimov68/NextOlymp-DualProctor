@@ -3,6 +3,7 @@ import { MOCK_OLYMPIADS, MOCK_QUESTIONS, DEFAULT_SAMPLE_QUESTIONS } from './mock
 import { useLeaderboardStore } from '../store/useLeaderboardStore';
 import { useOlympiadStore } from '../store/useOlympiadStore';
 import { useNationalExamStore } from '../store/useNationalExamStore';
+import { apiClient } from './api';
 
 export interface OlympiadFilter {
   subject?: Subject | 'all';

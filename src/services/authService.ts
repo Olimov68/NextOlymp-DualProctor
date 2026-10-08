@@ -1,6 +1,7 @@
 import { User } from '../types';
 import { useSecurityStore } from '../store/useSecurityStore';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { useUserStore } from '../store/useUserStore';
 import { apiClient } from './api';
 
 export interface LoginParams {
@@ -149,7 +150,23 @@ export const authService = {
     return null;
   },
 
-  async resetPassword(email: string): Promise<boolean> {
+  getRegisteredUsers(): User[] {
+    const storeUsers = useUserStore.getState().users;
+    return storeUsers.map((u: any) => ({
+      id: String(u.id),
+      email: u.email || (u.phone ? `${u.phone.replace(/\D/g, '')}@ibnsino.uz` : 'user@ibnsino.uz'),
+      fullName: u.fullName || u.name || 'Foydalanuvchi',
+      role: (u.role as any) || 'student',
+      grade: u.grade || 9,
+      region: u.region || 'Toshkent',
+      district: u.district || '',
+      school: u.school || 'Maktab',
+      phone: u.phone || '',
+      createdAt: u.createdAt || new Date().toISOString(),
+    }));
+  },
+
+  async resetPassword(email: string, _newPassword?: string): Promise<boolean> {
     useNotificationStore.getState().addNotification({
       title: 'Parol tiklash so\'rovi',
       desc: `${email} pochtasiga yo'riqnoma yuborildi`,

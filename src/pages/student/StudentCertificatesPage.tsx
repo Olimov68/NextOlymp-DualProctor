@@ -6,6 +6,7 @@ import { Certificate } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { ShieldCheck, Search, Award, CheckCircle2, AlertCircle, Sparkles, ExternalLink, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '../../components/common/Button';
 
 export const StudentCertificatesPage: React.FC = () => {
   const { user } = useAuth();

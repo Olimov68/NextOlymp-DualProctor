@@ -31,4 +31,9 @@ export const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5173',
   'https://ibnsino.uz',
   'https://www.ibnsino.uz',
+  'https://ibnsinoschool.uz',
+  'https://www.ibnsinoschool.uz',
+  'http://ibnsinoschool.uz',
+  'http://www.ibnsinoschool.uz',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : []),
 ];

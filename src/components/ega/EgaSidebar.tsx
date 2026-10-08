@@ -71,7 +71,7 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
                 <span className="text-sm font-extrabold tracking-wider bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent uppercase leading-none truncate">
-                  KHISO ADMIN
+                  IBN SINO ADMIN
                 </span>
                 <span className="text-[10px] font-bold tracking-widest uppercase mt-1 text-zinc-400 truncate">
                   Control System

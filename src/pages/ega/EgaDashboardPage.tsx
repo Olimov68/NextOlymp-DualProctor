@@ -210,14 +210,14 @@ export const EgaDashboardPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className={clsx("font-extrabold text-xs", isDark ? "text-white" : "text-slate-900")}>
-                  Uzcloud Server & Xavfsizlik Holati
+                  Ibn Sino Main Server & Xavfsizlik Holati
                 </span>
                 <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   Online
                 </span>
               </div>
               <span className="text-[10px] text-slate-400 font-mono">
-                1 vCPU @ 2.40GHz · Uptime: {securityStore.serverMetrics.uptime}
+                2 vCPU @ 2.40GHz · Uptime: {securityStore.serverMetrics.uptime}
               </span>
             </div>
           </div>
@@ -227,7 +227,7 @@ export const EgaDashboardPage: React.FC = () => {
             <div className={clsx("px-3 py-1.5 rounded-xl border flex items-center gap-2", isDark ? "bg-[#0D1832] border-[#1E335E]" : "bg-white border-slate-200")}>
               <MemoryStick className="w-3.5 h-3.5 text-cyan-400" />
               <div>
-                <span className="text-slate-400 block text-[9px]">RAM (1024 MiB)</span>
+                <span className="text-slate-400 block text-[9px]">RAM (4096 MiB)</span>
                 <span className="font-bold text-cyan-300 font-mono">{securityStore.serverMetrics.ramUsedMb || 418}MB ({securityStore.serverMetrics.ram}%)</span>
               </div>
             </div>
@@ -236,7 +236,7 @@ export const EgaDashboardPage: React.FC = () => {
             <div className={clsx("px-3 py-1.5 rounded-xl border flex items-center gap-2", isDark ? "bg-[#0D1832] border-[#1E335E]" : "bg-white border-slate-200")}>
               <HardDrive className="w-3.5 h-3.5 text-indigo-400" />
               <div>
-                <span className="text-slate-400 block text-[9px]">SSD (25 GB)</span>
+                <span className="text-slate-400 block text-[9px]">NVMe SSD (50 GB)</span>
                 <span className="font-bold text-indigo-300 font-mono">{securityStore.serverMetrics.diskUsedGb || 8.4}GB ({securityStore.serverMetrics.disk}%)</span>
               </div>
             </div>

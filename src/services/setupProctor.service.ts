@@ -283,7 +283,7 @@ export class DualDeviceProctorGateway {
       localStorage.setItem('ibnsino_active_proctor_session', config.sessionId);
     }
 
-    const serverUrl = config.serverUrl || (import.meta as any).env?.VITE_WS_URL || 'http://localhost:5000';
+    const serverUrl = config.serverUrl || (import.meta as any).env?.VITE_WS_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
 
     try {
       this.socket = io(serverUrl, {

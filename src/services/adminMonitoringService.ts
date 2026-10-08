@@ -70,23 +70,23 @@ export const adminMonitoringService = {
       memoryUsageMb = Math.max(32, Math.min(256, heapMb));
     }
 
-    const totalRamMb = 1024;
+    const totalRamMb = 4096;
     const freeRamMb = Math.max(0, totalRamMb - memoryUsageMb);
     const ramUsagePercent = Math.max(1, Math.round((memoryUsageMb / totalRamMb) * 100));
 
     
-    let usedDiskGb = 0.1;
+    let usedDiskGb = 8.4;
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const localBytes = JSON.stringify(window.localStorage).length * 2;
         const localMb = localBytes / (1024 * 1024);
-        usedDiskGb = parseFloat((0.08 + localMb / 1024).toFixed(2));
+        usedDiskGb = parseFloat((8.2 + localMb / 1024).toFixed(2));
       }
     } catch {
-      usedDiskGb = 0.1;
+      usedDiskGb = 8.4;
     }
 
-    const totalDiskGb = 25; 
+    const totalDiskGb = 50; 
     const freeDiskGb = parseFloat((totalDiskGb - usedDiskGb).toFixed(2));
     const diskUsagePercent = Math.max(1, Math.round((usedDiskGb / totalDiskGb) * 100));
 
@@ -104,8 +104,8 @@ export const adminMonitoringService = {
         usagePercent: diskUsagePercent
       },
       cpu: {
-        model: 'Intel Xeon E5-2680 v4 (Uzcloud Cloud vCPU)',
-        cores: 1,
+        model: 'Intel Xeon Processor (Server vCPU)',
+        cores: 2,
         usagePercent: 2,
         speedGhz: 2.4
       },

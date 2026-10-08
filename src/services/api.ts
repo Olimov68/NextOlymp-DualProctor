@@ -2,7 +2,7 @@
  * Ibn Sino Mock Exam & Olympiad Platform - Unified API Client
  */
 
-const BASE_URL = '/api';
+const BASE_URL = (import.meta as any).env?.VITE_API_URL || (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
 const getToken = (): string => {
   if (typeof window === 'undefined') return '';
@@ -26,7 +26,7 @@ const mapEndpoint = (endpoint: string): string => {
   } else if (clean.startsWith('/security.php') || clean.startsWith('/anticheat.php')) {
     clean = clean.replace(/\/(security|anticheat)\.php/, '/exams/IBN-MED-101/proctor-event');
   } else if (clean.startsWith('/logs.php')) {
-    clean = clean.replace('/logs.php', '/health');
+    clean = clean.replace('/logs.php', '/admin/system-metrics');
   }
 
   return clean;
@@ -60,6 +60,7 @@ const safeParseJson = async <T>(res: Response): Promise<T> => {
 };
 
 export const apiClient = {
+  baseURL: BASE_URL,
   async get<T = any>(endpoint: string): Promise<T> {
     const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
     const res = await fetch(targetUrl, {
