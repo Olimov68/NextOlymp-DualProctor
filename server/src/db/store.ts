@@ -140,6 +140,9 @@ class Store {
         if (!Array.isArray(data.proctorSessions)) {
           data.proctorSessions = [];
         }
+        if (!Array.isArray(data.securityBlockedIps)) {
+          data.securityBlockedIps = [];
+        }
         
         // Auto-sanitize leaked passwords and real PII if present in store.json
         const LEAKED_ADMIN_HASH = '$2a$10$w0AKUQrXpxOSaPhvDSOf4OJ9vfiofDNDFIg0mWJVb92siLkI.XDx6';
@@ -803,6 +806,50 @@ class Store {
   public getAllProctorSessions(): ProctorSessionRecord[] {
     if (!this.data.proctorSessions) return [];
     return this.data.proctorSessions;
+  }
+
+  // --- IP Blocking & Threat Management ---
+  public getBlockedIPs(): Array<{ ip: string; reason: string; blockedAt: string }> {
+    if (!this.data.securityBlockedIps) {
+      this.data.securityBlockedIps = [];
+    }
+    return this.data.securityBlockedIps;
+  }
+
+  public blockIP(ip: string, reason?: string): boolean {
+    if (!this.data.securityBlockedIps) {
+      this.data.securityBlockedIps = [];
+    }
+    const cleanIp = ip.trim();
+    if (!cleanIp) return false;
+    const exists = this.data.securityBlockedIps.some(item => item.ip === cleanIp);
+    if (!exists) {
+      this.data.securityBlockedIps.unshift({
+        ip: cleanIp,
+        reason: reason || 'Xavfsizlik qoidabuzarligi',
+        blockedAt: new Date().toISOString(),
+      });
+      this.saveData();
+    }
+    return true;
+  }
+
+  public unblockIP(ip: string): boolean {
+    if (!this.data.securityBlockedIps) return false;
+    const cleanIp = ip.trim();
+    const prevLen = this.data.securityBlockedIps.length;
+    this.data.securityBlockedIps = this.data.securityBlockedIps.filter(item => item.ip !== cleanIp);
+    if (this.data.securityBlockedIps.length !== prevLen) {
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
+  public isIPBlocked(ip: string): boolean {
+    if (!this.data.securityBlockedIps || !ip) return false;
+    const cleanIp = ip.replace(/^.*:/, '').trim();
+    return this.data.securityBlockedIps.some(item => item.ip === cleanIp || item.ip === ip.trim());
   }
 }
 

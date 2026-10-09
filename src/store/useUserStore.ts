@@ -46,10 +46,10 @@ export const useUserStore = create<UserState>((set, get) => ({
   fetchFromApi: async () => {
     set({ loading: true });
     try {
-      const json = await apiClient.get('/users.php');
+      const json = await apiClient.get('/users');
       const usersList = Array.isArray(json)
         ? json
-        : json?.status === 'success' && Array.isArray(json.data)
+        : (json?.success || json?.status === 'success') && Array.isArray(json.data)
         ? json.data
         : null;
 
@@ -95,8 +95,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     persistUsers(updated);
     set({ users: updated });
 
-    
-    apiClient.post('/users.php', newUser).catch((e) => console.warn('User API sync warning:', e));
+    apiClient.post('/users', newUser).catch((e) => console.warn('User API sync warning:', e));
   },
 
   updateUser: (id, userData) => {
@@ -105,10 +104,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     persistUsers(updated);
     set({ users: updated });
 
-    const target = updated.find((u) => u.id === id);
-    if (target) {
-      apiClient.post('/users.php', target).catch((e) => console.warn('User API sync warning:', e));
-    }
+    apiClient.put(`/users/${encodeURIComponent(id)}`, userData).catch((e) => console.warn('User API sync warning:', e));
   },
 
   deleteUser: (id) => {
@@ -117,8 +113,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     persistUsers(updated);
     set({ users: updated });
 
-    
-    apiClient.delete(`/users.php?id=${encodeURIComponent(id)}`).catch((e) => console.warn('User API delete warning:', e));
+    apiClient.delete(`/users/${encodeURIComponent(id)}`).catch((e) => console.warn('User API delete warning:', e));
 
     try {
       useLeaderboardStore.getState().removeUser(id);
@@ -138,7 +133,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     const target = updated.find((u) => u.id === id);
     if (target) {
-      apiClient.post('/users.php', target).catch((e) => console.warn('User API sync warning:', e));
+      apiClient.put(`/users/${encodeURIComponent(id)}`, target).catch((e) => console.warn('User API sync warning:', e));
     }
   },
 

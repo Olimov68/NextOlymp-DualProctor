@@ -46,7 +46,7 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
   fetchFromApi: async () => {
     set({ loading: true });
     try {
-      const json = await apiClient.get('/national-exams.php');
+      const json = await apiClient.get('/exams');
       const data = Array.isArray(json) ? json : (json?.data || []);
       if (Array.isArray(data) && data.length > 0) {
         persistExams(data);
@@ -84,8 +84,7 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
     persistExams(updated);
     set({ exams: updated });
 
-    
-    apiClient.post('/national-exams.php', exam).catch((e) => console.warn('National Exam API sync error:', e));
+    apiClient.post('/exams', exam).catch((e) => console.warn('National Exam API sync error:', e));
 
     return exam;
   },
@@ -97,7 +96,7 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
 
     const target = updated.find((e) => e.id === id);
     if (target) {
-      apiClient.post('/national-exams.php', target).catch((e) => console.warn('National Exam API sync error:', e));
+      apiClient.put(`/exams/${encodeURIComponent(id)}`, target).catch((e) => console.warn('National Exam API sync error:', e));
     }
   },
 
@@ -106,8 +105,7 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
     persistExams(updated);
     set({ exams: updated });
 
-    
-    apiClient.delete(`/national-exams.php?id=${encodeURIComponent(id)}`).catch((e) =>
+    apiClient.delete(`/exams/${encodeURIComponent(id)}`).catch((e) =>
       console.warn('National Exam API delete error:', e)
     );
   },
@@ -119,7 +117,7 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
 
     const target = updated.find((e) => e.id === id);
     if (target) {
-      apiClient.post('/national-exams.php', target).catch((e) => console.warn('National Exam API sync error:', e));
+      apiClient.put(`/exams/${encodeURIComponent(id)}`, target).catch((e) => console.warn('National Exam API sync error:', e));
     }
   },
 
@@ -132,7 +130,7 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
 
     const target = updated.find((e) => e.id === id);
     if (target) {
-      apiClient.post('/national-exams.php', target).catch((e) => console.warn('National Exam API sync error:', e));
+      apiClient.put(`/exams/${encodeURIComponent(id)}`, target).catch((e) => console.warn('National Exam API sync error:', e));
     }
   },
 

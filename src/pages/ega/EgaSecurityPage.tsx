@@ -207,7 +207,13 @@ export const EgaSecurityPage: React.FC = () => {
     let isMounted = true;
     const fetchRealLogs = async () => {
       try {
-        const res = await fetch('/api/admin/system-metrics');
+        const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+        const res = await fetch('/api/admin/system-metrics', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
         if (res.ok) {
           const json = await res.json();
           if (isMounted && json.status === 'success') {
@@ -284,9 +290,13 @@ export const EgaSecurityPage: React.FC = () => {
   const handleBlockIP = async (ip: string, reason: string, permanent: boolean) => {
     store.blockIP(ip, 'Qo\'lda qo\'shilgan', 'UZ', reason, permanent);
     try {
-      await fetch('/api/logs.php?action=block_ip', {
+      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      await fetch('/api/admin/block-ip', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ ip, reason, permanent })
       });
     } catch (e) {}
@@ -295,9 +305,13 @@ export const EgaSecurityPage: React.FC = () => {
   const handleUnblockIP = async (ip: string) => {
     store.unblockIP(ip);
     try {
-      await fetch('/api/logs.php?action=unblock_ip', {
+      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      await fetch('/api/admin/unblock-ip', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ ip })
       });
     } catch (e) {}
@@ -306,16 +320,24 @@ export const EgaSecurityPage: React.FC = () => {
   const handleClearLogs = async () => {
     store.clearLogs();
     try {
-      await fetch('/api/logs.php', { method: 'DELETE' });
+      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      await fetch('/api/admin/system-metrics', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
     } catch (e) {}
   };
 
   const handleToggleDefense = async (key: keyof DefenseStatus) => {
     store.toggleDefense(key);
     try {
-      await fetch('/api/logs.php?action=toggle_setting', {
+      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      await fetch('/api/admin/toggle-setting', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ key, value: !store.defenseStatus[key] })
       });
     } catch (e) {}

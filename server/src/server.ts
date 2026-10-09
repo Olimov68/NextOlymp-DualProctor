@@ -31,6 +31,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
+// CRITICAL SECURITY FIX: Reject requests from blocked IPs immediately
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const rawIp = req.socket.remoteAddress || '127.0.0.1';
+  if (dbStore.isIPBlocked(rawIp)) {
+    return res.status(403).json({
+      error: 'Xavfsizlik sababli ushbu IP manzil bloklangan (Forbidden)',
+    });
+  }
+  next();
+});
+
 // CRITICAL SECURITY FIX (Item 13): Comprehensive security headers (CSP, Permissions-Policy, HSTS)
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -124,7 +135,10 @@ app.get('/api/auth/me', authenticateJWT, AuthController.me);
 // 2. Exam routes (CRITICAL FIX: Item 5: Required authentication, no guest IDOR bypass)
 app.get('/api/exams/active', ExamController.getActiveExams);
 app.get('/api/exams', ExamController.getActiveExams);
+app.post('/api/exams', authenticateJWT, requireRole(['admin']), ExamController.createExam);
 app.get('/api/exams/:id', ExamController.getExamById);
+app.put('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.updateExam);
+app.delete('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.deleteExam);
 app.get('/api/exams/:id/questions', ExamController.getExamQuestions); // SECURED: answers hidden!
 app.post('/api/exams/:id/start', authenticateJWT, ExamController.startExam);
 app.post('/api/exams/:id/answer', authenticateJWT, ExamController.submitAnswer);
@@ -145,6 +159,7 @@ app.get('/api/leaderboard', SubmissionController.getLeaderboard);
 
 // 4. Users (CRITICAL FIX: Item 7: Protected with auth & role check)
 app.get('/api/users', authenticateJWT, requireRole(['admin']), UserController.getUsers);
+app.post('/api/users', authenticateJWT, requireRole(['admin']), UserController.createUser);
 app.get('/api/users/:id', authenticateJWT, UserController.getUserById);
 app.put('/api/users/:id', authenticateJWT, UserController.updateUser);
 app.delete('/api/users/:id', authenticateJWT, requireRole(['admin']), UserController.deleteUser);
@@ -156,6 +171,7 @@ app.get('/api/verify/:code', CertificateController.verifyCertificate);
 // 6. Dual-Device Proctoring (CRITICAL FIX: Item 4: Proctor createSession authenticated)
 app.post('/api/proctor/session/create', authenticateJWT, ProctorController.createSession);
 app.post('/api/proctor/calibrate', proctorCalibrateBodyParser, ProctorController.calibrate);
+app.post('/api/proctor/verify-snapshot', proctorCalibrateBodyParser, ProctorController.calibrate);
 app.get('/api/proctor/check-gatekeeper/:sessionId', ProctorController.checkGatekeeper);
 
 // Health check
@@ -244,14 +260,76 @@ const handleSystemMetrics = (req: Request, res: Response) => {
       memoryLimit: '4096M',
       totalModulesCount: 48,
     },
-    data: [],
-    blockedIPs: [],
+    data: dbStore.getProctorEvents().map(e => ({
+      id: e.id,
+      timestamp: e.timestamp,
+      ip: e.ipAddress,
+      country: "O'zbekiston",
+      countryCode: 'UZ',
+      type: e.eventType,
+      level: e.severity === 'critical' ? 'critical' : e.severity === 'high' ? 'error' : e.severity === 'medium' ? 'warning' : 'info',
+      statusCode: 200,
+      message: `${e.eventType}: ${e.details}`,
+      userAgent: 'NextOlymp Proctoring Client',
+      userEmail: e.userId,
+    })),
+    blockedIPs: dbStore.getBlockedIPs(),
   });
 };
 
-// CRITICAL SECURITY FIX (Item 8): Protected endpoints; removed legacy unauthenticated aliases (/api/logs.php, /api/system-metrics)
+// CRITICAL SECURITY FIX (Item 8): Protected endpoints for Admins
 app.get('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']), handleSystemMetrics);
 app.get('/api/admin/system-stats', authenticateJWT, requireRole(['admin']), handleSystemMetrics);
+
+// Real Admin Security Logs Endpoint
+app.get('/api/admin/security-logs', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
+  const events = dbStore.getProctorEvents();
+  const logs = events.map(e => ({
+    id: e.id,
+    timestamp: e.timestamp,
+    ip: e.ipAddress,
+    country: "O'zbekiston",
+    countryCode: 'UZ',
+    type: e.eventType,
+    level: e.severity === 'critical' ? 'critical' : e.severity === 'high' ? 'error' : e.severity === 'medium' ? 'warning' : 'info',
+    statusCode: 200,
+    message: `${e.eventType}: ${e.details}`,
+    userAgent: 'Proctoring Guard',
+    userEmail: e.userId,
+  }));
+  return res.json(logs);
+});
+
+// Admin IP Blocking Endpoints
+app.post('/api/admin/block-ip', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
+  const { ip, reason } = req.body;
+  if (!ip) return res.status(400).json({ error: 'IP talab qilinadi' });
+  dbStore.blockIP(String(ip), reason ? String(reason) : 'Admin tomonidan bloklandi');
+  return res.json({ success: true, message: `${ip} bloklandi`, blockedIPs: dbStore.getBlockedIPs() });
+});
+
+app.post('/api/admin/unblock-ip', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
+  const { ip } = req.body;
+  if (!ip) return res.status(400).json({ error: 'IP talab qilinadi' });
+  dbStore.unblockIP(String(ip));
+  return res.json({ success: true, message: `${ip} blokdan chiqarildi`, blockedIPs: dbStore.getBlockedIPs() });
+});
+
+// Legacy backward compatibility for logs.php with action query
+app.all(['/api/logs.php', '/logs.php'], authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
+  const action = req.query.action || req.body?.action;
+  if (action === 'block_ip') {
+    const { ip, reason } = req.body;
+    if (ip) dbStore.blockIP(String(ip), reason);
+    return res.json({ success: true, blockedIPs: dbStore.getBlockedIPs() });
+  }
+  if (action === 'unblock_ip') {
+    const { ip } = req.body;
+    if (ip) dbStore.unblockIP(String(ip));
+    return res.json({ success: true, blockedIPs: dbStore.getBlockedIPs() });
+  }
+  return handleSystemMetrics(req, res);
+});
 
 // Setup sockets
 setupProctorSockets(io);

@@ -5,7 +5,7 @@ export const certificateService = {
   async getUserCertificates(userId: string): Promise<Certificate[]> {
     let subs: any[] = [];
     try {
-      const res = await apiClient.get(`/submissions.php?user_id=${encodeURIComponent(userId)}`);
+      const res = await apiClient.get(`/submissions?user_id=${encodeURIComponent(userId)}`);
       subs = Array.isArray(res) ? res : (res?.data || []);
     } catch {}
 
@@ -108,7 +108,7 @@ export const certificateService = {
 
   async getAllCertificates(): Promise<Certificate[]> {
     try {
-      const res = await apiClient.get('/submissions.php');
+      const res = await apiClient.get('/submissions');
       const subs = Array.isArray(res) ? res : (res?.data || []);
       return subs.map((s: any, idx: number) => ({
         id: s.id || `cert_${idx + 1}`,
@@ -132,7 +132,7 @@ export const certificateService = {
   },
 
   saveCertificate(cert: Certificate): void {
-    apiClient.post('/submissions.php', {
+    apiClient.post('/submissions', {
       id: cert.id,
       userId: cert.userId,
       userName: cert.userName,

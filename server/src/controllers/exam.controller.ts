@@ -346,4 +346,62 @@ export class ExamController {
       return res.status(500).json({ error: 'Hodisani yozishda xatolik yuz berdi' });
     }
   }
+
+  public static async createExam(req: AuthenticatedRequest, res: Response) {
+    try {
+      const examData = req.body;
+      const id = examData.id || `EXAM-${Date.now()}`;
+      const exam: ExamRecord = {
+        id,
+        title: examData.title || 'Yangi Imtihon',
+        subject: examData.subject || 'Umumiy',
+        category: examData.category || 'general',
+        format: examData.format || 'online',
+        description: examData.description || '',
+        image: examData.image || '',
+        startTime: examData.startTime || new Date().toISOString(),
+        endTime: examData.endTime || new Date(Date.now() + 86400000 * 7).toISOString(),
+        durationMinutes: Number(examData.durationMinutes) || 60,
+        price: Number(examData.price) || 0,
+        status: examData.status || 'active',
+        maxScore: Number(examData.maxScore) || 100,
+        totalQuestions: Number(examData.totalQuestions) || (examData.questions?.length || 0),
+        registeredCount: 0,
+        organizer: examData.organizer || 'NextOlymp',
+        createdAt: new Date().toISOString(),
+      };
+      dbStore.saveExam(exam);
+      return res.status(201).json({ success: true, data: exam });
+    } catch (error: any) {
+      console.error('[ExamController.createExam Error]:', error);
+      return res.status(500).json({ error: 'Imtihon yaratishda xatolik yuz berdi' });
+    }
+  }
+
+  public static async updateExam(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const existing = dbStore.getExamById(id);
+      if (!existing) {
+        return res.status(404).json({ error: 'Imtihon topilmadi' });
+      }
+      const updated = { ...existing, ...req.body, id: existing.id };
+      dbStore.saveExam(updated);
+      return res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error('[ExamController.updateExam Error]:', error);
+      return res.status(500).json({ error: 'Imtihonni yangilashda xatolik yuz berdi' });
+    }
+  }
+
+  public static async deleteExam(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      dbStore.deleteExam(id);
+      return res.json({ success: true, message: 'Imtihon o\'chirildi' });
+    } catch (error: any) {
+      console.error('[ExamController.deleteExam Error]:', error);
+      return res.status(500).json({ error: 'Imtihonni o\'chirishda xatolik yuz berdi' });
+    }
+  }
 }

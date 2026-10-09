@@ -201,20 +201,6 @@ export const payxService = {
     inMemoryTransactions = [txn, ...inMemoryTransactions];
     notifySubscribers();
 
-    
-    fetch('/api/payments.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: 1,
-        olympiad_id: 1,
-        amount,
-        provider: paymentMethod === 'click' ? 'click' : paymentMethod === 'uzum' ? 'uzum' : 'payme',
-        status: 'paid',
-        transaction_id: txn.payxRefCode
-      })
-    }).catch(() => {});
-
     return txn;
   },
 

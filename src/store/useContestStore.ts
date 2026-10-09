@@ -5,6 +5,7 @@ import { useNotificationStore } from './useNotificationStore';
 import { useAuthStore } from './useAuthStore';
 import { ServerExamEngine, ServerSyncResponse } from '../services/serverExamEngine';
 import { submissionService } from '../services/submissionService';
+import { apiClient } from '../services/api';
 
 export interface IncidentLog {
   id: string;
@@ -229,23 +230,10 @@ export const useContestStore = create<ContestState>((set, get) => ({
       submissionService.saveLiveCheatLog(olympiadId, formattedLog);
 
       
-      fetch('/api/anticheat.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: newIncident.id,
-          studentId: currentUser?.id || 'usr-student',
-          studentName: currentUser?.fullName || 'Ishtirokchi',
-          studentEmail: currentUser?.email || '',
-          studentPhone: currentUser?.phone || '',
-          olympiadId,
-          olympiadTitle: 'Olimpiada',
-          eventType: typeLabel,
-          details: message,
-          severity: newIncident.severity,
-          snapshotUrl: snapshotUrl,
-          timestamp: new Date().toISOString()
-        })
+      apiClient.post(`/exams/${encodeURIComponent(olympiadId)}/proctor-event`, {
+        eventType: typeLabel?.toLowerCase().includes('tab') ? 'TAB_SWITCH' : 'SECURITY_WARNING',
+        details: message,
+        severity: newIncident.severity === 'Kritik' ? 'critical' : newIncident.severity === 'Yuqori' ? 'high' : 'medium'
       }).catch((e) => console.warn('Anti-cheat API sync warning:', e));
     } catch (e) {
       console.error('Error saving live anticheat log:', e);

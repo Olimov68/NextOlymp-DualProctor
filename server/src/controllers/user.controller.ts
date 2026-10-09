@@ -100,4 +100,39 @@ export class UserController {
       return res.status(500).json({ error: 'Foydalanuvchini o\'chirishda xatolik yuz berdi' });
     }
   }
+
+  public static async createUser(req: AuthenticatedRequest, res: Response) {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Faqat admin yangi foydalanuvchi qo\'sha oladi' });
+      }
+
+      const { fullName, phone, email, password, role, grade, region, district, school } = req.body;
+      if (!fullName || !phone) {
+        return res.status(400).json({ error: 'Ism-familiya va telefon raqami talab qilinadi' });
+      }
+
+      const user = dbStore.createUser({
+        fullName: String(fullName).trim(),
+        phone: String(phone).trim(),
+        email: email ? String(email).trim().toLowerCase() : `user_${Date.now()}@ibnsino.uz`,
+        password: password ? String(password) : 'Student_2026!#Default',
+        role: role === 'admin' ? 'admin' : role === 'teacher' ? 'teacher' : 'student',
+        grade: Number(grade) || 9,
+        region: region ? String(region).trim() : 'Toshkent shahri',
+        district: district ? String(district).trim() : 'Yunusobod tumani',
+        school: school ? String(school).trim() : 'Prezident maktabi',
+      });
+
+      if (!user) {
+        return res.status(409).json({ error: 'Ushbu telefon yoki email bilan foydalanuvchi mavjud' });
+      }
+
+      const { passwordHash: _, ...safe } = user;
+      return res.status(201).json({ success: true, data: safe });
+    } catch (error: any) {
+      console.error('[UserController.createUser Error]:', error);
+      return res.status(500).json({ error: 'Foydalanuvchi yaratishda xatolik yuz berdi' });
+    }
+  }
 }

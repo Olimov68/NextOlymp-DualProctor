@@ -61,12 +61,12 @@ export const useLeaderboardStore = create<LeaderboardStore>((set, get) => ({
 
   fetchFromApi: async () => {
     try {
-      const res = await fetch('/api/users.php');
+      const res = await fetch('/api/leaderboard');
       if (res.ok) {
         const json = await res.json();
         const usersList = Array.isArray(json)
           ? json
-          : json.status === 'success' && Array.isArray(json.data)
+          : (json.success || json.status === 'success') && Array.isArray(json.data)
           ? json.data
           : null;
 

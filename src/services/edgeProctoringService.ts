@@ -25,12 +25,43 @@ const ALERT_COOLDOWN_MS = 10000;
 let lastAlertTimestamp = 0;
 
 export async function verifyIncidentWithGeminiVision(
-  _base64Image: string,
+  base64Image: string,
   detectedReason: string
 ): Promise<AiVisionVerificationResult> {
+  if (!base64Image || base64Image.length < 50) {
+    return {
+      cheat: false,
+      confidence: 0,
+      reason: "Rasm ma'lumotlari mavjud emas",
+    };
+  }
+
+  try {
+    const res = await fetch('/api/proctor/verify-snapshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'verify_' + Date.now(),
+        imageBase64: base64Image,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.evaluation) {
+        return {
+          cheat: !data.evaluation.valid_placement,
+          confidence: Math.round((data.evaluation.confidence_score || 0.85) * 100),
+          reason: data.evaluation.feedback || detectedReason,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('AI Vision verification server sync:', err);
+  }
+
   return {
-    cheat: true,
-    confidence: 90,
+    cheat: Boolean(detectedReason),
+    confidence: 85,
     reason: detectedReason,
   };
 }

@@ -58,7 +58,11 @@ export const adminMonitoringService = {
         }
       });
       if (res.ok) {
-        return await res.json();
+        const json = await res.json();
+        if (json && json.metrics) {
+          return json.metrics;
+        }
+        return json;
       }
     } catch {
       

@@ -12,8 +12,14 @@ const getToken = (): string => {
 // Map legacy PHP paths to modern REST API endpoints
 const mapEndpoint = (endpoint: string): string => {
   let clean = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  
-  if (clean.startsWith('/olympiads.php')) {
+
+  if (clean.includes('/users.php?id=')) {
+    const id = clean.split('/users.php?id=')[1];
+    clean = `/users/${id}`;
+  } else if (clean.includes('/national-exams.php?id=')) {
+    const id = clean.split('/national-exams.php?id=')[1];
+    clean = `/exams/${id}`;
+  } else if (clean.startsWith('/olympiads.php')) {
     clean = clean.replace('/olympiads.php', '/exams');
   } else if (clean.startsWith('/national-exams.php')) {
     clean = clean.replace('/national-exams.php', '/exams');
@@ -24,9 +30,11 @@ const mapEndpoint = (endpoint: string): string => {
   } else if (clean.startsWith('/auth.php')) {
     clean = clean.replace('/auth.php', '/auth/login');
   } else if (clean.startsWith('/security.php') || clean.startsWith('/anticheat.php')) {
-    clean = clean.replace(/\/(security|anticheat)\.php/, '/exams/IBN-MED-101/proctor-event');
+    clean = clean.replace(/\/(security|anticheat)\.php/, '/anticheat');
   } else if (clean.startsWith('/logs.php')) {
     clean = clean.replace('/logs.php', '/admin/system-metrics');
+  } else if (clean.startsWith('/leaderboard.php')) {
+    clean = clean.replace('/leaderboard.php', '/leaderboard');
   }
 
   return clean;

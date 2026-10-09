@@ -259,7 +259,7 @@ const attemptCountsMap = new Map<string, number>();
 if (typeof window !== 'undefined') {
   setTimeout(async () => {
     try {
-      const res = await apiClient.get('/submissions.php');
+      const res = await apiClient.get('/submissions');
       const subs = Array.isArray(res) ? res : (res?.data || []);
       if (Array.isArray(subs)) {
         userSubmissionsCache.push(...subs);
