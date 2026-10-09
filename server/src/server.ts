@@ -3,7 +3,7 @@ import http from 'http';
 import os from 'os';
 import cors from 'cors';
 import { Server } from 'socket.io';
-import { PORT, ALLOWED_ORIGINS } from './config/constants';
+import { PORT, ALLOWED_ORIGINS, isOriginAllowed, IS_PRODUCTION } from './config/constants';
 import { AuthController } from './controllers/auth.controller';
 import { ExamController } from './controllers/exam.controller';
 import { UserController } from './controllers/user.controller';
@@ -17,13 +17,13 @@ import { dbStore } from './db/store';
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
+// CRITICAL SECURITY FIX (Item 9): Strict CORS policy
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://192.168.') || origin.startsWith('http://10.') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS xavfsizlik cheklovi: Ruxsatsiz domen'));
+      callback(new Error('CORS xavfsizlik cheklovi: Ruxsatsiz domen rad etildi'));
     }
   },
   credentials: true,
@@ -31,83 +31,119 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
-// Security headers
+// CRITICAL SECURITY FIX (Item 13): Comprehensive security headers (CSP, Permissions-Policy, HSTS)
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "img-src 'self' data: blob: https:; " +
+    "connect-src 'self' ws: wss: http: https:; " +
+    "media-src 'self' blob:; " +
+    "frame-ancestors 'self';"
+  );
+
+  if (IS_PRODUCTION || req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
   next();
 });
 
-// In-memory rate limiting with safe IP resolution
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 240;
+// CRITICAL SECURITY FIX (Item 16): Granular in-memory rate limiting
+const generalRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const authRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const clientIp = req.socket.remoteAddress || '127.0.0.1';
-  const now = Date.now();
-  const record = rateLimitMap.get(clientIp);
+function createRateLimiter(map: Map<string, { count: number; resetTime: number }>, windowMs: number, maxRequests: number, label: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const rawIp = req.socket.remoteAddress || '127.0.0.1';
+    const clientIp = rawIp.replace(/^.*:/, ''); // normalize IPv6 mapped IPv4
+    const now = Date.now();
+    const record = map.get(clientIp);
 
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(clientIp, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return next();
-  }
+    if (!record || now > record.resetTime) {
+      map.set(clientIp, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
 
-  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
-    return res.status(429).json({
-      error: "So'rovlar soni me'yordan oshdi (Rate limit exceeded). Iltimos, bir oz kuting.",
-      retryAfterSeconds: Math.ceil((record.resetTime - now) / 1000)
-    });
-  }
+    if (record.count >= maxRequests) {
+      return res.status(429).json({
+        error: `${label} bo'yicha so'rovlar chegarasi oshdi (Rate limit exceeded). Iltimos, kuting.`,
+        retryAfterSeconds: Math.ceil((record.resetTime - now) / 1000)
+      });
+    }
 
-  record.count++;
-  next();
-});
+    record.count++;
+    next();
+  };
+}
 
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+const generalRateLimiter = createRateLimiter(generalRateLimitMap, 60 * 1000, 150, 'Umumiy');
+const authRateLimiter = createRateLimiter(authRateLimitMap, 15 * 60 * 1000, 20, 'Autentifikatsiya');
 
-// Socket.io for dual-device real-time proctoring
+app.use(generalRateLimiter);
+
+// CRITICAL SECURITY FIX (Item 15): Safe request body limits (1MB default instead of 20MB)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Dedicated body parser for high-resolution proctor snapshots (up to 10MB)
+const proctorCalibrateBodyParser = express.json({ limit: '10mb' });
+
+// CRITICAL SECURITY FIX (Item 9 & 15): Strict Socket.io CORS & payload size
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS xavfsizlik cheklovi: Socket rad etildi'));
+      }
+    },
     methods: ['GET', 'POST'],
+    credentials: true,
   },
-  maxHttpBufferSize: 5e7,
+  maxHttpBufferSize: 5e6, // 5MB max payload per packet
 });
 
 // --- API Endpoints ---
 
-// 1. Auth routes
-app.post('/api/auth/login', AuthController.login);
-app.post('/api/auth/register', AuthController.register);
+// 1. Auth routes (with dedicated rate limit)
+app.post('/api/auth/login', authRateLimiter, AuthController.login);
+app.post('/api/auth/register', authRateLimiter, AuthController.register);
+app.post('/api/auth/forgot-password', authRateLimiter, AuthController.forgotPassword);
+app.post('/api/auth/reset-password', authRateLimiter, AuthController.resetPassword);
 app.get('/api/auth/me', authenticateJWT, AuthController.me);
 
-// 2. Exam routes
+// 2. Exam routes (CRITICAL FIX: Item 5: Required authentication, no guest IDOR bypass)
 app.get('/api/exams/active', ExamController.getActiveExams);
 app.get('/api/exams', ExamController.getActiveExams);
 app.get('/api/exams/:id', ExamController.getExamById);
 app.get('/api/exams/:id/questions', ExamController.getExamQuestions); // SECURED: answers hidden!
-app.post('/api/exams/:id/start', optionalAuth, ExamController.startExam);
-app.post('/api/exams/:id/answer', optionalAuth, ExamController.submitAnswer);
-app.post('/api/exams/:id/finish', optionalAuth, ExamController.finishExam); // SECURED: server-side grading!
-app.get('/api/exams/:id/result', optionalAuth, ExamController.getExamResult);
-app.post('/api/exams/:id/proctor-event', optionalAuth, ExamController.recordProctorEvent);
+app.post('/api/exams/:id/start', authenticateJWT, ExamController.startExam);
+app.post('/api/exams/:id/answer', authenticateJWT, ExamController.submitAnswer);
+app.post('/api/exams/:id/finish', authenticateJWT, ExamController.finishExam);
+app.get('/api/exams/:id/result', authenticateJWT, ExamController.getExamResult);
+app.post('/api/exams/:id/proctor-event', authenticateJWT, ExamController.recordProctorEvent);
 
-// Legacy aliases for backward compatibility
+// Legacy aliases for backward compatibility (authenticated)
 app.get('/api/olympiads', ExamController.getActiveExams);
 app.get('/api/olympiads/:id', ExamController.getExamById);
 app.get('/api/national-exams', ExamController.getActiveExams);
-app.post('/api/anticheat', optionalAuth, (req, res) => ExamController.recordProctorEvent(req, res));
+app.post('/api/anticheat', authenticateJWT, (req, res) => ExamController.recordProctorEvent(req, res));
 
-// 3. Submissions & Leaderboard
-app.get('/api/submissions', optionalAuth, SubmissionController.getSubmissions);
-app.get('/api/submissions/:id', optionalAuth, SubmissionController.getSubmissionById);
+// 3. Submissions & Leaderboard (CRITICAL FIX: Item 6: Enforce ownership & require auth)
+app.get('/api/submissions', authenticateJWT, SubmissionController.getSubmissions);
+app.get('/api/submissions/:id', authenticateJWT, SubmissionController.getSubmissionById);
 app.get('/api/leaderboard', SubmissionController.getLeaderboard);
 
-// 4. Users (Admin protected)
+// 4. Users (CRITICAL FIX: Item 7: Protected with auth & role check)
 app.get('/api/users', authenticateJWT, requireRole(['admin']), UserController.getUsers);
 app.get('/api/users/:id', authenticateJWT, UserController.getUserById);
 app.put('/api/users/:id', authenticateJWT, UserController.updateUser);
@@ -117,9 +153,9 @@ app.delete('/api/users/:id', authenticateJWT, requireRole(['admin']), UserContro
 app.get('/api/certificates/:code', CertificateController.verifyCertificate);
 app.get('/api/verify/:code', CertificateController.verifyCertificate);
 
-// 6. Dual-Device Proctoring
-app.post('/api/proctor/session/create', ProctorController.createSession);
-app.post('/api/proctor/calibrate', ProctorController.calibrate);
+// 6. Dual-Device Proctoring (CRITICAL FIX: Item 4: Proctor createSession authenticated)
+app.post('/api/proctor/session/create', authenticateJWT, ProctorController.createSession);
+app.post('/api/proctor/calibrate', proctorCalibrateBodyParser, ProctorController.calibrate);
 app.get('/api/proctor/check-gatekeeper/:sessionId', ProctorController.checkGatekeeper);
 
 // Health check
@@ -127,12 +163,12 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'Ibn Sino Mock Exam & Olympiad Core API',
-    version: '2.0.0',
+    version: '2.1.0',
     timestamp: new Date().toISOString(),
   });
 });
 
-// Real-time server system stats and security metrics
+// CRITICAL SECURITY FIX (Item 8): Real-time server system stats protected for Admins only
 const handleSystemMetrics = (req: Request, res: Response) => {
   const users = dbStore.getUsers() || [];
   const exams = dbStore.getExams() || [];
@@ -196,24 +232,14 @@ const handleSystemMetrics = (req: Request, res: Response) => {
     },
     serverHostStats: {
       hostingAccountsCount: 1,
-      currentAccount: 'root (ibnsinoschool.uz)',
+      currentAccount: 'secure-node',
       accountRamLimit: `${totalMemMb} MiB`,
       accountDiskQuota: '50 GB NVMe SSD',
       serverNode: 'Ibn Sino VPS Server · Toshkent DC',
     },
     diagnostics: {
-      osName: 'Ubuntu 22.04 LTS / Linux x86_64',
-      kernel: os.version() || '5.15.0-91-generic',
-      hostname: os.hostname() || 'server.ibnsinoschool.uz',
+      osName: 'Linux / Production Server',
       arch: os.arch(),
-      loadAvg: os.loadavg(),
-      ports: [
-        { port: 80, name: 'HTTP Web Server (Nginx)', protocol: 'TCP', status: 'Ochiq & Faol', color: 'emerald' },
-        { port: 443, name: 'HTTPS SSL/TLS', protocol: 'TCP', status: 'Ochiq & Himoyalangan', color: 'emerald' },
-        { port: 5000, name: 'Node.js Core Backend', protocol: 'TCP', status: 'Lokal Ulanish Faol', color: 'cyan' },
-        { port: 22, name: 'SSH Secure Shell', protocol: 'TCP', status: 'Himoyalangan (Port 22)', color: 'indigo' },
-        { port: 3306, name: 'Database Port', protocol: 'TCP', status: 'Lokal Faol', color: 'blue' },
-      ],
       nodeVersion: process.version,
       memoryLimit: '4096M',
       totalModulesCount: 48,
@@ -223,19 +249,19 @@ const handleSystemMetrics = (req: Request, res: Response) => {
   });
 };
 
-app.get('/api/admin/system-metrics', handleSystemMetrics);
-app.get('/api/admin/system-stats', handleSystemMetrics);
-app.get('/api/logs.php', handleSystemMetrics);
-app.get('/api/system-metrics', handleSystemMetrics);
+// CRITICAL SECURITY FIX (Item 8): Protected endpoints; removed legacy unauthenticated aliases (/api/logs.php, /api/system-metrics)
+app.get('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']), handleSystemMetrics);
+app.get('/api/admin/system-stats', authenticateJWT, requireRole(['admin']), handleSystemMetrics);
 
 // Setup sockets
 setupProctorSockets(io);
 
 // Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('[API Error]:', err.message);
-  res.status(err.status || 500).json({
-    error: err.message || 'Ichki server xatoligi yuz berdi',
+  console.error('[API Error]:', err.message || err);
+  const status = typeof err.status === 'number' ? err.status : 500;
+  res.status(status).json({
+    error: IS_PRODUCTION && status === 500 ? 'Ichki server xatoligi yuz berdi' : (err.message || 'Ichki server xatoligi yuz berdi'),
   });
 });
 

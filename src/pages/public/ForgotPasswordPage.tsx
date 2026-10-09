@@ -26,30 +26,28 @@ export const ForgotPasswordPage: React.FC = () => {
       return;
     }
 
-    const registered = authService.getRegisteredUsers();
-    const user = registered.find((u) => u.email.toLowerCase().trim() === trimmedEmail);
-
-    if (!user) {
-      setError("Bunday email bilan akkaunt topilmadi. Iltimos, pochtangizni tekshiring yoki ro'yxatdan o'ting.");
-      return;
-    }
-
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
-    setLoading(false);
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(code);
-    setEnteredCode(code); 
-    setStep('verify');
+    try {
+      const res = await authService.requestPasswordReset(trimmedEmail);
+      if (res.debugCode) {
+        // In local development environment only, show debug code hint if returned
+        setGeneratedCode(res.debugCode);
+      }
+      setEnteredCode(''); 
+      setStep('verify');
+    } catch (err: any) {
+      setError(err?.message || "Bunday email bilan akkaunt topilmadi.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (enteredCode.trim() !== generatedCode.trim()) {
-      setError("Tasdiqlash kodi noto'g'ri. Qaytadan tekshirib kiriting.");
+    if (!enteredCode.trim()) {
+      setError("Tasdiqlash kodini kiriting.");
       return;
     }
 
@@ -65,7 +63,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await authService.resetPassword(email, newPassword);
+      await authService.resetPassword(email.trim().toLowerCase(), enteredCode.trim(), newPassword);
       setStep('success');
     } catch (err: any) {
       setError(err?.message || "Parolni yangilashda xatolik yuz berdi.");

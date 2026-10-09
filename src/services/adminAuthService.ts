@@ -73,33 +73,15 @@ export const adminAuthService = {
         return { success: false, error: 'Ushbu hisobda administrator huquqi mavjud emas.' };
       }
     } catch (e: any) {
-      // Fallback for emergency offline superadmin
-      const isDefault = (inputEmail === 'admin@ibnsino.uz' || inputEmail === 'admin@nextolymp.uz') &&
-        (inputPass === 'IbnSino2026!Admin' || inputPass === 'admin123');
-
-      if (isDefault) {
-        const issuedAt = Date.now();
-        const expiresAt = issuedAt + 24 * 60 * 60 * 1000;
-        const mockToken = `jwt-admin-offline-${issuedAt}`;
-        const payload: AdminSessionPayload = {
-          email: inputEmail,
-          role: 'admin',
-          token: mockToken,
-          issuedAt,
-          expiresAt,
-        };
-        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(payload));
-        localStorage.setItem('ibn_sino_token', mockToken);
-        localStorage.setItem('next_olymp_jwt', mockToken);
-        return { success: true, session: payload };
-      }
-
       useSecurityStore.getState().recordFailedLogin(
-        '127.0.0.1 (Client)',
+        'Client',
         email,
-        "Noto'g'ri Admin Email yoki Parol kiritildi"
+        "Noto'g'ri Admin Email yoki Maxfiy Kalit kiritildi"
       );
-      return { success: false, error: e.message || "Noto'g'ri Admin Email yoki Maxfiy Kalit kiritildi." };
+      return {
+        success: false,
+        error: e.message || "Noto'g'ri Admin Email yoki Maxfiy Kalit kiritildi."
+      };
     }
   },
 

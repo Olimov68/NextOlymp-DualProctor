@@ -3,43 +3,56 @@ import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { validatePlacementSnapshot } from '../services/setupProctor.service';
 import { JWT_SECRET } from '../config/constants';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
-export const activeProctorSessions = new Map<string, {
-  sessionId: string;
-  token: string;
-  examId: string;
-  studentId: string;
-  status: string;
-  calibrated: boolean;
-  examStartTime: number;
-  examEndTime: number;
-  lastHeartbeat: number;
-}>();
+import { dbStore, ProctorSessionRecord } from '../db/store';
+
+export const activeProctorSessions = new Map<string, ProctorSessionRecord>();
+
+// Preload persisted proctor sessions on server start (Item 9)
+for (const session of dbStore.getAllProctorSessions()) {
+  activeProctorSessions.set(session.sessionId, session);
+}
 
 function sanitizeString(str: any): string {
   if (typeof str !== 'string') return '';
   return str.replace(/[<>'"]/g, '').trim();
 }
 
+// CRITICAL SECURITY FIX (Item 2 & 3): Strict session auth without URL token leak
 function verifySessionAuth(req: Request, sessionId: string): boolean {
   const authHeader = req.headers.authorization;
-  const tokenParam = (req.query.token as string) || (req.body && req.body.token);
+  const bodyToken = req.body && req.body.token;
 
   let token = '';
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.slice(7);
-  } else if (tokenParam) {
-    token = tokenParam;
+    token = authHeader.slice(7).trim();
+  } else if (bodyToken) {
+    token = String(bodyToken).trim();
   }
 
-  // FIXED: Must require valid token!
-  if (!token) return false;
+  if (!token || !sessionId) return false;
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    if (decoded && decoded.sessionId && decoded.sessionId !== sessionId) {
+    if (!decoded || !decoded.sessionId || decoded.sessionId !== sessionId) {
       return false;
     }
+    const session = activeProctorSessions.get(sessionId);
+    if (!session) return false;
+
+    // Strict binding: token sessionId, examId, and studentId must all strictly match active session!
+    if (!decoded.studentId || decoded.studentId !== session.studentId) {
+      return false;
+    }
+    if (!decoded.examId || decoded.examId !== session.examId) {
+      return false;
+    }
+    // Check if session has expired
+    if (Date.now() > session.examEndTime + 60000) {
+      return false;
+    }
+
     return true;
   } catch {
     return false;
@@ -47,14 +60,21 @@ function verifySessionAuth(req: Request, sessionId: string): boolean {
 }
 
 export class ProctorController {
-  public static async createSession(req: Request, res: Response) {
+  // CRITICAL SECURITY FIX (Item 4): Proctor session must require authentication
+  public static async createSession(req: AuthenticatedRequest, res: Response) {
     try {
-      const examId = sanitizeString(req.body.examId);
-      const studentId = sanitizeString(req.body.studentId);
-      const studentName = sanitizeString(req.body.studentName);
+      if (!req.user) {
+        return res.status(401).json({ error: 'Avtorizatsiyadan o\'tilmagan (Token talab qilinadi)' });
+      }
 
-      if (!examId || !studentId) {
-        return res.status(400).json({ error: "examId va studentId majburiy" });
+      const examId = sanitizeString(req.body.examId);
+      // Derive studentId from verified authenticated user, preventing impersonation!
+      const isPrivileged = req.user.role === 'admin' || req.user.role === 'teacher';
+      const studentId = isPrivileged && req.body.studentId ? sanitizeString(req.body.studentId) : req.user.id;
+      const studentName = isPrivileged && req.body.studentName ? sanitizeString(req.body.studentName) : req.user.fullName;
+
+      if (!examId) {
+        return res.status(400).json({ error: "examId majburiy" });
       }
 
       const sessionId = uuidv4();
@@ -68,7 +88,7 @@ export class ProctorController {
       const examStartTime = req.body.examStartTime ? new Date(req.body.examStartTime).getTime() : now;
       const examEndTime = req.body.examEndTime ? new Date(req.body.examEndTime).getTime() : now + (120 * 60 * 1000);
 
-      activeProctorSessions.set(sessionId, {
+      const sessionRecord: ProctorSessionRecord = {
         sessionId,
         token,
         examId,
@@ -78,11 +98,15 @@ export class ProctorController {
         examStartTime,
         examEndTime,
         lastHeartbeat: now,
-      });
+      };
+
+      activeProctorSessions.set(sessionId, sessionRecord);
+      dbStore.saveProctorSession(sessionRecord);
 
       const host = req.get('host') || 'localhost:3000';
       const protocol = req.protocol || 'http';
-      const streamUrl = `${protocol}://${host}/proctor/stream?sessionId=${sessionId}&token=${token}`;
+      // CRITICAL FIX (Item 2): Never append confidential JWT token to public URL!
+      const streamUrl = `${protocol}://${host}/proctor/stream?sessionId=${sessionId}`;
 
       return res.status(201).json({
         success: true,
@@ -105,8 +129,13 @@ export class ProctorController {
       const sessionId = sanitizeString(req.body.sessionId);
       const imageBase64 = req.body.imageBase64;
 
-      if (!sessionId || !imageBase64) {
+      if (!sessionId || !imageBase64 || typeof imageBase64 !== 'string') {
         return res.status(400).json({ error: "sessionId va imageBase64 talab qilinadi" });
+      }
+
+      // Check maximum snapshot size (approx 7MB base64) to prevent DoS
+      if (imageBase64.length > 7 * 1024 * 1024) {
+        return res.status(413).json({ error: "Snapshot hajmi juda katta (maksimal 5MB rasm ruxsat etiladi)" });
       }
 
       if (!verifySessionAuth(req, sessionId)) {
@@ -120,6 +149,7 @@ export class ProctorController {
         session.calibrated = evaluation.valid_placement;
         session.status = evaluation.valid_placement ? 'CALIBRATED' : 'DEVICE_CONNECTED';
         session.lastHeartbeat = Date.now();
+        dbStore.saveProctorSession(session);
       }
 
       return res.json({

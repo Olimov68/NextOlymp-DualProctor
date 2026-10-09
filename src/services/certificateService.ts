@@ -78,13 +78,7 @@ export const certificateService = {
       const subs = Array.isArray(res) ? res : (res?.data || []);
       
       const found = subs.find((s: any) => {
-        const legacyCode = s.verificationCode || `IS-2026-${(s.examTitle || s.olympiadTitle || 'MED').slice(0, 4).toUpperCase()}-${Math.abs(Number(s.id?.replace(/\D/g, '')) || 8921)}`;
-        return (
-          cleanCode === 'IS-2026-MED-8921' ||
-          cleanCode === 'NO-8921' ||
-          legacyCode.toUpperCase() === cleanCode ||
-          (s.verificationCode && s.verificationCode.toUpperCase() === cleanCode)
-        );
+        return Boolean(s.verificationCode && s.verificationCode.toUpperCase() === cleanCode);
       });
 
       if (!found) return null;

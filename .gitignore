@@ -40,3 +40,7 @@ Desktop.ini
 scratch_*.cjs
 scratch/
 *.zip
+
+# Database runtime stores
+server/data/store.json
+!server/data/store.example.json

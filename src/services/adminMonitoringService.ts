@@ -49,10 +49,11 @@ export const adminMonitoringService = {
   
   async getSystemStats(): Promise<SystemStatsResponse> {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+    const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
     try {
       const res = await fetch(`${apiBase}/admin/system-stats`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('next_olymp_jwt') || ''}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -125,10 +126,11 @@ export const adminMonitoringService = {
   
   async getSecurityLogs(): Promise<SecurityLogEntry[]> {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+    const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
     try {
       const res = await fetch(`${apiBase}/admin/security-logs`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('next_olymp_jwt') || ''}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });

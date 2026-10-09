@@ -2,38 +2,17 @@ import { Request, Response } from 'express';
 import { dbStore } from '../db/store';
 
 export class CertificateController {
+  // CRITICAL SECURITY FIX (Item 1): Remove hardcoded certificate forgery bypass
   public static async verifyCertificate(req: Request, res: Response) {
     try {
-      const { code } = req.params;
+      const code = req.params.code ? String(req.params.code).trim() : '';
       if (!code) {
         return res.status(400).json({ error: 'Verifikatsiya kodi talab qilinadi' });
       }
 
+      // Check strictly in database by certificate verification code (NO HARDCODED BYPASS!)
       const submission = dbStore.verifyCertificateByCode(code);
       if (!submission) {
-        // Also support legacy format code match
-        const all = dbStore.getSubmissions();
-        const altMatch = all.find(s => s.verificationCode?.toLowerCase() === code.toLowerCase() || code.toUpperCase() === 'IS-2026-MED-8921');
-        if (altMatch) {
-          return res.json({
-            success: true,
-            valid: true,
-            certificate: {
-              id: altMatch.id,
-              userId: altMatch.userId,
-              userName: altMatch.userName,
-              examTitle: altMatch.examTitle,
-              subject: altMatch.subject,
-              score: altMatch.score,
-              maxScore: altMatch.maxScore,
-              percentage: altMatch.percentage,
-              certificateType: altMatch.certificateType,
-              verificationCode: altMatch.verificationCode,
-              issuedAt: altMatch.submittedAt,
-            }
-          });
-        }
-
         return res.status(404).json({
           success: false,
           valid: false,
@@ -59,7 +38,7 @@ export class CertificateController {
         }
       });
     } catch (error: any) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'Sertifikat tekshiruvida xatolik yuz berdi' });
     }
   }
 }

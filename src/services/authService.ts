@@ -30,9 +30,13 @@ export const authService = {
     const password = (params.password || '').trim();
 
     try {
+      if (!password) {
+        throw new Error('Parol kiritilishi shart');
+      }
+
       const res = await apiClient.post('/auth/login', {
         identifier,
-        password: password || 'IbnSino2026!Admin',
+        password,
         role: params.role,
       });
 
@@ -63,29 +67,6 @@ export const authService = {
         return { user: userProfile, token: res.token };
       }
     } catch (err: any) {
-      // If server error, check if admin local credential
-      if (params.role === 'admin' || identifier.includes('admin')) {
-        const isDefaultAdmin = (identifier === 'admin@ibnsino.uz' || identifier === 'admin@nextolymp.uz') && 
-          (password === 'IbnSino2026!Admin' || password === 'admin123' || password === 'superadmin');
-        
-        if (isDefaultAdmin) {
-          const adminUser: User = {
-            id: 'usr-admin-master',
-            email: identifier,
-            fullName: 'Ibn Sino Bosh Admin',
-            role: 'admin',
-            grade: 11,
-            region: 'Toshkent shahri',
-            school: 'Ibn Sino Markaziy Boshqaruv',
-            createdAt: new Date().toISOString(),
-          };
-          const mockToken = `jwt-admin-token-${Date.now()}`;
-          localStorage.setItem('ibn_sino_token', mockToken);
-          localStorage.setItem('next_olymp_jwt', mockToken);
-          localStorage.setItem('next_olymp_user', JSON.stringify(adminUser));
-          return { user: adminUser, token: mockToken };
-        }
-      }
       throw new Error(err.message || 'Login yoki parol noto\'g\'ri');
     }
 
@@ -94,11 +75,15 @@ export const authService = {
 
   async register(params: RegisterParams): Promise<{ user: User; token: string }> {
     try {
+      if (!params.password || params.password.trim().length < 6) {
+        throw new Error('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      }
+
       const res = await apiClient.post('/auth/register', {
         fullName: params.fullName.trim(),
         email: params.email?.trim(),
         phone: params.phone?.trim(),
-        password: params.password?.trim() || 'password123',
+        password: params.password.trim(),
         role: params.role || 'student',
         grade: params.grade || 9,
         region: params.region || 'Toshkent shahri',
@@ -166,13 +151,36 @@ export const authService = {
     }));
   },
 
-  async resetPassword(email: string, _newPassword?: string): Promise<boolean> {
-    useNotificationStore.getState().addNotification({
-      title: 'Parol tiklash so\'rovi',
-      desc: `${email} pochtasiga yo'riqnoma yuborildi`,
-      type: 'info',
-    });
-    return true;
+  async requestPasswordReset(email: string): Promise<{ success: boolean; message: string; debugCode?: string }> {
+    try {
+      const res = await apiClient.post('/auth/forgot-password', { email });
+      useNotificationStore.getState().addNotification({
+        title: 'Parol tiklash so\'rovi',
+        desc: `${email} pochtasiga tasdiqlash kodi yuborildi`,
+        type: 'info',
+      });
+      return res;
+    } catch (err: any) {
+      throw new Error(err.message || 'Parolni tiklash so\'rovi yuborilmadi');
+    }
+  },
+
+  async resetPassword(email: string, code: string, newPassword?: string): Promise<boolean> {
+    try {
+      const res = await apiClient.post('/auth/reset-password', {
+        email,
+        code,
+        newPassword,
+      });
+      useNotificationStore.getState().addNotification({
+        title: 'Parol muvaffaqiyatli o\'zgartirildi',
+        desc: 'Yangi parol orqali tizimga kirishingiz mumkin',
+        type: 'success',
+      });
+      return res.success;
+    } catch (err: any) {
+      throw new Error(err.message || 'Parolni yangilashda xatolik yuz berdi');
+    }
   },
 
   logout(): void {

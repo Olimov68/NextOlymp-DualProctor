@@ -92,6 +92,18 @@ export interface ProctorEventRecord {
   ipAddress: string;
 }
 
+export interface ProctorSessionRecord {
+  sessionId: string;
+  token: string;
+  examId: string;
+  studentId: string;
+  status: string;
+  calibrated: boolean;
+  examStartTime: number;
+  examEndTime: number;
+  lastHeartbeat: number;
+}
+
 export interface DatabaseSchema {
   users: UserRecord[];
   exams: ExamRecord[];
@@ -100,6 +112,7 @@ export interface DatabaseSchema {
   submissions: SubmissionRecord[];
   proctorEvents: ProctorEventRecord[];
   securityBlockedIps: Array<{ ip: string; reason: string; blockedAt: string }>;
+  proctorSessions?: ProctorSessionRecord[];
 }
 
 const DATA_DIR = path.resolve(process.cwd(), 'server', 'data');
@@ -123,10 +136,56 @@ class Store {
     if (fs.existsSync(STORE_PATH)) {
       try {
         const raw = fs.readFileSync(STORE_PATH, 'utf-8');
-        return JSON.parse(raw);
+        const data: DatabaseSchema = JSON.parse(raw);
+        if (!Array.isArray(data.proctorSessions)) {
+          data.proctorSessions = [];
+        }
+        
+        // Auto-sanitize leaked passwords and real PII if present in store.json
+        const LEAKED_ADMIN_HASH = '$2a$10$w0AKUQrXpxOSaPhvDSOf4OJ9vfiofDNDFIg0mWJVb92siLkI.XDx6';
+        const LEAKED_STUDENT_HASH = '$2a$10$hddDD4.o4fXH4shoJQVDJuZcNBFOlxc3wdT0HDfbOK.r/kuHHCpFC';
+        const newAdminHash = bcrypt.hashSync(process.env.INITIAL_ADMIN_PASSWORD || 'IbnSino_Admin_2026!#Strong', 10);
+        const newStudentHash = bcrypt.hashSync(process.env.INITIAL_STUDENT_PASSWORD || 'Student_Demo_2026!#Pass', 10);
+
+        let modified = false;
+        if (Array.isArray(data.users)) {
+          data.users = data.users.filter(u => {
+            // Remove real student PII from repo data
+            if (u.email === 'aoolimov68@gmail.com') {
+              modified = true;
+              return false;
+            }
+            return true;
+          });
+
+          for (const u of data.users) {
+            if (u.passwordHash === LEAKED_ADMIN_HASH) {
+              u.passwordHash = newAdminHash;
+              modified = true;
+            } else if (u.passwordHash === LEAKED_STUDENT_HASH) {
+              u.passwordHash = newStudentHash;
+              modified = true;
+            }
+          }
+        }
+
+        if (modified) {
+          this.saveData(data);
+        }
+
+        return data;
       } catch (e) {
         console.error('Error reading store.json, falling back to initial data:', e);
       }
+    }
+    const EXAMPLE_PATH = path.resolve(__dirname, '../../data/store.example.json');
+    if (fs.existsSync(EXAMPLE_PATH)) {
+      try {
+        const raw = fs.readFileSync(EXAMPLE_PATH, 'utf-8');
+        const data: DatabaseSchema = JSON.parse(raw);
+        this.saveData(data);
+        return data;
+      } catch {}
     }
     const initial = this.createInitialData();
     this.saveData(initial);
@@ -136,12 +195,23 @@ class Store {
   private saveData(dataToSave?: DatabaseSchema) {
     this.ensureDir();
     const data = dataToSave || this.data;
-    fs.writeFileSync(STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    const tempPath = `${STORE_PATH}.tmp.${process.pid}.${Date.now()}`;
+    try {
+      fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+      fs.renameSync(tempPath, STORE_PATH);
+    } catch (err) {
+      try {
+        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+      } catch {}
+      fs.writeFileSync(STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    }
   }
 
   private createInitialData(): DatabaseSchema {
-    const adminPassHash = bcrypt.hashSync('IbnSino2026!Admin', 10);
-    const studentPassHash = bcrypt.hashSync('student123', 10);
+    const adminPass = process.env.INITIAL_ADMIN_PASSWORD || 'IbnSino_Admin_2026!#Strong';
+    const studentPass = process.env.INITIAL_STUDENT_PASSWORD || 'Student_Demo_2026!#Pass';
+    const adminPassHash = bcrypt.hashSync(adminPass, 12);
+    const studentPassHash = bcrypt.hashSync(studentPass, 12);
 
     const users: UserRecord[] = [
       {
@@ -435,6 +505,7 @@ class Store {
       submissions,
       proctorEvents: [],
       securityBlockedIps: [],
+      proctorSessions: [],
     };
   }
 
@@ -640,6 +711,12 @@ class Store {
     return this.data.submissions;
   }
 
+  public verifyCertificateByCode(code: string): SubmissionRecord | undefined {
+    if (!code) return undefined;
+    const clean = code.trim().toLowerCase();
+    return this.data.submissions.find(s => s.verificationCode && s.verificationCode.trim().toLowerCase() === clean);
+  }
+
   // --- Users ---
   public getUsers(): UserRecord[] {
     return this.data.users;
@@ -658,10 +735,14 @@ class Store {
     );
   }
 
-  public createUser(user: UserRecord): UserRecord {
+  public createUser(user: UserRecord): { success: boolean; error?: string; user?: UserRecord } {
+    const existing = this.getUserByEmailOrPhone(user.email) || (user.phone ? this.getUserByEmailOrPhone(user.phone) : null);
+    if (existing) {
+      return { success: false, error: 'Ushbu email yoki telefon raqami bilan foydalanuvchi allaqachon mavjud' };
+    }
     this.data.users.unshift(user);
     this.saveData();
-    return user;
+    return { success: true, user };
   }
 
   public updateUser(id: string, updates: Partial<UserRecord>): UserRecord | null {
@@ -698,6 +779,30 @@ class Store {
   public verifyCertificateByCode(code: string): SubmissionRecord | undefined {
     const clean = code.trim().toUpperCase();
     return this.data.submissions.find(s => s.verificationCode.toUpperCase() === clean);
+  }
+
+  // --- Proctor Session Persistence (Item 9) ---
+  public saveProctorSession(session: ProctorSessionRecord): void {
+    if (!this.data.proctorSessions) {
+      this.data.proctorSessions = [];
+    }
+    const idx = this.data.proctorSessions.findIndex(s => s.sessionId === session.sessionId);
+    if (idx >= 0) {
+      this.data.proctorSessions[idx] = { ...session };
+    } else {
+      this.data.proctorSessions.push({ ...session });
+    }
+    this.saveData();
+  }
+
+  public getProctorSession(sessionId: string): ProctorSessionRecord | undefined {
+    if (!this.data.proctorSessions) return undefined;
+    return this.data.proctorSessions.find(s => s.sessionId === sessionId);
+  }
+
+  public getAllProctorSessions(): ProctorSessionRecord[] {
+    if (!this.data.proctorSessions) return [];
+    return this.data.proctorSessions;
   }
 }
 

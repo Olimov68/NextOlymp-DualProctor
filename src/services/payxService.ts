@@ -4,9 +4,7 @@ export type PayxPaymentMethod = 'payme' | 'click' | 'uzumpay' | 'paynet' | 'uzca
 
 export interface PayxConfig {
   merchantId: string;
-  apiKey: string;
-  secretKey: string;
-  webhookUrl: string;
+  publicKey?: string;
   mode: 'live' | 'sandbox';
   apiUrl: string;
 }
@@ -67,16 +65,13 @@ export interface PayxProcessPaymentParams {
 
 type Subscriber = () => void;
 
-const PAYX_CONFIG_KEY = 'payx_merchant_config';
-const PAYX_TRANSACTIONS_KEY = 'payx_transactions_history';
-
+// SECURITY NOTICE (Item 10): Payment secret keys MUST NEVER be stored in the frontend codebase.
+// All secret keys and payment validations must reside strictly on the server backend.
 const defaultConfig: PayxConfig = {
-  merchantId: 'PAYX-MERCHANT-IBN-SINO-2026',
-  apiKey: 'payx_live_pk_892184912409124810294',
-  secretKey: 'payx_live_sk_991824091824012984019284',
-  webhookUrl: 'https://api.ibnsino.uz/api/v1/payx/webhook',
-  mode: 'live',
-  apiUrl: 'https://api.payx.uz/v1',
+  merchantId: (import.meta as any).env?.VITE_PAYX_MERCHANT_ID || 'PAYX-MERCHANT-IBN-SINO',
+  publicKey: (import.meta as any).env?.VITE_PAYX_PUBLIC_KEY || '',
+  mode: 'sandbox',
+  apiUrl: (import.meta as any).env?.VITE_PAYX_API_URL || 'https://api.payx.uz/v1',
 };
 
 const subscribers: Set<Subscriber> = new Set();
