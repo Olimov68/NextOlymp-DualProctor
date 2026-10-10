@@ -5,10 +5,8 @@ import {
   Trophy,
   Users,
   MapPin,
-  CreditCard,
   Bell,
   HelpCircle,
-  Package,
   User,
   PanelLeftClose,
   PanelLeftOpen,
@@ -63,17 +61,11 @@ export const EgaNavbar: React.FC<EgaNavbarProps> = ({ isCollapsed, onToggleColla
     if (path.startsWith('/ega/locations')) {
       return { title: translateText('Hududlar', currentLang.toLowerCase()), icon: MapPin };
     }
-    if (path.startsWith('/ega/finance')) {
-      return { title: translateText('To\'lovlar', currentLang.toLowerCase()), icon: CreditCard };
-    }
     if (path.startsWith('/ega/notifications')) {
       return { title: translateText('Xabarnomalar', currentLang.toLowerCase()), icon: Bell };
     }
     if (path.startsWith('/ega/support')) {
       return { title: translateText('Yordam xizmati', currentLang.toLowerCase()), icon: HelpCircle };
-    }
-    if (path.startsWith('/ega/packages')) {
-      return { title: translateText('Paketlar', currentLang.toLowerCase()), icon: Package };
     }
     if (path.startsWith('/ega/security')) {
       return { title: translateText('Kiberxavfsizlik', currentLang.toLowerCase()), icon: ShieldAlert };

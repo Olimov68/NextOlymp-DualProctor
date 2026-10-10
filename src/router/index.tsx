@@ -45,12 +45,10 @@ import { EgaLeaderboardPage } from '../pages/ega/EgaLeaderboardPage';
 import { EgaSubjectsPage } from '../pages/ega/EgaSubjectsPage';
 import { EgaUsersPage } from '../pages/ega/EgaUsersPage';
 import { EgaCertificatesPage } from '../pages/ega/EgaCertificatesPage';
-import { EgaFinancePage } from '../pages/ega/EgaFinancePage';
 import { EgaTeamPage } from '../pages/ega/EgaTeamPage';
 import { EgaLocationsPage } from '../pages/ega/EgaLocationsPage';
 import { EgaNotificationsPage } from '../pages/ega/EgaNotificationsPage';
 import { EgaSupportPage } from '../pages/ega/EgaSupportPage';
-import { EgaPackagesPage } from '../pages/ega/EgaPackagesPage';
 import { EgaSecurityPage } from '../pages/ega/EgaSecurityPage';
 import { EgaBaholashPage } from '../pages/ega/EgaBaholashPage';
 import { EgaLevelTestsPage } from '../pages/ega/EgaLevelTestsPage';
@@ -161,11 +159,11 @@ export const AppRouter: React.FC = () => {
         <Route path="/ega/locations" element={<EgaLocationsPage />} />
         <Route path="/ega/team" element={<EgaTeamPage />} />
         <Route path="/ega/certificates" element={<EgaCertificatesPage />} />
-        <Route path="/ega/finance" element={<EgaFinancePage />} />
-        <Route path="/ega/payments" element={<EgaFinancePage />} />
+        <Route path="/ega/finance" element={<Navigate to="/ega" replace />} />
+        <Route path="/ega/payments" element={<Navigate to="/ega" replace />} />
+        <Route path="/ega/packages" element={<Navigate to="/ega" replace />} />
         <Route path="/ega/notifications" element={<EgaNotificationsPage />} />
         <Route path="/ega/support" element={<EgaSupportPage />} />
-        <Route path="/ega/packages" element={<EgaPackagesPage />} />
         <Route path="/ega/security" element={<EgaSecurityPage />} />
         <Route path="/ega/settings" element={<EgaSecurityPage />} />
 

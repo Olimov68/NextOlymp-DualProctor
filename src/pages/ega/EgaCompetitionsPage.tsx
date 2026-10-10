@@ -107,8 +107,8 @@ export const EgaCompetitionsPage: React.FC = () => {
   const totalCount = olympiads?.length || 0;
   const openCount = useMemo(() => (olympiads || []).filter((o) => (o?.status || 'ochiq') === 'ochiq').length, [olympiads]);
   const closedCount = useMemo(() => (olympiads || []).filter((o) => o?.status === 'yopiq').length, [olympiads]);
-  const totalRevenueSum = useMemo(() => (olympiads || []).reduce((sum, o) => sum + (Number(o?.totalRevenue) || 0), 0), [olympiads]);
-  const totalPaidCountSum = useMemo(() => (olympiads || []).reduce((sum, o) => sum + (Number(o?.paidCount) || 0), 0), [olympiads]);
+  const totalRegisteredSum = useMemo(() => (olympiads || []).reduce((sum, o) => sum + (Number(o?.registeredCount) || 0), 0), [olympiads]);
+  const totalSubmittedSum = useMemo(() => (olympiads || []).reduce((sum, o) => sum + (Number(o?.submittedCount) || 0), 0), [olympiads]);
 
   
   const filteredOlympiads = useMemo(() => {
@@ -157,12 +157,9 @@ export const EgaCompetitionsPage: React.FC = () => {
       [t('Olimpiada Nomi')]: o.title || '',
       [t('Fan')]: t(o.subject || ''),
       [t('Formati')]: (o.format || 'online').toUpperCase(),
-      [t('Narxi')]: !o.price || o.price === 0 ? t('Bepul') : `${o.price} UZS`,
       [t('Holati')]: (o.status || 'ochiq') === 'ochiq' ? t('Ochiq (Faol)') : t('Yopiq'),
       [t('Ro\'yxatdan o\'tganlar')]: o.registeredCount || 0,
       [t('Topshirganlar')]: o.submittedCount || 0,
-      [t('To\'lov qilganlar')]: o.paidCount || 0,
-      [t('Jami tushum')]: `${o.totalRevenue || 0} UZS`,
       [t('Boshlanish vaqti')]: o.startDate || '',
       [t('Tugash vaqti')]: o.endDate || '',
       [t('Manzil (Offline)')]: o.location || '-'
@@ -325,11 +322,11 @@ export const EgaCompetitionsPage: React.FC = () => {
             )}
           >
             <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-              <DollarSign className="w-5 h-5" />
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400">{t("Jami Tushum")}</div>
-              <div className="text-sm font-black text-blue-300 mt-0.5 font-mono truncate">{totalRevenueSum.toLocaleString()} UZS</div>
+              <div className="text-[10px] uppercase font-bold text-slate-400">{t("Jami Qatnashuvchilar")}</div>
+              <div className="text-sm font-black text-blue-300 mt-0.5 font-mono truncate">{totalRegisteredSum.toLocaleString()} {t("kishi")}</div>
             </div>
           </div>
 
@@ -341,11 +338,11 @@ export const EgaCompetitionsPage: React.FC = () => {
             )}
           >
             <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
-              <Users className="w-5 h-5" />
+              <Award className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400">{t("To'lov Qilganlar")}</div>
-              <div className="text-lg font-black text-purple-300 mt-0.5 font-mono">{totalPaidCountSum.toLocaleString()} {t("kishi")}</div>
+              <div className="text-[10px] uppercase font-bold text-slate-400">{t("Topshirganlar")}</div>
+              <div className="text-lg font-black text-purple-300 mt-0.5 font-mono">{totalSubmittedSum.toLocaleString()} {t("kishi")}</div>
             </div>
           </div>
         </div>
@@ -537,14 +534,6 @@ export const EgaCompetitionsPage: React.FC = () => {
                         <div className="text-[9px] text-slate-400 uppercase font-semibold">{t("Topshirganlar")}</div>
                         <div className="font-bold font-mono text-emerald-400 mt-0.5">{(item.submittedCount || 0).toLocaleString()} kishi</div>
                       </div>
-                      <div>
-                        <div className="text-[9px] text-slate-400 uppercase font-semibold">{t("To'laganlar")}</div>
-                        <div className="font-bold font-mono text-purple-300 mt-0.5">{(item.paidCount || 0).toLocaleString()} kishi</div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-slate-400 uppercase font-semibold">{t("Jami Tushum")}</div>
-                        <div className="font-bold font-mono text-amber-400 text-xs mt-0.5 whitespace-nowrap inline-block">{formatUZS(item.totalRevenue)}</div>
-                      </div>
                     </div>
 
                     
@@ -609,11 +598,8 @@ export const EgaCompetitionsPage: React.FC = () => {
                     <th className="py-2.5 px-3 w-10 text-center">№</th>
                     <th className="py-2.5 px-3">{t("Olimpiada Nomi")}</th>
                     <th className="py-2.5 px-3">{t("Formati")}</th>
-                    <th className="py-2.5 px-3">{t("Narxi")}</th>
                     <th className="py-2.5 px-3">{t("Ro'yxatdan o'tganlar")}</th>
                     <th className="py-2.5 px-3">{t("Topshirganlar")}</th>
-                    <th className="py-2.5 px-3">{t("To'laganlar")}</th>
-                    <th className="py-2.5 px-3">{t("Jami Tushum")}</th>
                     <th className="py-2.5 px-3">{t("Holati")}</th>
                     <th className="py-2.5 px-3 text-right">{t("Amallar")}</th>
                   </tr>
@@ -636,20 +622,11 @@ export const EgaCompetitionsPage: React.FC = () => {
                           {item.format || 'online'}
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-mono font-bold text-amber-400 whitespace-nowrap">
-                        {formatUZS(item.price)}
-                      </td>
                       <td className="py-3 px-3 font-mono font-bold text-cyan-400 whitespace-nowrap">
                         {(item.registeredCount || 0).toLocaleString()} kishi
                       </td>
                       <td className="py-3 px-3 font-mono font-bold text-emerald-400 whitespace-nowrap">
                         {(item.submittedCount || 0).toLocaleString()} kishi
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-blue-400 whitespace-nowrap">
-                        {(item.paidCount || 0).toLocaleString()} kishi
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-amber-300 whitespace-nowrap">
-                        {formatUZS(item.totalRevenue)}
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border", item.status === 'ochiq' ? "bg-emerald-950/70 text-emerald-400 border-emerald-800/60" : "bg-rose-950/70 text-rose-400 border-rose-800/60")}>
@@ -749,38 +726,19 @@ export const EgaCompetitionsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
-                      {t("Narxi (UZS)")}
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={editingOlympiad.price}
-                      onChange={(e) => setEditingOlympiad({ ...editingOlympiad, price: Number(e.target.value) })}
-                      className={clsx(
-                        "w-full rounded-lg px-3 py-2 text-xs outline-none border font-mono",
-                        isDark ? "bg-[#091024] border-[#1A2F57] focus:border-amber-400 text-white" : "bg-slate-50 border-slate-300 focus:border-amber-500 text-slate-900"
-                      )}
-                    />
-                  </div>
-
-                  <div>
-                    <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
-                      {t("Fan")}
-                    </label>
-                    <input
-                      type="text"
-                      value={editingOlympiad.subject}
-                      onChange={(e) => setEditingOlympiad({ ...editingOlympiad, subject: e.target.value })}
-                      className={clsx(
-                        "w-full rounded-lg px-3 py-2 text-xs outline-none border",
-                        isDark ? "bg-[#091024] border-[#1A2F57] focus:border-amber-400 text-white" : "bg-slate-50 border-slate-300 focus:border-amber-500 text-slate-900"
-                      )}
-                    />
-                  </div>
+                <div>
+                  <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
+                    {t("Fan")}
+                  </label>
+                  <input
+                    type="text"
+                    value={editingOlympiad.subject}
+                    onChange={(e) => setEditingOlympiad({ ...editingOlympiad, subject: e.target.value })}
+                    className={clsx(
+                      "w-full rounded-lg px-3 py-2 text-xs outline-none border",
+                      isDark ? "bg-[#091024] border-[#1A2F57] focus:border-amber-400 text-white" : "bg-slate-50 border-slate-300 focus:border-amber-500 text-slate-900"
+                    )}
+                  />
                 </div>
 
                 <div>

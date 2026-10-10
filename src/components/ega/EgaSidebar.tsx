@@ -5,8 +5,6 @@ import {
   Trophy,
   Users,
   MapPin,
-  Package,
-  CreditCard,
   Bell,
   HelpCircle,
   LogOut,
@@ -41,10 +39,8 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
         { label: translateText('Reytinglar', currentLang), path: '/ega/leaderboard', icon: Award },
         { label: translateText('Foydalanuvchilar', currentLang), path: '/ega/users', icon: Users },
         { label: translateText('Hududlar', currentLang), path: '/ega/locations', icon: MapPin },
-        { label: translateText('To\'lovlar', currentLang), path: '/ega/finance', icon: CreditCard },
         { label: translateText('Xabarnomalar', currentLang), path: '/ega/notifications', icon: Bell },
         { label: translateText('Yordam xizmati', currentLang), path: '/ega/support', icon: HelpCircle },
-        { label: translateText('Paketlar', currentLang), path: '/ega/packages', icon: Package },
         { label: translateText('Kiberxavfsizlik', currentLang), path: '/ega/security', icon: ShieldAlert },
       ]
     }

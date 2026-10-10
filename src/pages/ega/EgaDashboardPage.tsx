@@ -5,8 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { translateText } from '../../i18n/translator';
 import { useOlympiadStore } from '../../store/useOlympiadStore';
 import { useUserStore } from '../../store/useUserStore';
-import { usePackageStore } from '../../store/usePackageStore';
-import { usePaymentStore } from '../../store/usePaymentStore';
 import { useSupportStore } from '../../store/useSupportStore';
 import { useSecurityStore } from '../../store/useSecurityStore';
 import { clsx } from 'clsx';
@@ -14,8 +12,6 @@ import { Link } from 'react-router-dom';
 import {
   Trophy,
   Users,
-  DollarSign,
-  CreditCard,
   ShieldAlert,
   CheckCircle2,
   ArrowRight,
@@ -50,8 +46,6 @@ export const EgaDashboardPage: React.FC = () => {
 
   const { olympiads } = useOlympiadStore();
   const { users } = useUserStore();
-  const { packages } = usePackageStore();
-  const { payments } = usePaymentStore();
   const { tickets } = useSupportStore();
   const securityStore = useSecurityStore();
 
@@ -59,10 +53,7 @@ export const EgaDashboardPage: React.FC = () => {
   const totalCompetitions = olympiads.length;
   const activeCompetitions = olympiads.filter((o) => o.status === 'ochiq').length;
   const totalRegisteredParticipants = olympiads.reduce((acc, curr) => acc + (curr.registeredCount || 0), 0);
-  const totalRevenue = payments
-    .filter((p) => p.status === 'muvaffaqiyatli')
-    .reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const totalPaidCount = payments.filter((p) => p.status === 'muvaffaqiyatli').length;
+  const totalSubmittedCount = olympiads.reduce((acc, curr) => acc + (curr.submittedCount || 0), 0);
   const openTicketsCount = tickets.filter((t) => t.status === 'yangi' || t.status === 'jarayonda').length;
 
   
@@ -82,15 +73,7 @@ export const EgaDashboardPage: React.FC = () => {
   });
 
   
-  const successfulPayments = payments.filter((p) => p.status === 'muvaffaqiyatli');
-  const cardCount = successfulPayments.filter((p) => p.method === 'karta').length;
-  const pkgCount = payments.filter((p) => p.method === 'paket').length;
-  const cashCount = successfulPayments.filter((p) => p.method === 'naqd').length;
-  const totalPayTransactions = successfulPayments.length || 1;
 
-  const cardSharePercent = successfulPayments.length > 0 ? Math.round((cardCount / totalPayTransactions) * 100) : 0;
-  const pkgSharePercent = payments.length > 0 ? Math.round((pkgCount / payments.length) * 100) : 0;
-  const cashSharePercent = successfulPayments.length > 0 ? Math.round((cashCount / totalPayTransactions) * 100) : 0;
 
   
   const studentCount = users.filter((u) => u.role === 'student').length;
@@ -365,18 +348,18 @@ export const EgaDashboardPage: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <span className={clsx("text-[10px] font-extrabold uppercase tracking-wider", isDark ? "text-slate-400" : "text-slate-500")}>
-                {t("Jami Moliya Tushumi")}
+                {t("Topshirilgan Sinovlar")}
               </span>
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
-                <DollarSign className="w-4 h-4" />
+                <Award className="w-4 h-4" />
               </div>
             </div>
             <div>
               <div className="text-xl font-black font-mono text-emerald-400">
-                {totalRevenue.toLocaleString()} UZS
+                {totalSubmittedCount.toLocaleString()} ta
               </div>
-              <div className="text-[11px] font-semibold text-slate-400 mt-0.5">
-                {totalPaidCount} ta to'lov muvaffaqiyatli
+              <div className="text-[11px] font-semibold text-emerald-400/80 mt-0.5">
+                100% Bepul (Ochiq kirish)
               </div>
             </div>
           </div>
@@ -675,46 +658,46 @@ export const EgaDashboardPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b pb-2 border-slate-700/40">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  <Award className="w-4 h-4 text-emerald-400" />
                   <h3 className={clsx("text-xs font-extrabold uppercase tracking-wider", isDark ? "text-white" : "text-slate-900")}>
-                    {t("Moliya & To'lovlar")}
+                    {t("Baholash & Rasch Moduli")}
                   </h3>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400">
-                  {totalRevenue.toLocaleString()} UZS
+                  Faol
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 text-[11px]">
                 <div className={clsx("p-2.5 rounded-xl border flex justify-between items-center", isDark ? "bg-[#091024] border-[#182A4D]" : "bg-slate-50 border-slate-200")}>
                   <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-blue-400" />
-                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>Karta Orqali:</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>Faol Musobaqalar:</span>
                   </div>
-                  <span className="font-mono font-bold text-emerald-400">{cardSharePercent}%</span>
+                  <span className="font-mono font-bold text-emerald-400">{activeCompetitions} ta</span>
                 </div>
                 <div className={clsx("p-2.5 rounded-xl border flex justify-between items-center", isDark ? "bg-[#091024] border-[#182A4D]" : "bg-slate-50 border-slate-200")}>
                   <div className="flex items-center gap-2">
-                    <Gift className="w-4 h-4 text-purple-400" />
-                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>VIP Paket (Bepul):</span>
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>Rasch Shkalasi:</span>
                   </div>
-                  <span className="font-mono font-bold text-purple-400">{pkgSharePercent}%</span>
+                  <span className="font-mono font-bold text-purple-400">75 Ball (A+)</span>
                 </div>
                 <div className={clsx("p-2.5 rounded-xl border flex justify-between items-center", isDark ? "bg-[#091024] border-[#182A4D]" : "bg-slate-50 border-slate-200")}>
                   <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-amber-400" />
-                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>Naqd Pul (Kassa):</span>
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>Ishtirok imkoniyati:</span>
                   </div>
-                  <span className="font-mono font-bold text-amber-400">{cashSharePercent}%</span>
+                  <span className="font-mono font-bold text-emerald-400">OCHIQ (Open Access)</span>
                 </div>
               </div>
             </div>
 
             <Link
-              to="/ega/finance"
+              to="/ega/baholash"
               className="flex items-center justify-center gap-1 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs transition-all mt-2"
             >
-              <span>{t("Moliyaviy Hisobotlar")}</span>
+              <span>{t("Baholash Moduliga O'tish")}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -749,8 +732,8 @@ export const EgaDashboardPage: React.FC = () => {
                   <span className="font-bold text-amber-400 font-mono">{teacherSharePercent}% ({teacherCount} ta)</span>
                 </div>
                 <div className={clsx("p-2.5 rounded-xl border flex justify-between items-center", isDark ? "bg-[#091024] border-[#182A4D]" : "bg-slate-50 border-slate-200")}>
-                  <span>Faol Paket Obunalari:</span>
-                  <span className="font-bold text-emerald-400 font-mono">{packages.length} turdagi tarif</span>
+                  <span>Umumiy Qamrov:</span>
+                  <span className="font-bold text-emerald-400 font-mono">14 Viloyat (Respublika)</span>
                 </div>
               </div>
             </div>
@@ -829,17 +812,6 @@ export const EgaDashboardPage: React.FC = () => {
             </Link>
 
             <Link
-              to="/ega/finance"
-              className={clsx(
-                "p-3 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition-all hover:scale-102 cursor-pointer",
-                isDark ? "bg-[#091024] border-[#182A4D] hover:border-emerald-400" : "bg-slate-50 border-slate-200 hover:border-emerald-500"
-              )}
-            >
-              <DollarSign className="w-5 h-5 text-emerald-400" />
-              <span className={clsx("font-bold text-xs", isDark ? "text-slate-200" : "text-slate-800")}>Moliya Hisob</span>
-            </Link>
-
-            <Link
               to="/ega/users"
               className={clsx(
                 "p-3 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition-all hover:scale-102 cursor-pointer",
@@ -861,16 +833,7 @@ export const EgaDashboardPage: React.FC = () => {
               <span className={clsx("font-bold text-xs", isDark ? "text-slate-200" : "text-slate-800")}>Baholash Moduli</span>
             </Link>
 
-            <Link
-              to="/ega/packages"
-              className={clsx(
-                "p-3 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition-all hover:scale-102 cursor-pointer",
-                isDark ? "bg-[#091024] border-[#182A4D] hover:border-purple-400" : "bg-slate-50 border-slate-200 hover:border-purple-500"
-              )}
-            >
-              <Gift className="w-5 h-5 text-purple-400" />
-              <span className={clsx("font-bold text-xs", isDark ? "text-slate-200" : "text-slate-800")}>Paket Tariflar</span>
-            </Link>
+
 
             <Link
               to="/ega/notifications"

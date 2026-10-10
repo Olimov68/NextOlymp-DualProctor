@@ -759,7 +759,7 @@ export const ContestParticipatePage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                   <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
                     <div className="text-[10px] text-zinc-400 uppercase font-bold">F.I.Sh.</div>
                     <div className="font-bold text-zinc-100 text-sm truncate">{user?.fullName || "Ishtirokchi"}</div>
@@ -767,12 +767,6 @@ export const ContestParticipatePage: React.FC = () => {
                   <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
                     <div className="text-[10px] text-zinc-400 uppercase font-bold">Sinfi & Hudud</div>
                     <div className="font-bold text-zinc-200">{user?.grade ? `${user.grade}-sinf` : '9-sinf'} • {user?.region || 'Toshkent sh.'}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
-                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Ishtirok Narxi</div>
-                    <div className="font-bold text-sm font-mono text-emerald-400">
-                      BEPUL (Open Access)
-                    </div>
                   </div>
                   <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
                     <div className="text-[10px] text-zinc-400 uppercase font-bold">Holati</div>

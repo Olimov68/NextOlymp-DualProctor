@@ -35,8 +35,6 @@ export const OlympiadDetailPage: React.FC = () => {
     navigate(`/olympiads/${olympiad.id}/participate`);
   };
 
-  const price = Number(olympiad.price || 0);
-
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 font-sans">
       <Button variant="ghost" onClick={() => navigate(-1)} leftIcon={<ArrowLeft className="w-4 h-4" />}>
@@ -99,12 +97,6 @@ export const OlympiadDetailPage: React.FC = () => {
               Musobaqa Shartlari va Bosqichlar
             </h3>
             <ul className="space-y-3 text-sm text-zinc-300">
-              {price > 0 && (
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>PayX gateway (payx.uz/docs) orqali Payme, Click, Uzum Pay, Paynet yoki Uzcard/Humo yordamida to'lov qiling.</span>
-                </li>
-              )}
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <span>Timer server-side sinxronlanadi va berilgan daqiqa tugagach avtomatik topshiriladi.</span>

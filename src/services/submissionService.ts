@@ -32,7 +32,7 @@ export interface ParticipantAdminResult {
   submittedAt?: string;
   registeredAt?: string;
   currentQuestion?: number;
-  paymentType?: 'Karta' | 'Hamyon' | 'Naqd' | 'VIP Paket (Bepul)' | string;
+  paymentType?: string;
   paymentStatus?: 'paid' | 'free' | 'pending' | string;
   certificateType?: 'I darajali Diplom' | 'II darajali Diplom' | 'III darajali Diplom' | 'Sertifikat' | string;
   rank?: number;

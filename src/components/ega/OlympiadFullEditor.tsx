@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { OlympiadItem } from '../../data/initialOlympiads';
 import { useOlympiadStore } from '../../store/useOlympiadStore';
-import { usePackageStore } from '../../store/usePackageStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useTranslation } from 'react-i18next';
 import { translateText } from '../../i18n/translator';
@@ -88,7 +87,6 @@ const ALL_GRADES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad, onBack }) => {
   const { updateOlympiad } = useOlympiadStore();
-  const { packages } = usePackageStore();
   const { theme } = useThemeStore();
   const { i18n } = useTranslation();
 
@@ -759,14 +757,14 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
       maxRetakeAttempts: retakeAllowed ? maxRetakeAttempts : 1,
       allowedLanguages,
       targetGrades,
-      paymentMethods: isFreeForAll ? [] : paymentMethods,
-      isFreeForAll,
-      separatePricesEnabled: isFreeForAll ? false : separatePricesEnabled,
-      price: isFreeForAll ? 0 : separatePricesEnabled ? (format === 'online' ? onlinePrice : offlinePrice) : price,
-      onlinePrice: isFreeForAll ? 0 : onlinePrice,
-      offlinePrice: isFreeForAll ? 0 : offlinePrice,
-      discountPercent: isFreeForAll ? 0 : discountPercent,
-      discountAmount: isFreeForAll ? 0 : discountAmount,
+      paymentMethods: [],
+      isFreeForAll: true,
+      separatePricesEnabled: false,
+      price: 0,
+      onlinePrice: 0,
+      offlinePrice: 0,
+      discountPercent: 0,
+      discountAmount: 0,
       isAlwaysOpen,
       registrationStartDate,
       registrationEndDate,
@@ -853,7 +851,7 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
               </span>
             </div>
             <p className={clsx("text-[11px] mt-0.5", isDark ? "text-slate-400" : "text-slate-500")}>
-              {t("Olimpiada ma'lumotlari, tasnif, qamrov, sinflar, narxlar va natija sozlamalarini tahrirlash")}
+              {t("Olimpiada ma'lumotlari, tasnif, qamrov, sinflar, vaqt va natija sozlamalarini tahrirlash")}
             </p>
           </div>
         </div>
@@ -912,21 +910,6 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
         >
           <HelpCircle className="w-3.5 h-3.5" />
           <span>{t("Savollar")} ({questionsList.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('pricing')}
-          className={clsx(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer whitespace-nowrap",
-            activeTab === 'pricing'
-              ? "bg-amber-500 text-slate-950 shadow-sm"
-              : isDark
-              ? "text-slate-400 hover:text-white hover:bg-[#14244A]"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
-          )}
-        >
-          <DollarSign className="w-3.5 h-3.5" />
-          <span>{t("Narx & To'lov")}</span>
         </button>
 
         <button
@@ -1494,394 +1477,6 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
             </div>
           )}
         </div>
-      )}
-
-      
-      {activeTab === 'pricing' && (
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            
-            <div
-              className={clsx(
-                "p-5 rounded-2xl border space-y-4 transition-colors",
-                isDark ? "bg-[#0D1832] border-[#182A4D]" : "bg-white border-slate-200"
-              )}
-            >
-              <h2 className={clsx("text-sm font-bold flex items-center gap-2 border-b pb-2.5", isDark ? "text-white border-[#182A4D]" : "text-slate-900 border-slate-200")}>
-                <CreditCard className="w-4 h-4 text-emerald-400" />
-                <span>{t("To'lov Usullari (Galochka orqali belgilash)")} *</span>
-              </h2>
-
-              {isFreeForAll ? (
-                <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{t("Olimpiada 100% BEPUL (0 UZS) etib belgilangan. To'lov usullari talab etilmaydi.")}</span>
-                </div>
-              ) : (
-                <p className="text-[11px] text-slate-400">
-                  {t("Ishtirokchilar ushbu olimpiada uchun qaysi usullarda to'lov qila olishlarini belgilang:")}
-                </p>
-              )}
-
-              <div className={clsx("space-y-2.5 transition-all", isFreeForAll && "opacity-40 pointer-events-none")}>
-                
-                <button
-                  type="button"
-                  disabled={isFreeForAll}
-                  onClick={() => togglePaymentMethod('karta')}
-                  className={clsx(
-                    "w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all",
-                    isFreeForAll ? "cursor-not-allowed" : "cursor-pointer",
-                    paymentMethods.includes('karta')
-                      ? isDark
-                        ? "bg-blue-600/20 border-blue-500/60 text-blue-300"
-                        : "bg-blue-50 border-blue-400 text-blue-800"
-                      : isDark
-                      ? "bg-[#091024] border-[#16284D] text-slate-400"
-                      : "bg-slate-50 border-slate-200 text-slate-600"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <CreditCard className="w-4 h-4 text-blue-400 shrink-0" />
-                    <div>
-                      <div>{t("Karta orqali to'lov (Uzcard, Humo, Visa, Payme, Click)")}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{t("Avtomatik onlayn to'lov va darhol aktivlashish")}</div>
-                    </div>
-                  </div>
-                  {paymentMethods.includes('karta') ? (
-                    <CheckSquare className="w-5 h-5 text-blue-400 shrink-0" />
-                  ) : (
-                    <Square className="w-5 h-5 text-slate-500 shrink-0" />
-                  )}
-                </button>
-
-                
-                <button
-                  type="button"
-                  disabled={isFreeForAll}
-                  onClick={() => togglePaymentMethod('hamyon')}
-                  className={clsx(
-                    "w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all",
-                    isFreeForAll ? "cursor-not-allowed" : "cursor-pointer",
-                    paymentMethods.includes('hamyon')
-                      ? isDark
-                        ? "bg-purple-600/20 border-purple-500/60 text-purple-300"
-                        : "bg-purple-50 border-purple-400 text-purple-800"
-                      : isDark
-                      ? "bg-[#091024] border-[#16284D] text-slate-400"
-                      : "bg-slate-50 border-slate-200 text-slate-600"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Wallet className="w-4 h-4 text-purple-400 shrink-0" />
-                    <div>
-                      <div>{t("Hamyon (Ibn Sino Shaxsiy Balansi)")}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{t("Foydalanuvchining shaxsiy hamyonidagi mablag'dan yechish")}</div>
-                    </div>
-                  </div>
-                  {paymentMethods.includes('hamyon') ? (
-                    <CheckSquare className="w-5 h-5 text-purple-400 shrink-0" />
-                  ) : (
-                    <Square className="w-5 h-5 text-slate-500 shrink-0" />
-                  )}
-                </button>
-
-                
-                <button
-                  type="button"
-                  disabled={isFreeForAll}
-                  onClick={() => togglePaymentMethod('naqd')}
-                  className={clsx(
-                    "w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all",
-                    isFreeForAll ? "cursor-not-allowed" : "cursor-pointer",
-                    paymentMethods.includes('naqd')
-                      ? isDark
-                        ? "bg-amber-600/20 border-amber-500/60 text-amber-300"
-                        : "bg-amber-50 border-amber-400 text-amber-800"
-                      : isDark
-                      ? "bg-[#091024] border-[#16284D] text-slate-400"
-                      : "bg-slate-50 border-slate-200 text-slate-600"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Coins className="w-4 h-4 text-amber-400 shrink-0" />
-                    <div>
-                      <div>{t("Naqd pul to'lovi (Joyida / Kassa orqali)")}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{t("Oflayn bino kassisiga yoki maktabda topshirish")}</div>
-                    </div>
-                  </div>
-                  {paymentMethods.includes('naqd') ? (
-                    <CheckSquare className="w-5 h-5 text-amber-400 shrink-0" />
-                  ) : (
-                    <Square className="w-5 h-5 text-slate-500 shrink-0" />
-                  )}
-                </button>
-              </div>
-
-              
-              <div className={clsx("pt-3 border-t border-[#182A4D] space-y-3 transition-all", isFreeForAll && "opacity-40 pointer-events-none")}>
-                <label className={clsx("block text-xs font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-900")}>
-                  <Gift className="w-4 h-4 text-emerald-400" />
-                  <span>{t("Paket Egalari Uchun Bepul Qatnashish Imtiyozi")} *</span>
-                </label>
-                <p className="text-[11px] text-slate-400">
-                  {t("Paketlar bo'limidagi qaysi paket obunachilariga ushbu olimpiadada bepul qatnashish imkoniyatini berasiz?")}
-                </p>
-
-                <select
-                  disabled={isFreeForAll}
-                  value={freeForPackageId}
-                  onChange={(e) => setFreeForPackageId(e.target.value)}
-                  className={clsx(
-                    "w-full rounded-xl px-3.5 py-2.5 text-xs outline-none border font-bold text-emerald-400",
-                    isFreeForAll ? "cursor-not-allowed" : "cursor-pointer",
-                    isDark ? "bg-[#091024] border-[#1A2F57]" : "bg-slate-50 border-slate-300 text-emerald-700"
-                  )}
-                >
-                  <option value="none">❌ Imtiyozsiz (Barcha ishtirokchilar to'lov qiladi)</option>
-                  <option value="all">🌟 Barcha pullik paket egalari (Standard, Pro, VIP) uchun BEPUL</option>
-                  {packages.map((pkg) => (
-                    <option key={pkg.id} value={pkg.id}>
-                      🎁 {pkg.nomi} ({pkg.narxi.toLocaleString()} UZS/oy) obunachilari uchun BEPUL
-                    </option>
-                  ))}
-                </select>
-
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-300 space-y-1">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Imtiyoz Holati:</span>
-                  </div>
-                  <div>
-                    {isFreeForAll
-                      ? "Olimpiada barcha ishtirokchilar uchun mutlaqo BEPUL qilingan (Paket obunasi talab etilmaydi)."
-                      : freeForPackageId === 'none'
-                      ? "Hech qaysi paket egalariga bepul berilmagan."
-                      : freeForPackageId === 'all'
-                      ? "Barcha Standard, Pro va VIP paket sotib olgan foydalanuvchilar to'lov qilmasdan qatnashadi."
-                      : `Faqat ${packages.find((p) => p.id === freeForPackageId)?.nomi || freeForPackageId} paketi foydalanuvchilari uchun 100% BEPUL.`}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            
-            <div
-              className={clsx(
-                "p-5 rounded-2xl border space-y-4 transition-colors",
-                isDark ? "bg-[#0D1832] border-[#182A4D]" : "bg-white border-slate-200"
-              )}
-            >
-              <h2 className={clsx("text-sm font-bold flex items-center gap-2 border-b pb-2.5", isDark ? "text-white border-[#182A4D]" : "text-slate-900 border-slate-200")}>
-                <DollarSign className="w-4 h-4 text-amber-400" />
-                <span>{t("Narx va Chegirma Sozlamalari")}</span>
-              </h2>
-
-              
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                    <Gift className="w-4 h-4 text-emerald-300" />
-                    <span>{t("🌟 Hamma Uchun BEPUL (0 UZS)")}</span>
-                  </div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">
-                    {t("Ushbu olimpiadada barcha ishtirokchilar to'lov qilmasdan 100% BEPUL qatnashadi")}
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={isFreeForAll}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setIsFreeForAll(checked);
-                    if (checked) {
-                      setPrice(0);
-                      setOnlinePrice(0);
-                      setOfflinePrice(0);
-                      setSeparatePricesEnabled(false);
-                      setDiscountPercent(0);
-                      setDiscountAmount(0);
-                      setPaymentMethods([]);
-                    } else {
-                      setPrice(35000);
-                      setOnlinePrice(35000);
-                      setOfflinePrice(50000);
-                      setPaymentMethods(['karta', 'hamyon']);
-                    }
-                  }}
-                  className="w-5 h-5 accent-emerald-500 cursor-pointer"
-                />
-              </div>
-
-              
-              <div className={clsx(
-                "p-3 rounded-xl border flex items-center justify-between transition-all",
-                isFreeForAll ? "opacity-40 cursor-not-allowed bg-black/10 border-white/5 pointer-events-none" : "bg-black/20 border-white/10"
-              )}>
-                <div>
-                  <div className="text-xs font-bold text-white">{t("Online va Offline narxni alohida belgilash")}</div>
-                  <div className="text-[10px] text-slate-400">{t("Onlayn va oflayn qatnashish uchun har xil narx belgilash")}</div>
-                </div>
-                <input
-                  type="checkbox"
-                  disabled={isFreeForAll}
-                  checked={!isFreeForAll && separatePricesEnabled}
-                  onChange={(e) => !isFreeForAll && setSeparatePricesEnabled(e.target.checked)}
-                  className="w-4 h-4 accent-amber-500 cursor-pointer disabled:cursor-not-allowed"
-                />
-              </div>
-
-              
-              {isFreeForAll ? (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-1.5">
-                  <div className="text-xs font-extrabold text-emerald-400 flex items-center justify-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>{t("Ishtirok Narxi: 0 UZS (100% BEPUL)")}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-300">
-                    {t("Ushbu olimpiada barcha qatnashuvchilar uchun mutlaqo bepul qilingan. Pullik narx yoki to'lov talab etilmaydi.")}
-                  </p>
-                </div>
-              ) : !separatePricesEnabled ? (
-                <div>
-                  <label className={clsx("block text-xs font-bold mb-1.5", isDark ? "text-slate-300" : "text-slate-700")}>
-                    {t("Asosiy Ishtirok Narxi (UZS) *")}
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={0}
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className={clsx(
-                      "w-full rounded-xl px-3.5 py-2.5 text-xs outline-none border font-mono font-bold text-amber-400 text-sm",
-                      isDark ? "bg-[#091024] border-[#1A2F57]" : "bg-slate-50 border-slate-300 text-amber-600"
-                    )}
-                  />
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={clsx("block text-xs font-bold mb-1.5 text-blue-300")}>
-                      🌐 {t("Online Narxi (UZS) *")}
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={onlinePrice}
-                      onChange={(e) => setOnlinePrice(Number(e.target.value))}
-                      className={clsx(
-                        "w-full rounded-xl px-3 py-2 text-xs outline-none border font-mono font-bold text-blue-400 text-sm",
-                        isDark ? "bg-[#091024] border-[#1A2F57]" : "bg-slate-50 border-slate-300"
-                      )}
-                    />
-                  </div>
-
-                  <div>
-                    <label className={clsx("block text-xs font-bold mb-1.5 text-purple-300")}>
-                      📍 {t("Offline Narxi (UZS) *")}
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={offlinePrice}
-                      onChange={(e) => setOfflinePrice(Number(e.target.value))}
-                      className={clsx(
-                        "w-full rounded-xl px-3 py-2 text-xs outline-none border font-mono font-bold text-purple-300 text-sm",
-                        isDark ? "bg-[#091024] border-[#1A2F57]" : "bg-slate-50 border-slate-300"
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              
-              {!isFreeForAll && (
-                <div className="pt-3 border-t border-[#182A4D] space-y-3">
-                  <label className={clsx("block text-xs font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-900")}>
-                    <Percent className="w-4 h-4 text-rose-400" />
-                    <span>{t("Chegirma Qo'shish (Aksiya)")}</span>
-                  </label>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
-                        {t("Chegirma Foizida (%)")}
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={discountPercent}
-                        onChange={(e) => {
-                          setDiscountPercent(Number(e.target.value));
-                          setDiscountAmount(0);
-                        }}
-                        placeholder="Masalan: 15%"
-                        className={clsx(
-                          "w-full rounded-xl px-3 py-2 text-xs outline-none border font-mono font-bold text-rose-400",
-                          isDark ? "bg-[#091024] border-[#1A2F57]" : "bg-slate-50 border-slate-300"
-                        )}
-                      />
-                    </div>
-
-                    <div>
-                      <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
-                        {t("Yoki Chegirma Summasi (UZS)")}
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={discountAmount}
-                        onChange={(e) => {
-                          setDiscountAmount(Number(e.target.value));
-                          setDiscountPercent(0);
-                        }}
-                        placeholder="Masalan: 5000"
-                        className={clsx(
-                          "w-full rounded-xl px-3 py-2 text-xs outline-none border font-mono font-bold text-rose-400",
-                          isDark ? "bg-[#091024] border-[#1A2F57]" : "bg-slate-50 border-slate-300"
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              
-              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex justify-between items-center text-xs">
-                <div>
-                  <div className="text-slate-400 font-semibold">{t("Yakuniy To'lov Summasi")}:</div>
-                  <div className="text-[10px] text-slate-500">
-                    {isFreeForAll
-                      ? t("100% BEPUL ishtirok")
-                      : discountPercent > 0
-                      ? `${discountPercent}% chegirma qo'llanildi`
-                      : discountAmount > 0
-                      ? `${discountAmount.toLocaleString()} UZS chegirma qo'llanildi`
-                      : 'Chegirmasiz standart narx'}
-                  </div>
-                </div>
-                <div className={clsx("text-base font-black font-mono", isFreeForAll ? "text-emerald-400" : "text-amber-300")}>
-                  {isFreeForAll
-                    ? "0 UZS (BEPUL)"
-                    : `${getCalculatedPrice(separatePricesEnabled ? (format === 'online' ? onlinePrice : offlinePrice) : price).toLocaleString()} UZS`}
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-xs shadow-md"
-                >
-                  {t("Narxlarni saqlash")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
       )}
 
       

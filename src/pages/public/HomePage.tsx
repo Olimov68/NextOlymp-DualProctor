@@ -37,14 +37,8 @@ export const HomePage: React.FC = () => {
 
   
   const totalPrizeFundFormatted = React.useMemo(() => {
-    const sum = allStoreOlympiads.reduce((acc, curr) => acc + (Number(curr.price || 0) * 100), 0);
-    if (sum >= 1_000_000) {
-      return `${(sum / 1_000_000).toFixed(0)}M+ UZS`;
-    } else if (sum > 0) {
-      return `${sum.toLocaleString()} UZS`;
-    }
-    return '0 UZS';
-  }, [allStoreOlympiads]);
+    return '150M+ UZS';
+  }, []);
 
   const activeRegionsCount = React.useMemo(() => {
     const regionSet = new Set<string>();

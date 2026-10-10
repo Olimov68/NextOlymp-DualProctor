@@ -52,7 +52,6 @@ export const EgaUsersPage: React.FC = () => {
     gender: true,
     phone: true,
     role: true,
-    package: true,
     status: true,
     region: true,
     district: true,
@@ -134,7 +133,6 @@ export const EgaUsersPage: React.FC = () => {
       [t('Jins')]: u.gender === 'male' ? t("O'g'il bola") : t("Qiz bola"),
       [t('Telefon')]: u.phone,
       [t('Rol')]: t(u.role === 'student' ? "O'quvchi" : u.role === 'teacher' ? "O'qituvchi" : 'Admin'),
-      [t('Paket')]: u.package,
       [t('Holati')]: t(u.status === 'active' ? 'Faol' : 'Bloklangan'),
       [t('Manzil')]: t(u.region),
       [t('Tuman')]: t(u.district),
@@ -394,7 +392,6 @@ export const EgaUsersPage: React.FC = () => {
                     gender: t("Jinsi"),
                     phone: t("Telefon"),
                     role: t("Rol"),
-                    package: t("Paket"),
                     status: t("Holati"),
                     region: t("Manzil"),
                     district: t("Tuman"),
@@ -448,7 +445,6 @@ export const EgaUsersPage: React.FC = () => {
                   {visibleColumns.phone && <th className="py-2.5 px-3">{t("Telefon")}</th>}
                   {visibleColumns.email && <th className="py-2.5 px-3">{t("Email")}</th>}
                   {visibleColumns.role && <th className="py-2.5 px-3">{t("Rol")}</th>}
-                  {visibleColumns.package && <th className="py-2.5 px-3">{t("Paket")}</th>}
                   {visibleColumns.status && <th className="py-2.5 px-3">{t("Holati")}</th>}
                   {visibleColumns.region && <th className="py-2.5 px-3">{t("Manzil")}</th>}
                   {visibleColumns.district && <th className="py-2.5 px-3">{t("Tuman")}</th>}
@@ -547,25 +543,6 @@ export const EgaUsersPage: React.FC = () => {
                               )}
                             >
                               {t(u.role === 'student' ? "O'quvchi" : u.role === 'teacher' ? "O'qituvchi" : "Admin")}
-                            </span>
-                          </td>
-                        )}
-
-                        {visibleColumns.package && (
-                          <td className="py-2.5 px-3">
-                            <span
-                              className={clsx(
-                                "px-2 py-0.5 rounded text-[11px] font-bold border",
-                                u.package === 'VIP'
-                                  ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                                  : u.package === 'Pro'
-                                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
-                                  : u.package === 'Standard'
-                                  ? "bg-blue-500/20 text-blue-400 border-blue-500/40"
-                                  : "bg-slate-500/20 text-slate-400 border-slate-500/40"
-                              )}
-                            >
-                              {u.package}
                             </span>
                           </td>
                         )}
@@ -932,27 +909,6 @@ export const EgaUsersPage: React.FC = () => {
                   )}
                 </div>
 
-                <div>
-                  <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
-                    {t("Paket")}
-                  </label>
-                  <select
-                    value={newPackage}
-                    onChange={(e) => setNewPackage(e.target.value as any)}
-                    className={clsx(
-                      "w-full rounded-lg px-3 py-2 text-xs outline-none border",
-                      isDark
-                        ? "bg-[#091024] border-[#1A2F57] focus:border-amber-400 text-white"
-                        : "bg-slate-50 border-slate-300 focus:border-amber-500 text-slate-900"
-                    )}
-                  >
-                    <option value="Bepul">Bepul</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Pro">Pro</option>
-                    <option value="VIP">VIP</option>
-                  </select>
-                </div>
-
                 <div className={clsx("flex justify-end gap-2 pt-2 border-t", isDark ? "border-[#182A4D]" : "border-slate-200")}>
                   <button
                     type="button"
@@ -1170,27 +1126,6 @@ export const EgaUsersPage: React.FC = () => {
                       </select>
                     </div>
                   )}
-                </div>
-
-                <div>
-                  <label className={clsx("block text-[11px] font-semibold mb-1", isDark ? "text-slate-300" : "text-slate-700")}>
-                    {t("Paket")}
-                  </label>
-                  <select
-                    value={editingUser.package}
-                    onChange={(e) => setEditingUser({ ...editingUser, package: e.target.value as any })}
-                    className={clsx(
-                      "w-full rounded-lg px-3 py-2 text-xs outline-none border",
-                      isDark
-                        ? "bg-[#091024] border-[#1A2F57] focus:border-amber-400 text-white"
-                        : "bg-slate-50 border-slate-300 focus:border-amber-500 text-slate-900"
-                    )}
-                  >
-                    <option value="Bepul">Bepul</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Pro">Pro</option>
-                    <option value="VIP">VIP</option>
-                  </select>
                 </div>
 
                 <div className={clsx("flex justify-end gap-2 pt-2 border-t", isDark ? "border-[#182A4D]" : "border-slate-200")}>

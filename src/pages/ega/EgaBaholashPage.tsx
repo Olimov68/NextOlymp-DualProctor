@@ -121,12 +121,9 @@ export const EgaBaholashPage: React.FC = () => {
       'Baholash Usuli': 'Rasch Modeli (75 ballik standart shkala)',
       'Maksimal Ball': e.maxScore,
       'A Daraja Chegarasi': e.aThreshold,
-      'Narxi (UZS)': e.price,
       'Holati': e.status === 'ochiq' ? 'Faol (Ochiq)' : 'Yopiq (Tugagan)',
       'Ro\'yxatdan o\'tganlar': e.registeredCount,
       'Topshirganlar': e.submittedCount,
-      'To\'laganlar': e.paidCount,
-      'Jami Tushum': e.totalRevenue,
       'Boshlanish Vaqti': e.startDate,
       'Tugash Vaqti': e.endDate,
       'Manzil': e.location || 'Online'
@@ -546,14 +543,6 @@ export const EgaBaholashPage: React.FC = () => {
                             <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Topshirganlar:</span>
                             <span className="font-bold text-teal-400">{exam.submittedCount} kishi</span>
                           </div>
-                          <div>
-                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Narx:</span>
-                            <span className="font-bold text-zinc-100">{exam.price > 0 ? `${exam.price.toLocaleString()} UZS` : 'Bepul'}</span>
-                          </div>
-                          <div>
-                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Jami Tushum:</span>
-                            <span className="font-bold text-amber-400">{exam.totalRevenue.toLocaleString()} UZS</span>
-                          </div>
                         </div>
 
                         <div className="pt-2 text-[11px] text-zinc-400 space-y-1">
@@ -626,9 +615,7 @@ export const EgaBaholashPage: React.FC = () => {
                       <th className="py-3.5 px-4">Format</th>
                       <th className="py-3.5 px-4">Holat</th>
                       <th className="py-3.5 px-4">Baholash Shkalasi</th>
-                      <th className="py-3.5 px-4">Narxi</th>
                       <th className="py-3.5 px-4">Ishtirokchilar</th>
-                      <th className="py-3.5 px-4">Tushum</th>
                       <th className="py-3.5 px-4 text-right">Amallar</th>
                     </tr>
                   </thead>
@@ -662,15 +649,9 @@ export const EgaBaholashPage: React.FC = () => {
                         <td className="py-3.5 px-4 text-emerald-400 font-medium">
                           Rasch (Maks. 75 ball / A: 65)
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-zinc-100">
-                          {exam.price > 0 ? `${exam.price.toLocaleString()} UZS` : 'Bepul'}
-                        </td>
                         <td className="py-3.5 px-4">
                           <span className="text-teal-400 font-semibold">{exam.submittedCount}</span>
                           <span className="text-zinc-500"> / {exam.registeredCount}</span>
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-amber-400">
-                          {exam.totalRevenue.toLocaleString()} UZS
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
