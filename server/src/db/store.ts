@@ -74,6 +74,7 @@ export interface ExamRecord {
   totalQuestions: number;
   registeredCount: number;
   organizer: string;
+  targetGrades?: number[];
   createdAt: string;
 }
 
@@ -207,11 +208,15 @@ class Store {
           };
         }
         
-        // Auto-sanitize leaked passwords and real PII if present in store.json
-        const LEAKED_ADMIN_HASH = '$2a$10$w0AKUQrXpxOSaPhvDSOf4OJ9vfiofDNDFIg0mWJVb92siLkI.XDx6';
-        const LEAKED_STUDENT_HASH = '$2a$10$hddDD4.o4fXH4shoJQVDJuZcNBFOlxc3wdT0HDfbOK.r/kuHHCpFC';
-        const newAdminHash = bcrypt.hashSync(process.env.INITIAL_ADMIN_PASSWORD || crypto.randomBytes(16).toString('hex'), 10);
-        const newStudentHash = bcrypt.hashSync(process.env.INITIAL_STUDENT_PASSWORD || crypto.randomBytes(16).toString('hex'), 10);
+        // Auto-sanitize leaked passwords and real PII if present in store.json (Item 9)
+        const KNOWN_INSECURE_HASHES = [
+          '$2a$10$w0AKUQrXpxOSaPhvDSOf4OJ9vfiofDNDFIg0mWJVb92siLkI.XDx6',
+          '$2a$10$hddDD4.o4fXH4shoJQVDJuZcNBFOlxc3wdT0HDfbOK.r/kuHHCpFC',
+          '$2a$10$TWbn8ZC9Pxt9JCnsMEFAgO1cqLsBrjp7/S1p3P/8Hp9te.6/Uw5Ju',
+          '$2a$10$5NC2i1zx2wAsTrRQHLRZuu6Aizq7GaRxvNtA31BZGF79MUvbrBSRS',
+        ];
+        const newAdminHash = bcrypt.hashSync(process.env.INITIAL_ADMIN_PASSWORD || (crypto.randomBytes(16).toString('hex') + 'A1!'), 10);
+        const newStudentHash = bcrypt.hashSync(process.env.INITIAL_STUDENT_PASSWORD || (crypto.randomBytes(16).toString('hex') + 'S1!'), 10);
 
         let modified = false;
         if (Array.isArray(data.users)) {
@@ -225,11 +230,8 @@ class Store {
           });
 
           for (const u of data.users) {
-            if (u.passwordHash === LEAKED_ADMIN_HASH) {
-              u.passwordHash = newAdminHash;
-              modified = true;
-            } else if (u.passwordHash === LEAKED_STUDENT_HASH) {
-              u.passwordHash = newStudentHash;
+            if (KNOWN_INSECURE_HASHES.includes(u.passwordHash)) {
+              u.passwordHash = u.role === 'admin' ? newAdminHash : newStudentHash;
               modified = true;
             }
           }
@@ -249,6 +251,14 @@ class Store {
       try {
         const raw = fs.readFileSync(EXAMPLE_PATH, 'utf-8');
         const data: DatabaseSchema = JSON.parse(raw);
+        // Ensure example users do not use hardcoded insecure passwords
+        const newAdminHash = bcrypt.hashSync(process.env.INITIAL_ADMIN_PASSWORD || (crypto.randomBytes(16).toString('hex') + 'A1!'), 10);
+        const newStudentHash = bcrypt.hashSync(process.env.INITIAL_STUDENT_PASSWORD || (crypto.randomBytes(16).toString('hex') + 'S1!'), 10);
+        if (Array.isArray(data.users)) {
+          for (const u of data.users) {
+            u.passwordHash = u.role === 'admin' ? newAdminHash : newStudentHash;
+          }
+        }
         this.saveData(data);
         return data;
       } catch {}
@@ -625,6 +635,12 @@ class Store {
     this.saveData();
   }
 
+  public saveQuestions(examId: string, questions: QuestionRecord[]) {
+    this.data.questions = this.data.questions.filter(q => q.examId !== examId);
+    this.data.questions.push(...questions);
+    this.saveData();
+  }
+
   // --- Sessions & Server-Side Grading ---
   public startSession(userId: string, examId: string, durationMinutes: number = 60): ExamSessionRecord {
     const sessionId = `sess_${userId}_${examId}_${Date.now()}`;
@@ -731,8 +747,9 @@ class Store {
     const timeSpentMinutes = Math.max(1, Math.round(elapsedMs / 60000));
 
     const certType = percentage >= 85 ? 'I darajali Diplom' : percentage >= 70 ? 'II darajali Diplom' : percentage >= 50 ? 'III darajali Diplom' : 'Ishtirokchi Sertifikati';
-    const subNum = crypto.randomInt(10000, 99999);
-    const verificationCode = `IS-2026-${(exam?.category || 'MED').toUpperCase().slice(0, 4)}-${subNum}`;
+    // Item 24: High-entropy verification code to prevent enumeration
+    const subToken = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const verificationCode = `IS-2026-${(exam?.category || 'MED').toUpperCase().slice(0, 4)}-${subToken}`;
 
     const submission: SubmissionRecord = {
       id: `sub_${session.userId}_${session.examId}_${Date.now()}`,

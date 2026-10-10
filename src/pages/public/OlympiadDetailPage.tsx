@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useOlympiadDetail } from '../../hooks/useOlympiad';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { PayxPaymentModal } from '../../components/common/PayxPaymentModal';
-import { Clock, Trophy, Users, CheckCircle2, ShieldCheck, ArrowLeft, Play, Award, AlertCircle, CreditCard } from 'lucide-react';
+import { Clock, Trophy, Users, CheckCircle2, ShieldCheck, ArrowLeft, Play, Award, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export const OlympiadDetailPage: React.FC = () => {
@@ -12,7 +11,6 @@ export const OlympiadDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: olympiad, isLoading } = useOlympiadDetail(id || '');
   const { isAuthenticated, user } = useAuth();
-  const [isPayxModalOpen, setIsPayxModalOpen] = useState(false);
 
   if (isLoading) {
     return <div className="max-w-4xl mx-auto py-20 text-center text-emerald-400 font-sans">Musobaqa ma'lumotlari yuklanmoqda...</div>;
@@ -34,16 +32,6 @@ export const OlympiadDetailPage: React.FC = () => {
       navigate('/auth/register');
       return;
     }
-    const price = Number(olympiad.price || 0);
-    if (price > 0) {
-      setIsPayxModalOpen(true);
-    } else {
-      navigate(`/olympiads/${olympiad.id}/participate`);
-    }
-  };
-
-  const handlePaymentSuccess = () => {
-    setIsPayxModalOpen(false);
     navigate(`/olympiads/${olympiad.id}/participate`);
   };
 
@@ -87,18 +75,12 @@ export const OlympiadDetailPage: React.FC = () => {
             <Users className="w-5 h-5 text-teal-400" />
             <span>Ishtirokchilar: <strong className="text-zinc-100">{olympiad.participantsCount || 0} ta</strong></span>
           </div>
-          {price > 0 && (
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-emerald-400" />
-              <span>To'lov: <strong className="text-emerald-400">PayX (Payme, Click, Uzum, Uzcard/Humo)</strong></span>
-            </div>
-          )}
         </div>
 
         <div className="pt-2">
           {olympiad.status === 'active' || olympiad.status === 'ochiq' ? (
             <Button size="lg" variant="primary" onClick={handleStartContest} leftIcon={<Play className="w-5 h-5 fill-white" />}>
-              {price > 0 ? `PayX Orqali Qatnashish (${price.toLocaleString()} UZS)` : "Musobaqaga kirish"}
+              Musobaqaga kirish
             </Button>
           ) : (
             <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 text-amber-300 text-sm font-semibold border border-amber-500/20">
@@ -165,17 +147,6 @@ export const OlympiadDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {price > 0 && (
-        <PayxPaymentModal
-          isOpen={isPayxModalOpen}
-          onClose={() => setIsPayxModalOpen(false)}
-          amount={price}
-          olympiadTitle={olympiad.title}
-          olympiadId={olympiad.id}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
     </div>
   );
 };

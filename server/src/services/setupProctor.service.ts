@@ -161,73 +161,21 @@ export async function validatePlacementSnapshot(
 }
 
 function fallbackEvaluation(cleanBase64: string): AIPlacementEvaluation {
+  // CRITICAL SECURITY FIX (Item 12): Fail-closed on AI unavailable. Never auto-pass with mock checksums!
+  console.warn('[setupProctor.service] AI Vision service unavailable or API keys unconfigured. Failing closed.');
   
-  const approxBytes = Math.round((cleanBase64.length * 3) / 4);
-  if (approxBytes < 6000) {
-    return {
-      valid_placement: false,
-      missing_elements: ['student', 'hands', 'desk', 'screen'],
-      guidance_message: "Tasvir sifati juda past yoki qorong'i. Xona yoritilishini tekshiring.",
-      confidence: 0.5,
-      details: {
-        student_detected: false,
-        hands_detected: false,
-        desk_detected: false,
-        screen_detected: false,
-        distance_rating: 'too_close',
-      },
-    };
-  }
-
-  
-  let sum = 0;
-  for (let i = 0; i < Math.min(cleanBase64.length, 300); i++) {
-    sum += cleanBase64.charCodeAt(i);
-  }
-  const score = sum % 100;
-
-  if (score > 25) {
-    return {
-      valid_placement: true,
-      missing_elements: [],
-      guidance_message: "Joylashuv ideal! O'quvchi, ish stoli, ikkala qo'l va test ekrani to'liq kadrda.",
-      confidence: 0.94,
-      details: {
-        student_detected: true,
-        hands_detected: true,
-        desk_detected: true,
-        screen_detected: true,
-        distance_rating: 'optimal',
-        angle_rating: 'optimal',
-      },
-    };
-  } else if (score % 2 === 0) {
-    return {
-      valid_placement: false,
-      missing_elements: ['hands'],
-      guidance_message: "Kamerani biroz orqaroqqa suring, qo'llaringiz va klaviatura ko'rinmayapti.",
-      confidence: 0.88,
-      details: {
-        student_detected: true,
-        hands_detected: false,
-        desk_detected: true,
-        screen_detected: true,
-        distance_rating: 'too_close',
-      },
-    };
-  } else {
-    return {
-      valid_placement: false,
-      missing_elements: ['screen'],
-      guidance_message: "Kamerani 45° burchak ostida qo'ying, noutbuk ekrani kadrga tushishi shart.",
-      confidence: 0.9,
-      details: {
-        student_detected: true,
-        hands_detected: true,
-        desk_detected: true,
-        screen_detected: false,
-        distance_rating: 'optimal',
-      },
-    };
-  }
+  return {
+    valid_placement: false,
+    missing_elements: ['ai_verification_pending'],
+    guidance_message: "AI vizual tahlil xizmati vaqtincha javob bermadi yoki API kalit sozlanmagan. Iltimos, kamerani to'g'ri burchakka o'rnating va qayta urinib ko'ring.",
+    confidence: 0,
+    details: {
+      student_detected: false,
+      hands_detected: false,
+      desk_detected: false,
+      screen_detected: false,
+      distance_rating: 'too_close',
+      angle_rating: 'too_flat',
+    },
+  };
 }

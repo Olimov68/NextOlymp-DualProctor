@@ -27,8 +27,8 @@ export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: 
       return res.status(401).json({ error: 'Foydalanuvchi topilmadi yoki hisob o\'chirilgan (Unauthorized)' });
     }
 
-    if (user.status === 'blocked') {
-      return res.status(403).json({ error: 'Ushbu hisob xavfsizlik sababli bloklangan (Forbidden)' });
+    if (user.status !== 'active') {
+      return res.status(403).json({ error: 'Ushbu hisob faol emas yoki bloklangan (Forbidden)' });
     }
 
     req.user = user;

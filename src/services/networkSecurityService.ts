@@ -40,32 +40,21 @@ export class HmacRequestSigner {
 
     
     let signature = '';
-    try {
-      const encoder = new TextEncoder();
-      const keyData = encoder.encode(keyString);
-      const messageData = encoder.encode(messageString);
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(keyString);
+    const messageData = encoder.encode(messageString);
 
-      const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        keyData,
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
 
-      const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-      const hashArray = Array.from(new Uint8Array(signatureBuffer));
-      signature = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-    } catch {
-      
-      let hash = 0;
-      for (let i = 0; i < messageString.length; i++) {
-        const char = messageString.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash |= 0;
-      }
-      signature = `hmac_fb_${Math.abs(hash).toString(16)}`;
-    }
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const hashArray = Array.from(new Uint8Array(signatureBuffer));
+    signature = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
     return {
       data,
@@ -108,7 +97,8 @@ export class HmacRequestSigner {
 
       return expectedSignature === signed.signature;
     } catch {
-      return signed.signature.startsWith('hmac_fb_');
+      // Fail-closed on error (Item 21)
+      return false;
     }
   }
 }

@@ -12,7 +12,6 @@ import { QuestionPalette } from '../../components/contest/QuestionPalette';
 import { AntiCheatBanner } from '../../components/contest/AntiCheatBanner';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { PayxPaymentModal } from '../../components/common/PayxPaymentModal';
 import { ExamSetupModal } from '../../components/contest/ExamSetupModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useOlympiadStore } from '../../store/useOlympiadStore';
@@ -105,12 +104,7 @@ export const ContestParticipatePage: React.FC = () => {
   const canAttempt = isGradeEligible && (attemptsUsed === 0 || (retakeAllowed && attemptsUsed < maxAttempts));
   const isRetake = isGradeEligible && retakeAllowed && attemptsUsed > 0 && attemptsUsed < maxAttempts;
 
-  const olympiadPrice = (olympiad as any)?.price ? Number((olympiad as any).price) : 0;
-  const isFree = Boolean((olympiad as any)?.isFree) || olympiadPrice === 0;
-
-  const isPaid = true;
-  const setIsPaid = (_val: boolean) => {};
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const isFree = true;
 
   const [isRegistered, setIsRegistered] = useState(() => {
     if (!id || !user?.id) return false;
@@ -163,42 +157,6 @@ export const ContestParticipatePage: React.FC = () => {
       confetti({ particleCount: 50, spread: 60 });
       setCurrentStep('exam_briefing');
     }, 400);
-  };
-
-  const handlePaymentSuccess = async (txn?: any) => {
-    if (user?.id && id) {
-      try {
-        await apiClient.post('/payments/verify', {
-          examId: id,
-          amount: olympiadPrice,
-          provider: txn?.paymentMethod || 'payx',
-          transactionRef: txn?.id || `PAYX-${Date.now()}`,
-        });
-      } catch (err) {
-        console.warn('Backend payment verification notice:', err);
-      }
-      setIsPaid(true);
-      setIsRegistered(true);
-      localStorage.setItem(`reg_olymp_${user.id}_${id}`, 'true');
-
-      usePaymentStore.getState().addPayment({
-        userName: user.fullName || "O'quvchi",
-        userPhone: user.phone || '+998 90 123 45 67',
-        userRole: 'student',
-        olympiadOrPackage: olympiad?.title || 'Olimpiada ishtiroki',
-        method: txn?.paymentMethod === 'cash' ? 'naqd' : 'karta',
-        amount: olympiadPrice,
-        status: 'muvaffaqiyatli',
-        transactionRef: txn?.id || `PAYX-${Date.now()}`
-      });
-
-      useOlympiadStore.getState().updateOlympiad(id, {
-        registeredCount: (olympiad?.participantsCount || 0) + 1
-      });
-    }
-    setIsPaymentModalOpen(false);
-    confetti({ particleCount: 70, spread: 70 });
-    setCurrentStep('exam_briefing');
   };
 
   const startContest = useContestStore((state) => state.startContest);
@@ -812,14 +770,14 @@ export const ContestParticipatePage: React.FC = () => {
                   </div>
                   <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
                     <div className="text-[10px] text-zinc-400 uppercase font-bold">Ishtirok Narxi</div>
-                    <div className={clsx("font-bold text-sm font-mono", isFree ? "text-emerald-400" : isPaid ? "text-teal-300" : "text-amber-400")}>
-                      {isFree ? 'BEPUL (Open Access)' : isPaid ? `${olympiadPrice.toLocaleString()} UZS (To'langan ✓)` : `${olympiadPrice.toLocaleString()} UZS`}
+                    <div className="font-bold text-sm font-mono text-emerald-400">
+                      BEPUL (Open Access)
                     </div>
                   </div>
                   <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
                     <div className="text-[10px] text-zinc-400 uppercase font-bold">Holati</div>
-                    <div className={clsx("font-bold text-xs", isRegistered ? "text-emerald-400" : !isFree && !isPaid ? "text-amber-400" : "text-teal-300")}>
-                      {isRegistered ? 'Ishtirok Tasdiqlangan ✓' : !isFree && !isPaid ? "To'lov qilinmagan" : 'Ro\'yxatdan o\'tish zarur'}
+                    <div className={clsx("font-bold text-xs", isRegistered ? "text-emerald-400" : "text-amber-400")}>
+                      {isRegistered ? 'Ishtirok Tasdiqlangan ✓' : 'Ro\'yxatdan o\'tish zarur'}
                     </div>
                   </div>
                 </div>
@@ -860,15 +818,11 @@ export const ContestParticipatePage: React.FC = () => {
                       "w-full sm:w-auto text-white font-bold px-8 shadow-xl active:scale-95",
                       !isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered)
                         ? "bg-zinc-800 opacity-60 cursor-not-allowed text-zinc-500"
-                        : !isFree && !isPaid
-                        ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-500/30 ring-2 ring-emerald-400/30 animate-pulse"
                         : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25"
                     )}
                     leftIcon={
                       !isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered) ? (
                         <AlertTriangle className="w-4 h-4 text-rose-400" />
-                      ) : !isFree && !isPaid ? (
-                        <CreditCard className="w-4 h-4 text-emerald-300" />
                       ) : (
                         <UserPlus className="w-4 h-4" />
                       )
@@ -880,8 +834,6 @@ export const ContestParticipatePage: React.FC = () => {
                       ? "Musobaqa yakunlangan 🔒"
                       : isRegistrationExpired && !isRegistered
                       ? "Ro'yxatdan o'tish yopilgan ⏳"
-                      : !isFree && !isPaid
-                      ? `PayX Bilan To'lov Qilish (${olympiadPrice.toLocaleString()} UZS) 💳`
                       : "Olimpiadaga Ro'yxatdan O'tish 📝"}
                   </Button>
                 ) : !canAttempt && attemptsUsed > 0 ? (
@@ -1248,16 +1200,6 @@ export const ContestParticipatePage: React.FC = () => {
             studentId={user?.id || 'student-demo'}
             studentName={user?.fullName || "O'quvchi"}
           />
-
-          
-          <PayxPaymentModal
-            isOpen={isPaymentModalOpen}
-            onClose={() => setIsPaymentModalOpen(false)}
-            amount={olympiadPrice}
-            olympiadTitle={olympiad?.title || 'Olimpiada'}
-            olympiadId={id}
-            onSuccess={handlePaymentSuccess}
-          />
         </div>
       </div>
     );
@@ -1498,17 +1440,6 @@ export const ContestParticipatePage: React.FC = () => {
         </div>
       </Modal>
 
-      
-      <PayxPaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        amount={olympiadPrice}
-        olympiadTitle={olympiad?.title || 'Olimpiada'}
-        olympiadId={id}
-        onSuccess={handlePaymentSuccess}
-      />
-
-      
       <ExamSetupModal
         isOpen={isDualDeviceModalOpen}
         onClose={() => setIsDualDeviceModalOpen(false)}

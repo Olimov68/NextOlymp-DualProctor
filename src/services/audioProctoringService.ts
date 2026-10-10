@@ -113,56 +113,35 @@ export const audioProctoringService = {
       featureVector,
       sampleRate
     };
-    try {
-      const json = JSON.stringify(data);
-      localStorage.setItem(`${STORAGE_VOICEPRINT_PREFIX}${userId}`, json);
-      localStorage.setItem(`voiceprint_${userId}`, json);
-      localStorage.setItem(`next_olymp_latest_voiceprint`, json);
+    // Item 17: Biometric voiceprints kept strictly in-memory during active session to protect biometric privacy
+    const inMemoryVoiceprints = (globalThis as any).__inMemoryVoiceprints || new Map<string, VoiceprintData>();
+    (globalThis as any).__inMemoryVoiceprints = inMemoryVoiceprints;
 
-      if (contestId) {
-        localStorage.setItem(`voiceprint_${contestId}`, json);
-        localStorage.setItem(`${STORAGE_VOICEPRINT_PREFIX}${contestId}`, json);
-        localStorage.setItem(`voiceprint_${userId}_${contestId}`, json);
-      }
-
-      console.log('[AudioProctoring AI] ✓ Voiceprint saved to storage:', {
-        userId,
-        contestId,
-        embeddingDims: featureVector.length,
-        sampleRate
-      });
-    } catch (e) {
-      console.warn('[AudioProctoring AI] ⚠ Error saving voiceprint to localStorage:', e);
+    inMemoryVoiceprints.set(userId, data);
+    if (contestId) {
+      inMemoryVoiceprints.set(`${userId}_${contestId}`, data);
+      inMemoryVoiceprints.set(contestId, data);
     }
+    inMemoryVoiceprints.set('latest', data);
+
     return data;
   },
 
   
   getVoiceprint(userId?: string, contestId?: string): VoiceprintData | null {
-    const candidateKeys = [
-      contestId ? `voiceprint_${contestId}` : null,
-      contestId ? `${STORAGE_VOICEPRINT_PREFIX}${contestId}` : null,
-      userId && contestId ? `voiceprint_${userId}_${contestId}` : null,
-      userId ? `${STORAGE_VOICEPRINT_PREFIX}${userId}` : null,
-      userId ? `voiceprint_${userId}` : null,
-      'next_olymp_latest_voiceprint'
-    ].filter(Boolean) as string[];
+    const inMemoryVoiceprints = (globalThis as any).__inMemoryVoiceprints as Map<string, VoiceprintData> | undefined;
+    if (!inMemoryVoiceprints) return null;
 
-    for (const key of candidateKeys) {
-      try {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && Array.isArray(parsed.featureVector) && parsed.featureVector.length > 0) {
-            console.log(`[AudioProctoring AI] Found valid voiceprint in key: "${key}"`);
-            return parsed;
-          }
-        }
-      } catch {}
+    if (userId && contestId && inMemoryVoiceprints.has(`${userId}_${contestId}`)) {
+      return inMemoryVoiceprints.get(`${userId}_${contestId}`) || null;
     }
-
-    console.warn('[AudioProctoring AI] No voiceprint found for user/contest:', { userId, contestId });
-    return null;
+    if (contestId && inMemoryVoiceprints.has(contestId)) {
+      return inMemoryVoiceprints.get(contestId) || null;
+    }
+    if (userId && inMemoryVoiceprints.has(userId)) {
+      return inMemoryVoiceprints.get(userId) || null;
+    }
+    return inMemoryVoiceprints.get('latest') || null;
   },
 
   

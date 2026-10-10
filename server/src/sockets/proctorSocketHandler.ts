@@ -42,12 +42,17 @@ export function setupProctorSockets(io: Server) {
       return next(new Error('Token va imtihon mos kelmadi'));
     }
 
+    const allowedRoles = ['primary', 'secondary'];
+    const assignedRole = (decoded.deviceRole && allowedRoles.includes(decoded.deviceRole))
+      ? decoded.deviceRole
+      : (role && allowedRoles.includes(role)) ? role : 'primary';
+
     // Attach verified session state to socket
     socket.data = {
       sessionId,
       studentId: decoded.studentId,
       examId: decoded.examId,
-      role: role || 'primary',
+      role: assignedRole,
       authenticated: true,
     };
 

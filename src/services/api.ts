@@ -67,6 +67,22 @@ const safeParseJson = async <T>(res: Response): Promise<T> => {
   }
 };
 
+const createApiError = (res: Response, errText: string): Error => {
+  let errMsg = `Server xatoligi: ${res.status}`;
+  let parsedData: any = null;
+  try {
+    parsedData = JSON.parse(errText);
+    if (parsedData.error) errMsg = parsedData.error;
+    else if (parsedData.message) errMsg = parsedData.message;
+  } catch {}
+  const error: any = new Error(errMsg);
+  error.response = {
+    status: res.status,
+    data: parsedData || { error: errMsg },
+  };
+  return error;
+};
+
 export const apiClient = {
   baseURL: BASE_URL,
   async get<T = any>(endpoint: string): Promise<T> {
@@ -77,13 +93,7 @@ export const apiClient = {
 
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Server xatoligi: ${res.status}`;
-      try {
-        const parsed = JSON.parse(errText);
-        if (parsed.error) errMsg = parsed.error;
-        else if (parsed.message) errMsg = parsed.message;
-      } catch {}
-      throw new Error(errMsg);
+      throw createApiError(res, errText);
     }
 
     return safeParseJson<T>(res);
@@ -99,13 +109,7 @@ export const apiClient = {
 
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Server xatoligi: ${res.status}`;
-      try {
-        const parsed = JSON.parse(errText);
-        if (parsed.error) errMsg = parsed.error;
-        else if (parsed.message) errMsg = parsed.message;
-      } catch {}
-      throw new Error(errMsg);
+      throw createApiError(res, errText);
     }
 
     return safeParseJson<T>(res);
@@ -121,13 +125,7 @@ export const apiClient = {
 
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Server xatoligi: ${res.status}`;
-      try {
-        const parsed = JSON.parse(errText);
-        if (parsed.error) errMsg = parsed.error;
-        else if (parsed.message) errMsg = parsed.message;
-      } catch {}
-      throw new Error(errMsg);
+      throw createApiError(res, errText);
     }
 
     return safeParseJson<T>(res);
@@ -142,13 +140,7 @@ export const apiClient = {
 
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = `Server xatoligi: ${res.status}`;
-      try {
-        const parsed = JSON.parse(errText);
-        if (parsed.error) errMsg = parsed.error;
-        else if (parsed.message) errMsg = parsed.message;
-      } catch {}
-      throw new Error(errMsg);
+      throw createApiError(res, errText);
     }
 
     return safeParseJson<T>(res);

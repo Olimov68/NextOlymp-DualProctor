@@ -53,7 +53,7 @@ class RequestLoggerService {
   private totalBytesOut = 0;
   private responseTimes: number[] = [];
   private lastSecondRequests = 0;
-  private currentRps = 1;
+  private currentRps = 0;
   private bucketStats = new Map<number, { requests: number; errors: number; bytes: number; blocked: number }>();
 
   constructor() {
@@ -215,7 +215,7 @@ class RequestLoggerService {
   public getTrafficStats() {
     const avgResponseTime = this.responseTimes.length > 0
       ? Math.round(this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length)
-      : 8;
+      : 0;
 
     // Build 6 actual time slots (last 30 minutes in 5-minute increments) using real recorded telemetry
     const points: TrafficPoint[] = [];
@@ -237,7 +237,7 @@ class RequestLoggerService {
     }
 
     return {
-      requestsPerSec: Math.max(1, this.currentRps),
+      requestsPerSec: this.currentRps,
       responseTimeAvg: avgResponseTime,
       totalRequests: this.totalRequests,
       totalErrors: this.totalErrors,

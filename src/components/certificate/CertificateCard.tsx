@@ -115,14 +115,30 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
       qrSrc = '';
     }
 
+    const escapeHtml = (str: any): string => {
+      if (typeof str !== 'string') return String(str ?? '');
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      
+      const safeUserName = escapeHtml(certificate.userName);
+      const safeCode = escapeHtml(certificate.verificationCode);
+      const safeTitle = escapeHtml(certificate.olympiadTitle || 'Olimpiada');
+      const safeScore = escapeHtml(certificate.score);
+      const safeMaxScore = escapeHtml(certificate.maxScore || 100);
+      const safeDate = escapeHtml(new Date(certificate.issuedAt).toLocaleDateString('uz-UZ'));
+
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Sertifikat - ${certificate.userName} (${certificate.verificationCode})</title>
+            <title>Sertifikat - ${safeUserName} (${safeCode})</title>
             <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Great+Vibes&family=Montserrat:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
             <style>
               @page { size: A4 landscape; margin: 0; }
@@ -141,7 +157,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
                   <div style="font-size: 10px; color: #94a3b8; letter-spacing: 1px;">RESPUBLIKA ILMIY-AKADEMIK OLIMPIADA PORTALI</div>
                 </div>
                 <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); color: #fcd34d; padding: 6px 12px; border-radius: 8px; font-family: monospace; font-size: 12px; font-weight: bold;">
-                  ID: ${certificate.verificationCode}
+                  ID: ${safeCode}
                 </div>
               </div>
 
@@ -149,27 +165,27 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
                 <div style="display: inline-block; background: #f59e0b; color: #0f172a; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">
                   ${certificate.type === 'winner' ? "G'OLIBLIK DIPLOMI" : certificate.type === 'round_passed' ? "BOSQICH G'OLIBI SERTIFIKATI" : certificate.type === 'round_failed' ? "ISHTIROKCHI SERTIFIKATI" : "MUVAFFAQIYAT SERTIFIKATI"}
                 </div>
-                <h1>${certificate.userName}</h1>
+                <h1>${safeUserName}</h1>
                 <p style="max-width: 800px; margin: 0 auto; font-size: 14px;">
-                  "${certificate.olympiadTitle || 'Olimpiada'}" fan musobaqasida yuqori intellektual salohiyat namoyon etib, ${certificate.rank && certificate.rank > 0 ? `faxrli ${certificate.rank}-o'rinni egalladi va` : ''} g'oliblik diplomi bilan taqdirlanadi.
+                  "${safeTitle}" fan musobaqasida yuqori intellektual salohiyat namoyon etib, ${certificate.rank && certificate.rank > 0 ? `faxrli ${Number(certificate.rank)}-o'rinni egalladi va` : ''} g'oliblik diplomi bilan taqdirlanadi.
                 </p>
                 <div style="margin-top: 15px; display: flex; justify-content: center; gap: 15px;">
-                  <span style="background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 6px; font-size: 13px;">To'plangan ball: <strong style="color: #fbbf24;">${certificate.score}</strong> / ${certificate.maxScore || 100}</span>
-                  ${certificate.rank && certificate.rank > 0 ? `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fcd34d; padding: 4px 12px; border-radius: 6px; font-size: 13px;">O'rni: <strong>${certificate.rank}-o'rin</strong></span>` : ''}
+                  <span style="background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 6px; font-size: 13px;">To'plangan ball: <strong style="color: #fbbf24;">${safeScore}</strong> / ${safeMaxScore}</span>
+                  ${certificate.rank && certificate.rank > 0 ? `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fcd34d; padding: 4px 12px; border-radius: 6px; font-size: 13px;">O'rni: <strong>${Number(certificate.rank)}-o'rin</strong></span>` : ''}
                 </div>
               </div>
 
               <div class="footer">
                 <div>
                   <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Berilgan sana</div>
-                  <div style="font-weight: bold; color: white;">${new Date(certificate.issuedAt).toLocaleDateString('uz-UZ')}</div>
+                  <div style="font-weight: bold; color: white;">${safeDate}</div>
                   <div style="font-size: 10px; color: #34d399; margin-top: 4px;">✓ Davlat talablari asosida</div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px;">
                   <img src="${qrSrc}" width="60" height="60" style="background: white; border-radius: 4px;" />
                   <div style="font-size: 10px; text-align: left;">
                     <div style="color: #fcd34d; font-weight: bold;">Haqiqiylik kodi</div>
-                    <div style="font-family: monospace; color: white;">${certificate.verificationCode}</div>
+                    <div style="font-family: monospace; color: white;">${safeCode}</div>
                   </div>
                 </div>
                 <div style="text-align: right;">

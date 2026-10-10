@@ -132,7 +132,7 @@ export class AuthController {
   }
 
   // --- Secure Password Reset Handlers ---
-  private static resetTokens = new Map<string, { codeHash: string; expiresAt: number }>();
+  private static resetTokens = new Map<string, { codeHash: string; expiresAt: number; attempts: number }>();
 
   public static async forgotPassword(req: Request, res: Response) {
     try {
@@ -142,22 +142,22 @@ export class AuthController {
       }
 
       const user = dbStore.getUserByEmailOrPhone(email);
-      if (!user) {
-        return res.status(404).json({ error: 'Ushbu pochta bilan foydalanuvchi topilmadi' });
+      // Item 4: Prevent user enumeration by returning the same generic response whether user exists or not
+      if (user) {
+        // Generate a 6-digit numeric verification code using crypto
+        const code = crypto.randomInt(100000, 999999).toString();
+        const salt = bcrypt.genSaltSync(8);
+        const codeHash = bcrypt.hashSync(code, salt);
+
+        // 15 minutes expiration with max 5 verification attempts
+        const expiresAt = Date.now() + 15 * 60 * 1000;
+        AuthController.resetTokens.set(email, { codeHash, expiresAt, attempts: 0 });
+        // SECURED: Never leak OTP reset codes to console logs or API response bodies
       }
 
-      // Generate a 6-digit numeric verification code using crypto
-      const code = crypto.randomInt(100000, 999999).toString();
-      const salt = bcrypt.genSaltSync(8);
-      const codeHash = bcrypt.hashSync(code, salt);
-
-      // 15 minutes expiration
-      const expiresAt = Date.now() + 15 * 60 * 1000;
-      AuthController.resetTokens.set(email, { codeHash, expiresAt });
-      // SECURED: Never leak OTP reset codes to console logs or API response bodies
       return res.json({
         success: true,
-        message: "Tasdiqlash kodi elektron pochtangizga yuborildi. Iltimos, pochtangizni tekshiring.",
+        message: "Agar ko'rsatilgan elektron pochta tizimda mavjud bo'lsa, tasdiqlash kodi yuborildi. Iltimos, pochtangizni tekshiring.",
       });
     } catch (error: any) {
       return res.status(500).json({ error: 'Serverda xatolik yuz berdi' });
@@ -188,13 +188,24 @@ export class AuthController {
         return res.status(400).json({ error: 'Tasdiqlash kodi muddati o\'tib ketgan' });
       }
 
+      // Brute force protection: max 5 attempts
+      tokenRecord.attempts += 1;
+      if (tokenRecord.attempts > 5) {
+        AuthController.resetTokens.delete(email);
+        return res.status(429).json({ error: 'Urinishlar soni oshib ketdi. Iltimos, yangi tasdiqlash kodi so\'rang.' });
+      }
+
       const isCodeValid = bcrypt.compareSync(code, tokenRecord.codeHash);
       if (!isCodeValid) {
-        return res.status(400).json({ error: 'Noto\'g\'ri tasdiqlash kodi kiritildi' });
+        const remaining = 5 - tokenRecord.attempts;
+        return res.status(400).json({
+          error: `Noto'g'ri tasdiqlash kodi kiritildi. Qolgan urinishlar: ${remaining}`
+        });
       }
 
       const user = dbStore.getUserByEmailOrPhone(email);
       if (!user) {
+        AuthController.resetTokens.delete(email);
         return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
       }
 

@@ -46,7 +46,20 @@ function resolveJwtSecret(): string {
     return configured;
   }
 
-  // Generate or load a unique server-bound cryptographic secret
+  // CRITICAL: In production, require explicit JWT_SECRET — never auto-generate
+  if (IS_PRODUCTION) {
+    if (!configured || configured.length < 32) {
+      console.error('[FATAL SECURITY] JWT_SECRET muhit o\'zgaruvchisi production muhitda majburiy (kamida 32 belgi).');
+      console.error('Server xavfsizlik sababli to\'xtatildi. .env faylga JWT_SECRET=<64+ belgili random string> qo\'shing.');
+      process.exit(1);
+    }
+    if (LEAKED_SECRETS.includes(configured)) {
+      console.error('[FATAL SECURITY] JWT_SECRET ommaviy ma\'lum bo\'lgan qiymat. Yangi kuchli secret yarating.');
+      process.exit(1);
+    }
+  }
+
+  // Development: Generate or load a unique server-bound cryptographic secret
   const secretPath = path.resolve(process.cwd(), '.jwt_secret');
   try {
     if (fs.existsSync(secretPath)) {
@@ -57,7 +70,7 @@ function resolveJwtSecret(): string {
     }
     const generated = crypto.randomBytes(64).toString('hex');
     fs.writeFileSync(secretPath, generated, { encoding: 'utf-8', mode: 0o600 });
-    console.warn('[SECURITY] Generated unique server JWT secret persisted to .jwt_secret');
+    console.warn('[SECURITY] Development: Generated unique server JWT secret persisted to .jwt_secret');
     return generated;
   } catch {
     return crypto.randomBytes(64).toString('hex');

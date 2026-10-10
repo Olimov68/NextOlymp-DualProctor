@@ -103,6 +103,16 @@ export class ExamController {
         return res.status(400).json({ error: 'Ushbu imtihonning qabul muddati yakunlangan.' });
       }
 
+      // Grade eligibility verification (Item 11)
+      if (exam.targetGrades && Array.isArray(exam.targetGrades) && exam.targetGrades.length > 0) {
+        const studentGrade = Number(req.user.grade);
+        if (studentGrade && !exam.targetGrades.includes(studentGrade)) {
+          return res.status(403).json({
+            error: `Ushbu olimpiada faqat ${exam.targetGrades.join(', ')}-sinflar uchun mo'ljallangan. Sizning sinfingiz: ${studentGrade}-sinf.`
+          });
+        }
+      }
+
       // Check if user already submitted this exam
       const existingSubmissions = dbStore.getSubmissions(userId);
       const alreadyCompleted = existingSubmissions.find(s => s.examId === id);
@@ -366,27 +376,61 @@ export class ExamController {
   public static async createExam(req: AuthenticatedRequest, res: Response) {
     try {
       const examData = req.body;
-      const id = examData.id || `EXAM-${Date.now()}`;
+      if (!examData || typeof examData !== 'object') {
+        return res.status(400).json({ error: "Yaroqsiz ma'lumotlar formati" });
+      }
+
+      const title = String(examData.title || '').trim().replace(/[<>]/g, '');
+      if (!title || title.length < 3) {
+        return res.status(400).json({ error: "Imtihon nomi kamida 3 ta belgidan iborat bo'lishi shart" });
+      }
+
+      const id = examData.id ? String(examData.id).replace(/[^a-zA-Z0-9_-]/g, '') : `EXAM-${Date.now()}`;
+      const durationMinutes = Math.max(5, Math.min(300, Number(examData.durationMinutes) || 60));
+      const targetGrades = Array.isArray(examData.targetGrades)
+        ? examData.targetGrades.map((g: any) => Number(g)).filter((g: number) => !isNaN(g) && g >= 1 && g <= 11)
+        : undefined;
+
+      const questionsList = Array.isArray(examData.questions) ? examData.questions : [];
+
       const exam: ExamRecord = {
         id,
-        title: examData.title || 'Yangi Imtihon',
-        subject: examData.subject || 'Umumiy',
-        category: examData.category || 'general',
-        format: examData.format || 'online',
-        description: examData.description || '',
-        image: examData.image || '',
+        title,
+        subject: String(examData.subject || 'Umumiy').trim().replace(/[<>]/g, ''),
+        category: String(examData.category || 'general').trim().replace(/[<>]/g, ''),
+        format: examData.format === 'offline' ? 'offline' : 'online',
+        description: String(examData.description || '').trim().replace(/[<>]/g, ''),
+        image: typeof examData.image === 'string' && examData.image.startsWith('http') ? examData.image : '',
         startTime: examData.startTime || new Date().toISOString(),
         endTime: examData.endTime || new Date(Date.now() + 86400000 * 7).toISOString(),
-        durationMinutes: Number(examData.durationMinutes) || 60,
-        price: Number(examData.price) || 0,
-        status: examData.status || 'active',
-        maxScore: Number(examData.maxScore) || 100,
-        totalQuestions: Number(examData.totalQuestions) || (examData.questions?.length || 0),
+        durationMinutes,
+        price: 0, // All exams are free
+        status: ['active', 'upcoming', 'completed', 'ochiq', 'yopiq'].includes(examData.status) ? examData.status : 'active',
+        maxScore: Math.max(10, Number(examData.maxScore) || 100),
+        totalQuestions: questionsList.length > 0 ? questionsList.length : (Number(examData.totalQuestions) || 0),
         registeredCount: 0,
-        organizer: examData.organizer || 'NextOlymp',
+        organizer: String(examData.organizer || 'Ibn Sino Akademiyasi').trim().replace(/[<>]/g, ''),
+        targetGrades,
         createdAt: new Date().toISOString(),
       };
+
       dbStore.saveExam(exam);
+
+      // Item 13: Save questions to store if provided
+      if (questionsList.length > 0) {
+        const sanitizedQuestions = questionsList.map((q: any, idx: number) => ({
+          id: q.id || `q_${id}_${idx + 1}`,
+          examId: id,
+          question_text: String(q.question_text || q.content || '').trim(),
+          options: Array.isArray(q.options) ? q.options : [],
+          correct_answer: String(q.correct_answer || 'A').trim().toUpperCase(),
+          points: Number(q.points) || 10,
+          orderNum: idx + 1,
+          explanation: String(q.explanation || '').trim(),
+        }));
+        dbStore.saveQuestions(id, sanitizedQuestions);
+      }
+
       return res.status(201).json({ success: true, data: exam });
     } catch (error: any) {
       console.error('[ExamController.createExam Error]:', error);
@@ -401,7 +445,46 @@ export class ExamController {
       if (!existing) {
         return res.status(404).json({ error: 'Imtihon topilmadi' });
       }
-      const updated = { ...existing, ...req.body, id: existing.id };
+
+      // Item 13 & 29: Strict allowlist to prevent mass assignment
+      const ALLOWED_FIELDS = [
+        'title', 'subject', 'category', 'format', 'description',
+        'image', 'startTime', 'endTime', 'durationMinutes', 'status',
+        'maxScore', 'organizer', 'targetGrades'
+      ];
+
+      const updates: Partial<ExamRecord> = {};
+      for (const field of ALLOWED_FIELDS) {
+        if (req.body[field] !== undefined) {
+          if (field === 'title' || field === 'subject' || field === 'category' || field === 'organizer' || field === 'description') {
+            (updates as any)[field] = String(req.body[field]).trim().replace(/[<>]/g, '');
+          } else if (field === 'durationMinutes' || field === 'maxScore') {
+            (updates as any)[field] = Number(req.body[field]);
+          } else if (field === 'targetGrades' && Array.isArray(req.body[field])) {
+            updates.targetGrades = req.body[field].map((g: any) => Number(g)).filter((g: number) => !isNaN(g));
+          } else {
+            (updates as any)[field] = req.body[field];
+          }
+        }
+      }
+
+      // Handle questions update if provided
+      if (Array.isArray(req.body.questions)) {
+        const sanitizedQuestions = req.body.questions.map((q: any, idx: number) => ({
+          id: q.id || `q_${id}_${idx + 1}`,
+          examId: id,
+          question_text: String(q.question_text || q.content || '').trim(),
+          options: Array.isArray(q.options) ? q.options : [],
+          correct_answer: String(q.correct_answer || 'A').trim().toUpperCase(),
+          points: Number(q.points) || 10,
+          orderNum: idx + 1,
+          explanation: String(q.explanation || '').trim(),
+        }));
+        dbStore.saveQuestions(id, sanitizedQuestions);
+        updates.totalQuestions = sanitizedQuestions.length;
+      }
+
+      const updated = { ...existing, ...updates, id: existing.id };
       dbStore.saveExam(updated);
       return res.json({ success: true, data: updated });
     } catch (error: any) {

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { dbStore } from '../db/store';
+import bcrypt from 'bcryptjs';
+import { dbStore, UserRecord } from '../db/store';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 export class UserController {
@@ -113,23 +114,36 @@ export class UserController {
         return res.status(400).json({ error: 'Ism-familiya va telefon raqami talab qilinadi' });
       }
 
-      const user = dbStore.createUser({
-        fullName: String(fullName).trim(),
-        phone: String(phone).trim(),
-        email: email ? String(email).trim().toLowerCase() : `user_${Date.now()}@ibnsino.uz`,
-        password: password ? String(password) : (crypto.randomBytes(8).toString('hex') + 'A1!'),
-        role: role === 'admin' ? 'admin' : role === 'teacher' ? 'teacher' : 'student',
-        grade: Number(grade) || 9,
-        region: region ? String(region).trim() : 'Toshkent shahri',
-        district: district ? String(district).trim() : 'Yunusobod tumani',
-        school: school ? String(school).trim() : 'Prezident maktabi',
-      });
-
-      if (!user) {
-        return res.status(409).json({ error: 'Ushbu telefon yoki email bilan foydalanuvchi mavjud' });
+      const rawPassword = password ? String(password).trim() : (crypto.randomBytes(8).toString('hex') + 'A1!');
+      if (rawPassword.length < 8) {
+        return res.status(400).json({ error: 'Parol kamida 8 ta belgidan iborat bo\'lishi shart' });
       }
 
-      const { passwordHash: _, ...safe } = user;
+      const salt = bcrypt.genSaltSync(10);
+      const passwordHash = bcrypt.hashSync(rawPassword, salt);
+
+      const newUser: UserRecord = {
+        id: `usr_${crypto.randomUUID().slice(0, 8)}`,
+        fullName: String(fullName).trim().replace(/[<>]/g, ''),
+        phone: String(phone).trim(),
+        email: email ? String(email).trim().toLowerCase() : `user_${Date.now()}@ibnsino.uz`,
+        passwordHash,
+        role: role === 'admin' ? 'admin' : role === 'teacher' ? 'teacher' : 'student',
+        grade: Number(grade) || 9,
+        region: region ? String(region).trim().replace(/[<>]/g, '') : 'Toshkent shahri',
+        district: district ? String(district).trim().replace(/[<>]/g, '') : '',
+        school: school ? String(school).trim().replace(/[<>]/g, '') : '',
+        score: 0,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+      };
+
+      const result = dbStore.createUser(newUser);
+      if (!result.success || !result.user) {
+        return res.status(409).json({ error: result.error || 'Ushbu telefon yoki email bilan foydalanuvchi mavjud' });
+      }
+
+      const { passwordHash: _, ...safe } = result.user;
       return res.status(201).json({ success: true, data: safe });
     } catch (error: any) {
       console.error('[UserController.createUser Error]:', error);

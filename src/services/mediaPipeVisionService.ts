@@ -14,13 +14,12 @@ export async function getMediaPipeFaceLandmarker(): Promise<any> {
   loadingPromise = (async () => {
     try {
       
-      const { FaceLandmarker, FilesetResolver } = await import(
-        
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest'
-      );
+      // @ts-ignore
+      const tasksVision: any = await import(/* @vite-ignore */ ('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14' as any));
+      const { FaceLandmarker, FilesetResolver } = tasksVision;
 
       const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
       );
 
       try {

@@ -137,91 +137,7 @@ function createMockSnapshotUrl(studentName: string, reason: string, timeStr: str
 const STORAGE_CHEAT_LOGS_KEY = 'next_olymp_cheat_logs';
 
 function getInitialSeededCheatLogs(): Record<string, any[]> {
-  const now = new Date();
-  const time1 = new Date(now.getTime() - 4 * 60 * 1000).toLocaleString();
-  const time2 = new Date(now.getTime() - 12 * 60 * 1000).toLocaleString();
-  const time3 = new Date(now.getTime() - 25 * 60 * 1000).toLocaleString();
-  const time4 = new Date(now.getTime() - 40 * 60 * 1000).toLocaleString();
-
-  const mockLogs = [
-    {
-      id: 'inc-seed-01',
-      studentId: 'USR-203',
-      name: 'Jasur Rahimov',
-      phone: '+998 97 333 44 55',
-      ipAddress: '195.158.12.45',
-      region: 'Buxoro viloyati',
-      school: "Qorako'l xalqaro matematika maktabi",
-      type: "Kamera oldida yuz ko'rinmadi (No Face)",
-      detail: "Kamerada 2.5 soniya davomida yuz aniqlanmadi (yuz qo'l bilan to'silgan).",
-      count: 2,
-      severity: 'Kritik',
-      timestamp: time1,
-      isOnline: true,
-      snapshotUrl: createMockSnapshotUrl('Jasur Rahimov', "Yuz to'silgan yoki aniqlanmadi", time1, 'no_face'),
-      status: 'pending'
-    },
-    {
-      id: 'inc-seed-02',
-      studentId: 'USR-214',
-      name: 'Shaxzod Karimov',
-      phone: '+998 99 777 12 34',
-      ipAddress: '84.54.78.112',
-      region: 'Toshkent viloyati',
-      school: 'Olmaliq 5-maktab',
-      type: 'Kadrda begona 2-shaxs aniqlandi',
-      detail: "Kamerada ikkinchi odam yuzi aniqlandi. Imtihonda yolg'iz bo'lish talabi buzildi.",
-      count: 3,
-      severity: 'Kritik',
-      timestamp: time2,
-      isOnline: true,
-      snapshotUrl: createMockSnapshotUrl('Shaxzod Karimov', "Kadrda 2-shaxs yuzi aniqlandi", time2, 'multiple_face'),
-      status: 'pending'
-    },
-    {
-      id: 'inc-seed-03',
-      studentId: 'USR-212',
-      name: 'Nilufar Saidova',
-      phone: '+998 93 322 44 55',
-      ipAddress: '213.230.77.10',
-      region: 'Sirdaryo viloyati',
-      school: 'Guliston IDUM',
-      type: 'Brauzer oynasi almashtirildi (Tab Switch)',
-      detail: 'Imtihon sahifasidan chiqib boshqa oyna ochildi.',
-      count: 1,
-      severity: 'Yuqori',
-      timestamp: time3,
-      isOnline: true,
-      snapshotUrl: createMockSnapshotUrl('Nilufar Saidova', "Boshqa tabga o'tildi", time3, 'tab_switch'),
-      status: 'warned'
-    },
-    {
-      id: 'inc-seed-04',
-      studentId: 'USR-201',
-      name: 'Sardor Alimov',
-      phone: '+998 90 111 22 33',
-      ipAddress: '195.158.3.18',
-      region: 'Toshkent shahri',
-      school: '174-sonli ixtisoslashtirilgan maktab',
-      type: 'Monitordan chetga qarash holati',
-      detail: 'Boshni chetga burib 3 soniyadan ortiq monitordan chetga qaraldi.',
-      count: 1,
-      severity: "O'rta",
-      timestamp: time4,
-      isOnline: true,
-      snapshotUrl: createMockSnapshotUrl('Sardor Alimov', 'Chetga qarash qayd etildi', time4, 'looking_away'),
-      status: 'pending'
-    }
-  ];
-
-  return {
-    'olymp-001': [...mockLogs],
-    'olymp-002': [mockLogs[0], mockLogs[2]],
-    'olymp-003': [mockLogs[1], mockLogs[3]],
-    'nat-001': [...mockLogs],
-    'nat-002': [mockLogs[0], mockLogs[1]],
-    'olymp-current': [...mockLogs]
-  };
+  return {};
 }
 
 function loadCheatLogsFromStorage(): Record<string, any[]> {
@@ -426,16 +342,7 @@ export const submissionService = {
       submitted_at: new Date().toISOString()
     };
 
-    userSubmissionsCache.unshift(submissionData);
-
-    try {
-      const existingSubs = JSON.parse(localStorage.getItem('next_olymp_user_submissions') || '[]');
-      existingSubs.unshift(submissionData);
-      localStorage.setItem('next_olymp_user_submissions', JSON.stringify(existingSubs));
-    } catch {}
-
-    
-    // 1. Submit to server-side evaluation engine
+    // 1. Submit to server-side evaluation engine (Item 18 & 19: Server is sole source of truth)
     let serverGradingResult: any = null;
     try {
       const serverRes = await apiClient.post(`/exams/${encodeURIComponent(olympiadId)}/finish`, {
@@ -477,6 +384,24 @@ export const submissionService = {
     const certType: CertificateType = isWinner ? 'winner' : 'participant';
     const verifyCode = serverGradingResult.verificationCode;
 
+    const verifiedSubmission = {
+      ...submissionData,
+      id: serverGradingResult.id || subId,
+      score: verifiedScore,
+      maxScore: verifiedMax,
+      percentage: verifiedPct,
+      verificationCode: verifyCode,
+      questionsAnalysis: serverGradingResult.analysis || gradedAnswers,
+    };
+
+    userSubmissionsCache.unshift(verifiedSubmission);
+
+    try {
+      const existingSubs = JSON.parse(localStorage.getItem('next_olymp_user_submissions') || '[]');
+      existingSubs.unshift(verifiedSubmission);
+      localStorage.setItem('next_olymp_user_submissions', JSON.stringify(existingSubs));
+    } catch {}
+
     const cert: Certificate = {
       id: serverGradingResult.id || `cert_${Date.now()}`,
       userId,
@@ -495,19 +420,16 @@ export const submissionService = {
     };
 
     return {
-      score: finalScore,
-      maxScore: finalMaxScore,
+      score: verifiedScore,
+      maxScore: verifiedMax,
       totalQuestions: questions.length,
       correctAnswersCount: correctCount,
       status: 'completed',
       grading: {
-        totalScore: finalScore,
-        maxScore: finalMaxScore,
-        correctAnswersCount: correctCount,
-        totalQuestionsCount: questions.length,
-        percentage,
-        gradedAnswers,
-        cheatLogs
+        totalScore: verifiedScore,
+        maxScore: verifiedMax,
+        percentage: verifiedPct,
+        status: isWinner ? 'g\'olib' : 'yakunlangan',
       },
       certificate: cert
     };

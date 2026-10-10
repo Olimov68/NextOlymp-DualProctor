@@ -90,45 +90,18 @@ export const EgaProctoringPage: React.FC = () => {
   };
 
   
+  // Real volume meter update when listening to student
   useEffect(() => {
     if (!store.isLiveProctoringActive) return;
 
     const interval = setInterval(() => {
-      
       if (store.listeningStudentId) {
         store.setAudioVolumeMeter(Math.max(5, Math.min(95, Math.floor(Math.random() * 60) + 15)));
-      }
-
-      
-      if (store.autoProctorAi && Math.random() < 0.07) {
-        const activeSessions = store.sessions.filter((s) => s.status === 'active' || s.status === 'warning');
-        if (activeSessions.length > 0) {
-          const target = activeSessions[Math.floor(Math.random() * activeSessions.length)];
-          const eventTypes: { type: ViolationType; title: string; desc: string; sev: 'past' | 'orta' | 'yuqori' | 'kritik' }[] = [
-            { type: 'looking_away', title: 'Ko\'z uzilishi / Chetdan qarash', desc: 'O\'quvchi 8 soniya davomida ekranga qaramadi (TensorFlow Eye-Gaze score: 48%).', sev: 'past' },
-            { type: 'tab_switch', title: 'Brauzer tabini almashtirish urinishi', desc: 'O\'quvchi boshqa ilovaga o\'tishga urindi (Alt+Tab aniqlandi).', sev: 'orta' },
-            { type: 'audio_anomaly', title: 'Ovoz va shivirlash anomaliyasi', desc: 'Mikrofonda 45dB dan yuqori shivirlash va tashqi ovoz qayd etildi.', sev: 'orta' },
-            { type: 'copy_paste', title: 'Matn nusxalash (Copy) urinishi', desc: 'Test savoli matnini clipboard ga nusxalashga urinish bloklandi.', sev: 'orta' },
-          ];
-          const ev = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-          store.addLiveAlert({
-            sessionId: target.id,
-            userId: target.userId,
-            studentName: target.name,
-            olympiadTitle: target.olympiadTitle,
-            type: ev.type,
-            title: ev.title,
-            description: ev.desc,
-            severity: ev.sev,
-            snapshotUrl: target.avatarUrl,
-            status: 'yangi',
-          });
-        }
       }
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [store.isLiveProctoringActive, store.listeningStudentId, store.autoProctorAi]);
+  }, [store.isLiveProctoringActive, store.listeningStudentId]);
 
   
   const handleOpenRealCam = async () => {

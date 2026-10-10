@@ -19,6 +19,9 @@ import { requestLoggerService } from './services/requestLogger.service';
 const app = express();
 const server = http.createServer(app);
 
+// CRITICAL SECURITY FIX (Item 16): Explicitly trust loopback proxy (Nginx on 127.0.0.1)
+app.set('trust proxy', 'loopback');
+
 // CRITICAL SECURITY FIX (Item 9): Strict CORS policy
 app.use(cors({
   origin: (origin, callback) => {
@@ -33,28 +36,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
-// Reverse-proxy aware IP resolver (supports Nginx X-Forwarded-For, X-Real-IP, Cloudflare)
+// Reverse-proxy aware IP resolver (Item 16)
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    const raw = typeof forwarded === 'string' ? forwarded : forwarded[0];
-    const first = raw.split(',')[0].trim().replace(/^.*:/, '');
-    if (first && first !== '1') return first;
-  }
-  const realIp = req.headers['x-real-ip'];
-  if (realIp) {
-    const raw = typeof realIp === 'string' ? realIp : realIp[0];
-    const clean = raw.trim().replace(/^.*:/, '');
-    if (clean && clean !== '1') return clean;
-  }
-  const cfIp = req.headers['cf-connecting-ip'];
-  if (cfIp) {
-    const raw = typeof cfIp === 'string' ? cfIp : cfIp[0];
-    const clean = raw.trim().replace(/^.*:/, '');
-    if (clean && clean !== '1') return clean;
-  }
-  const sock = req.socket.remoteAddress || '127.0.0.1';
-  return sock.replace(/^.*:/, '').trim() || '127.0.0.1';
+  const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+  return ip.replace(/^.*:/, '').trim() || '127.0.0.1';
 }
 
 // CRITICAL SECURITY FIX: Reject requests from blocked IPs immediately (support Reverse Proxy X-Forwarded-For)
@@ -75,7 +60,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Real-time request logging middleware for security audit and live traffic
 app.use(requestLoggerService.middleware());
 
-// CRITICAL SECURITY FIX (Item 13): Comprehensive security headers (CSP, Permissions-Policy, HSTS)
+// CRITICAL SECURITY FIX (Item 13 & 26): Hardened CSP without unsafe-eval, restricted connect-src
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -85,11 +70,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com data:; " +
     "img-src 'self' data: blob: https:; " +
-    "connect-src 'self' ws: wss: http: https:; " +
+    "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://storage.googleapis.com https://generativelanguage.googleapis.com https://api.deepseek.com; " +
     "media-src 'self' blob:; " +
     "frame-ancestors 'self';"
   );
@@ -100,12 +85,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// CRITICAL SECURITY FIX (Item 16): Granular in-memory rate limiting with reverse-proxy IP normalization
+// CRITICAL SECURITY FIX (Item 16 & 27): Granular in-memory rate limiting connected to security settings
 const generalRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const authRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 function createRateLimiter(map: Map<string, { count: number; resetTime: number }>, windowMs: number, maxRequests: number, label: string) {
   return (req: Request, res: Response, next: NextFunction) => {
+    const settings = dbStore.getSecuritySettings();
+    if (!settings.rateLimitEnabled) {
+      return next();
+    }
+
     const clientIp = getClientIp(req);
     const now = Date.now();
     const record = map.get(clientIp);

@@ -258,6 +258,8 @@ export class DualDeviceProctorGateway {
 
     
     this.messageListener = (e: MessageEvent) => {
+      // Item 22: Origin validation to prevent malicious cross-origin messages
+      if (e.origin !== window.location.origin) return;
       const data = e.data;
       if (data && data.source === 'ibnsino_proctor' && data.type) {
         if (!this.sessionId || !data.sessionId || data.sessionId === this.sessionId) {
@@ -362,7 +364,7 @@ export class DualDeviceProctorGateway {
         if (window.opener) {
           window.opener.postMessage(
             { source: 'ibnsino_proctor', type: event, sessionId: this.sessionId, payload },
-            '*'
+            window.location.origin
           );
         }
       } catch {}
