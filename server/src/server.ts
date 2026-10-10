@@ -394,9 +394,9 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda muvaffaqiyatli ishga tushdi`);
-  console.log(`🔗 REST API: http://localhost:${PORT}/api/health`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda (0.0.0.0) muvaffaqiyatli ishga tushdi`);
+  console.log(`🔗 REST API: http://127.0.0.1:${PORT}/api/health`);
 });
 
 export { app, server, io };
