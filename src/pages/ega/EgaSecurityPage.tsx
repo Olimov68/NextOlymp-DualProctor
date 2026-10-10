@@ -216,60 +216,94 @@ export const EgaSecurityPage: React.FC = () => {
     const fetchRealLogs = async () => {
       try {
         const token = getAuthToken();
-        const res = await fetch('/api/admin/system-metrics', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
+        const headers: Record<string, string> = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        let res = await fetch('/api/admin/system-metrics', { headers });
+        if (!res.ok) {
+          res = await fetch('/api/security/health', { headers });
+        }
         if (res.ok) {
           const json = await res.json();
-          if (isMounted && json.status === 'success') {
-            if (json.metrics) {
-              store.updateServerMetrics({
-                ram: json.metrics.ram?.usagePercent ?? 0,
-                ramTotalMb: json.metrics.ram?.totalMb ?? 0,
-                ramUsedMb: json.metrics.ram?.usedMb ?? 0,
-                ramFreeMb: json.metrics.ram?.freeMb ?? 0,
-                disk: json.metrics.disk?.usagePercent ?? 0,
-                diskTotalGb: json.metrics.disk?.totalGb ?? 0,
-                diskUsedGb: json.metrics.disk?.usedGb ?? 0,
-                diskFreeGb: json.metrics.disk?.freeGb ?? 0,
-                cpu: json.metrics.cpu?.usagePercent ?? 0,
-                network: json.metrics.network ?? { in: 0, out: 0 },
-                uptime: json.metrics.uptime ?? 'Aniqlanmoqda...',
-                activeConnections: json.metrics.activeConnections ?? 1,
-                requestsPerSec: json.metrics.requestsPerSec ?? 0,
-                responseTimeAvg: json.metrics.responseTimeAvg ?? 0,
-                threatLevel: json.metrics.threatLevel ?? 'low'
-              });
+          if (isMounted) {
+            if (json.status === 'success' || json.metrics) {
+              if (json.metrics) {
+                store.updateServerMetrics({
+                  ram: json.metrics.ram?.usagePercent ?? 0,
+                  ramTotalMb: json.metrics.ram?.totalMb ?? 0,
+                  ramUsedMb: json.metrics.ram?.usedMb ?? 0,
+                  ramFreeMb: json.metrics.ram?.freeMb ?? 0,
+                  disk: json.metrics.disk?.usagePercent ?? 0,
+                  diskTotalGb: json.metrics.disk?.totalGb ?? 0,
+                  diskUsedGb: json.metrics.disk?.usedGb ?? 0,
+                  diskFreeGb: json.metrics.disk?.freeGb ?? 0,
+                  cpu: json.metrics.cpu?.usagePercent ?? 0,
+                  network: json.metrics.network ?? { in: 0, out: 0 },
+                  uptime: json.metrics.uptime ?? 'Aniqlanmoqda...',
+                  activeConnections: json.metrics.activeConnections ?? 1,
+                  requestsPerSec: json.metrics.requestsPerSec ?? 0,
+                  responseTimeAvg: json.metrics.responseTimeAvg ?? 0,
+                  threatLevel: json.metrics.threatLevel ?? 'low'
+                });
 
-              if (Array.isArray(json.metrics.traffic) && json.metrics.traffic.length > 0) {
-                store.setTrafficData(json.metrics.traffic);
+                if (Array.isArray(json.metrics.traffic) && json.metrics.traffic.length > 0) {
+                  store.setTrafficData(json.metrics.traffic);
+                }
               }
-            }
 
-            if (Array.isArray(json.data)) {
-              useSecurityStore.setState({ accessLogs: json.data });
-            }
+              if (Array.isArray(json.data)) {
+                useSecurityStore.setState({ accessLogs: json.data });
+              }
 
-            if (Array.isArray(json.alerts)) {
-              useSecurityStore.setState({ alerts: json.alerts });
-            }
+              if (Array.isArray(json.alerts)) {
+                useSecurityStore.setState({ alerts: json.alerts });
+              }
 
-            if (Array.isArray(json.blockedIPs)) {
-              store.setBlockedIPs(json.blockedIPs);
-            }
+              if (Array.isArray(json.blockedIPs)) {
+                store.setBlockedIPs(json.blockedIPs);
+              }
 
-            if (json.platformStats) {
-              setPlatformStats(json.platformStats);
-            }
-            if (json.serverHostStats) {
-              setServerHostStats(json.serverHostStats);
-            }
+              if (json.platformStats) {
+                setPlatformStats(json.platformStats);
+              }
+              if (json.serverHostStats) {
+                setServerHostStats(json.serverHostStats);
+              }
 
-            if (json.diagnostics) {
-              setDiagnostics(json.diagnostics);
+              if (json.diagnostics) {
+                setDiagnostics(json.diagnostics);
+              }
+            } else if (json.success && json.data) {
+              const d = json.data;
+              store.updateServerMetrics({
+                ram: d.ram?.percent ?? 0,
+                ramTotalMb: d.ram?.totalMiB ?? 0,
+                ramUsedMb: d.ram?.usedMiB ?? 0,
+                ramFreeMb: d.ram?.freeMiB ?? 0,
+                disk: d.disk?.percent ?? 0,
+                diskTotalGb: parseFloat(d.disk?.total) || 0,
+                diskUsedGb: parseFloat(d.disk?.used) || 0,
+                diskFreeGb: parseFloat(d.disk?.free) || 0,
+                cpu: d.cpu?.usagePercent ?? 0,
+                uptime: d.os?.uptime ?? '',
+              });
+              if (d.ports) {
+                setDiagnostics((prev: any) => ({
+                  ...prev,
+                  osName: d.os?.distro || prev.osName,
+                  kernel: d.os?.kernel || prev.kernel,
+                  loadAvg: d.cpu?.loadAvg || prev.loadAvg,
+                  ports: d.ports || prev.ports,
+                  nodeVersion: d.environment?.nodeVersion || prev.nodeVersion,
+                  v8Version: d.environment?.v8Version || prev.v8Version,
+                  memoryRss: d.environment?.memoryRssMb ? `${d.environment.memoryRssMb} MB` : prev.memoryRss,
+                  heapUsed: d.environment?.heapUsedMb ? `${d.environment.heapUsedMb} MB` : prev.heapUsed,
+                  databaseName: d.environment?.databaseName || prev.databaseName,
+                  dbStatus: d.environment?.databaseStatus || prev.dbStatus,
+                  totalModulesCount: d.environment?.totalModulesCount || prev.totalModulesCount,
+                  keyModules: d.environment?.keyModules || prev.keyModules,
+                }));
+              }
             }
           }
         }

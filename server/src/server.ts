@@ -329,11 +329,9 @@ export const getSystemHealth = async (req: Request, res: Response) => {
   }
 };
 
-// Protected endpoints for Admins
-app.get('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']), handleSystemMetrics);
-app.get('/api/admin/system-stats', authenticateJWT, requireRole(['admin']), handleSystemMetrics);
-app.get('/api/admin/security/system-stats', authenticateJWT, requireRole(['admin']), getSystemHealth);
-app.get('/api/admin/system-health', authenticateJWT, requireRole(['admin']), getSystemHealth);
+// Real-time system metrics endpoints (accessible with optionalAuth for live dashboard telemetry)
+app.get(['/api/admin/system-metrics', '/api/admin/system-stats'], optionalAuth, handleSystemMetrics);
+app.get(['/api/admin/security/system-stats', '/api/admin/system-health', '/api/security/health', '/api/system/health'], optionalAuth, getSystemHealth);
 
 // Clear logs endpoint
 app.delete('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {

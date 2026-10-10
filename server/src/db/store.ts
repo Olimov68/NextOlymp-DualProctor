@@ -115,7 +115,22 @@ export interface DatabaseSchema {
   proctorSessions?: ProctorSessionRecord[];
 }
 
-const DATA_DIR = path.resolve(process.cwd(), 'server', 'data');
+const resolveDataDir = () => {
+  const candidates = [
+    path.resolve(process.cwd(), 'server', 'data'),
+    path.resolve(process.cwd(), 'data'),
+    path.resolve(__dirname, '..', '..', 'data'),
+    path.resolve(__dirname, '..', 'data'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return process.cwd().endsWith('server')
+    ? path.resolve(process.cwd(), 'data')
+    : path.resolve(process.cwd(), 'server', 'data');
+};
+
+const DATA_DIR = resolveDataDir();
 const STORE_PATH = path.join(DATA_DIR, 'store.json');
 
 class Store {
