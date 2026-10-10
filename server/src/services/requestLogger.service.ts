@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 
 export interface AccessLogItem {
   id: string;
@@ -53,6 +54,7 @@ class RequestLoggerService {
   private responseTimes: number[] = [];
   private lastSecondRequests = 0;
   private currentRps = 1;
+  private bucketStats = new Map<number, { requests: number; errors: number; bytes: number; blocked: number }>();
 
   constructor() {
     // Reset RPS counter every second
@@ -118,6 +120,21 @@ class RequestLoggerService {
           category = 'success_logins';
         }
 
+        const bucketKey = Math.floor(Date.now() / (5 * 60 * 1000));
+        const b = this.bucketStats.get(bucketKey) || { requests: 0, errors: 0, bytes: 0, blocked: 0 };
+        b.requests++;
+        if (statusCode >= 400) b.errors++;
+        b.bytes += contentLengthOut;
+        if (statusCode === 403) b.blocked++;
+        this.bucketStats.set(bucketKey, b);
+
+        if (this.bucketStats.size > 36) {
+          const oldestAllowed = bucketKey - 24;
+          for (const k of this.bucketStats.keys()) {
+            if (k < oldestAllowed) this.bucketStats.delete(k);
+          }
+        }
+
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         const fullDateStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${timeStr}`;
@@ -126,7 +143,7 @@ class RequestLoggerService {
         const userName = authUser ? (authUser.fullName || authUser.email) : (req.path.startsWith('/api/admin') ? 'Admin' : 'Mehmon');
 
         const logEntry: AccessLogItem = {
-          id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          id: `log-${Date.now()}-${crypto.randomInt(1000, 9999)}`,
           timestamp: fullDateStr,
           ip: clientIp === '1' || clientIp === '' ? '127.0.0.1' : clientIp,
           country: clientIp.startsWith('192.168.') || clientIp === '127.0.0.1' ? 'Lokal Tarmoq' : "O'zbekiston",
@@ -163,7 +180,7 @@ class RequestLoggerService {
     }
 
     const alert: SecurityAlertItem = {
-      id: `alt-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `alt-${Date.now()}-${crypto.randomInt(1000, 9999)}`,
       timestamp: now,
       type,
       severity,
@@ -200,24 +217,22 @@ class RequestLoggerService {
       ? Math.round(this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length)
       : 8;
 
-    // Build 6 time slots (last 30 minutes in 5-minute increments)
+    // Build 6 actual time slots (last 30 minutes in 5-minute increments) using real recorded telemetry
     const points: TrafficPoint[] = [];
-    const now = new Date();
+    const currentBucket = Math.floor(Date.now() / (5 * 60 * 1000));
 
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 5 * 60 * 1000);
-      const timeLabel = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Calculate realistic distribution based on actual total requests
-      const bucketRequests = Math.max(0, Math.round(this.totalRequests / (i === 0 ? 1 : 6)) + (i === 0 ? this.lastSecondRequests : 0));
-      const bucketErrors = Math.max(0, Math.round(this.totalErrors / 6));
+      const bKey = currentBucket - i;
+      const bDate = new Date(bKey * 5 * 60 * 1000);
+      const timeLabel = `${bDate.getHours().toString().padStart(2, '0')}:${bDate.getMinutes().toString().padStart(2, '0')}`;
+      const bucketData = this.bucketStats.get(bKey) || { requests: 0, errors: 0, bytes: 0, blocked: 0 };
 
       points.push({
         time: timeLabel,
-        requests: bucketRequests,
-        bandwidth: Math.round(bucketRequests * 1.5),
-        errors: bucketErrors,
-        blocked: 0,
+        requests: bucketData.requests,
+        bandwidth: Math.round(bucketData.bytes / 1024),
+        errors: bucketData.errors,
+        blocked: bucketData.blocked,
       });
     }
 

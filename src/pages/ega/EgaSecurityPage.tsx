@@ -239,16 +239,33 @@ export const EgaSecurityPage: React.FC = () => {
                   diskFreeGb: json.metrics.disk?.freeGb ?? 0,
                   cpu: json.metrics.cpu?.usagePercent ?? 0,
                   network: json.metrics.network ?? { in: 0, out: 0 },
-                  uptime: json.metrics.uptime ?? 'Aniqlanmoqda...',
-                  activeConnections: json.metrics.activeConnections ?? 1,
+                  uptime: json.metrics.backendUptime || json.metrics.uptime || 'Aniqlanmoqda...',
+                  backendUptime: json.metrics.backendUptime || 'Aniqlanmoqda...',
+                  systemUptime: json.metrics.systemUptime || json.metrics.uptime || 'Aniqlanmoqda...',
+                  activeConnections: json.metrics.activeConnections ?? 0,
                   requestsPerSec: json.metrics.requestsPerSec ?? 0,
                   responseTimeAvg: json.metrics.responseTimeAvg ?? 0,
-                  threatLevel: json.metrics.threatLevel ?? 'low'
+                  threatLevel: json.metrics.threatLevel ?? 'low',
+                  sslValid: json.metrics.ssl?.valid ?? true,
+                  sslExpiry: json.metrics.ssl?.validTo ?? 'Aniqlanmoqda...',
+                  sslIssuer: json.metrics.ssl?.issuer,
+                  sslDaysRemaining: json.metrics.ssl?.daysRemaining,
+                  hardwareSpecs: json.diagnostics?.hardwareSpecs,
                 });
 
                 if (Array.isArray(json.metrics.traffic) && json.metrics.traffic.length > 0) {
                   store.setTrafficData(json.metrics.traffic);
                 }
+              }
+
+              if (json.securitySettings) {
+                useSecurityStore.setState((prev) => ({
+                  defenseStatus: {
+                    ...prev.defenseStatus,
+                    waf: json.securitySettings.wafEnabled ?? prev.defenseStatus.waf,
+                    rateLimit: json.securitySettings.rateLimitEnabled ?? prev.defenseStatus.rateLimit,
+                  }
+                }));
               }
 
               if (Array.isArray(json.data)) {
@@ -331,7 +348,7 @@ export const EgaSecurityPage: React.FC = () => {
   const handleBlockIP = async (ip: string, reason: string, permanent: boolean) => {
     store.blockIP(ip, 'Qo\'lda qo\'shilgan', 'UZ', reason, permanent);
     try {
-      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      const token = getAuthToken();
       await fetch('/api/admin/block-ip', {
         method: 'POST',
         headers: {
@@ -346,7 +363,7 @@ export const EgaSecurityPage: React.FC = () => {
   const handleUnblockIP = async (ip: string) => {
     store.unblockIP(ip);
     try {
-      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      const token = getAuthToken();
       await fetch('/api/admin/unblock-ip', {
         method: 'POST',
         headers: {
@@ -361,7 +378,7 @@ export const EgaSecurityPage: React.FC = () => {
   const handleClearLogs = async () => {
     store.clearLogs();
     try {
-      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      const token = getAuthToken();
       await fetch('/api/admin/system-metrics', {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -370,16 +387,17 @@ export const EgaSecurityPage: React.FC = () => {
   };
 
   const handleToggleDefense = async (key: keyof DefenseStatus) => {
+    const nextVal = !store.defenseStatus[key];
     store.toggleDefense(key);
     try {
-      const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+      const token = getAuthToken();
       await fetch('/api/admin/toggle-setting', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ key, value: !store.defenseStatus[key] })
+        body: JSON.stringify({ key, value: nextVal })
       });
     } catch (e) {}
   };
@@ -519,7 +537,7 @@ export const EgaSecurityPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5 font-mono">
-                    2 vCPU @ 2.40 GHz · 4096 MiB RAM DDR4 · 50 GB NVMe SSD · Linux x64
+                    {diagnostics.hardwareSpecs || `${diagnostics.cpuCores || 1} vCPU @ ${diagnostics.cpuSpeed || '2.40 GHz'} · ${m.ramTotalMb || 1024} MiB RAM · ${m.diskTotalGb || 50} GB Disk · ${diagnostics.osName || 'Linux'}`}
                   </p>
                 </div>
               </div>
@@ -755,6 +773,9 @@ export const EgaSecurityPage: React.FC = () => {
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     WAF & Xavfsizlik Qatlamlari
                   </span>
+                  <span className={clsx("text-[9px] font-mono font-bold px-1.5 py-0.5 rounded", def.waf ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30")}>
+                    {def.waf ? 'WAF FAOL' : 'WAF O\'CHIQLIGI'}
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   <DefenseToggle label="DDoS Himoya" active={def.ddosProtection} onToggle={() => handleToggleDefense('ddosProtection')} icon={<Flame className="w-3.5 h-3.5" />} isDark={isDark} />
@@ -763,6 +784,20 @@ export const EgaSecurityPage: React.FC = () => {
                   <DefenseToggle label="Bot Bloklash" active={def.botDetection} onToggle={() => handleToggleDefense('botDetection')} icon={<Radio className="w-3.5 h-3.5" />} isDark={isDark} />
                   <DefenseToggle label="Brute-Force Lock" active={def.bruteForceProtection} onToggle={() => handleToggleDefense('bruteForceProtection')} icon={<Lock className="w-3.5 h-3.5" />} isDark={isDark} />
                   <DefenseToggle label="Intrusion (IDS)" active={def.intrusionDetection} onToggle={() => handleToggleDefense('intrusionDetection')} icon={<Fingerprint className="w-3.5 h-3.5" />} isDark={isDark} />
+                </div>
+                <div className="pt-2 border-t border-slate-700/20 text-[10px] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">SSL / TLS Holati:</span>
+                    <span className={clsx("font-bold font-mono", m.sslValid ? "text-emerald-400" : "text-rose-400")}>
+                      {m.sslValid ? 'Yaroqli (TLS v1.3)' : 'Muddati o\'tgan'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">SSL Muddati:</span>
+                    <span className="font-mono text-cyan-300">
+                      {m.sslExpiry || 'Aniqlanmoqda...'} {m.sslDaysRemaining ? `(${m.sslDaysRemaining} kun qoldi)` : ''}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -791,8 +826,12 @@ export const EgaSecurityPage: React.FC = () => {
                     <span className="font-mono text-cyan-300 text-[10px] truncate max-w-[180px]" title={diagnostics.kernel}>{diagnostics.kernel || 'Aniqlanmoqda...'}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Uptime (Ishlash vaqti):</span>
-                    <span className="font-bold text-emerald-400 font-mono text-[10px]">{m.uptime || 'Aniqlanmoqda...'}</span>
+                    <span className="text-slate-400">Backend Uptime:</span>
+                    <span className="font-bold text-emerald-400 font-mono text-[10px]" title="Node.js jarayoni ishlagan vaqti">{m.backendUptime || m.uptime || 'Aniqlanmoqda...'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">VPS Host Uptime:</span>
+                    <span className="font-mono text-cyan-300 text-[10px]" title="VPS server operatsion tizimi ishlagan vaqti">{m.systemUptime || diagnostics.systemUptime || 'Aniqlanmoqda...'}</span>
                   </div>
                   <div className="flex items-center justify-between pt-1 border-t border-slate-700/20">
                     <span className="text-slate-400">Load Average (Yuklama):</span>

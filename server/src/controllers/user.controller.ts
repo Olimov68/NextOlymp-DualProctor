@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import { dbStore } from '../db/store';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
@@ -116,7 +117,7 @@ export class UserController {
         fullName: String(fullName).trim(),
         phone: String(phone).trim(),
         email: email ? String(email).trim().toLowerCase() : `user_${Date.now()}@ibnsino.uz`,
-        password: password ? String(password) : 'Student_2026!#Default',
+        password: password ? String(password) : (crypto.randomBytes(8).toString('hex') + 'A1!'),
         role: role === 'admin' ? 'admin' : role === 'teacher' ? 'teacher' : 'student',
         grade: Number(grade) || 9,
         region: region ? String(region).trim() : 'Toshkent shahri',

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
@@ -88,7 +89,7 @@ export class AuthController {
         email: trimmedEmail || `${trimmedPhone.replace(/\D/g, '')}@ibnsino.uz`,
         phone: trimmedPhone,
         passwordHash,
-        role: role === 'teacher' ? 'teacher' : 'student',
+        role: 'student', // SECURITY FIX: Forced student role, prevents privilege escalation
         grade: Number(grade) || 9,
         region: String(region || 'Toshkent shahri').trim().replace(/[<>]/g, ''),
         district: String(district || '').trim().replace(/[<>]/g, ''),
@@ -145,8 +146,8 @@ export class AuthController {
         return res.status(404).json({ error: 'Ushbu pochta bilan foydalanuvchi topilmadi' });
       }
 
-      // Generate a 6-digit numeric verification code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate a 6-digit numeric verification code using crypto
+      const code = crypto.randomInt(100000, 999999).toString();
       const salt = bcrypt.genSaltSync(8);
       const codeHash = bcrypt.hashSync(code, salt);
 

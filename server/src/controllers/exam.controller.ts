@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { dbStore, ExamRecord } from '../db/store';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
@@ -33,14 +34,45 @@ export class ExamController {
 
   /**
    * CRITICAL SECURITY REQUIREMENT:
-   * Strips correct_answer and explanation before sending questions to the client!
+   * 1. Requires authenticated user
+   * 2. Requires verified payment if exam is paid
+   * 3. Requires active started session for students
+   * 4. Strips correct_answer and explanation before sending questions to the client!
    */
-  public static async getExamQuestions(req: Request, res: Response) {
+  public static async getExamQuestions(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
+      if (!req.user) {
+        return res.status(401).json({ error: 'Savollarni olish uchun tizimga kirish talab qilinadi (401 Unauthorized)' });
+      }
+
       const exam = dbStore.getExamById(id);
       if (!exam) {
         return res.status(404).json({ error: 'Imtihon topilmadi' });
+      }
+
+      // Check payment requirement for students
+      const isPaidExam = exam.price && Number(exam.price) > 0 && !(exam as any).isFree;
+      if (isPaidExam && req.user.role === 'student') {
+        const hasPaid = dbStore.hasUserPaidExam(req.user.id, id);
+        if (!hasPaid) {
+          return res.status(402).json({
+            error: "Ushbu imtihon pullik. Savollarni ko'rish uchun avval to'lovni tasdiqlang (402 Payment Required).",
+            code: 'PAYMENT_REQUIRED',
+            price: exam.price,
+          });
+        }
+      }
+
+      // For students, verify that an active session was started
+      if (req.user.role === 'student') {
+        const session = dbStore.getActiveSession(req.user.id, id);
+        if (!session || session.status !== 'IN_PROGRESS') {
+          return res.status(403).json({
+            error: "Savollarni ko'rish uchun imtihon sessiyasini boshlash talab qilinadi.",
+            code: 'SESSION_NOT_STARTED',
+          });
+        }
       }
 
       const sanitizedQuestions = dbStore.getSanitizedQuestions(id);
@@ -50,7 +82,6 @@ export class ExamController {
         examId: id,
         totalQuestions: sanitizedQuestions.length,
         questions: sanitizedQuestions,
-        // Also provide 'data' key for backward compatibility
         data: sanitizedQuestions,
       });
     } catch (error: any) {
@@ -59,7 +90,7 @@ export class ExamController {
     }
   }
 
-  // CRITICAL SECURITY FIX (Item 4 & 5): Strict schedule/expiry checks & atomic status transitions
+  // CRITICAL SECURITY FIX (Item 4 & 5 & Payment Gate): Strict payment, schedule, and atomic sessions
   public static async startExam(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
@@ -71,6 +102,19 @@ export class ExamController {
       const exam = dbStore.getExamById(id);
       if (!exam) {
         return res.status(404).json({ error: 'Imtihon topilmadi' });
+      }
+
+      // STRICT PAYMENT VERIFICATION
+      const isPaidExam = exam.price && Number(exam.price) > 0 && !(exam as any).isFree;
+      if (isPaidExam && req.user.role !== 'admin') {
+        const hasPaid = dbStore.hasUserPaidExam(userId, exam.id);
+        if (!hasPaid) {
+          return res.status(402).json({
+            error: "Ushbu imtihonda qatnashish uchun to'lov qilinmagan (402 Payment Required). Iltimos, to'lovni amalga oshiring.",
+            code: 'PAYMENT_REQUIRED',
+            price: exam.price,
+          });
+        }
       }
 
       const now = Date.now();
@@ -331,7 +375,7 @@ export class ExamController {
         : 'Xavfsizlik ogohlantirishi qayd etildi';
 
       dbStore.addProctorEvent({
-        id: `prc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id: `prc_${Date.now()}_${uuidv4().slice(0, 8)}`,
         userId,
         examId: String(id).slice(0, 64),
         eventType: validatedType,

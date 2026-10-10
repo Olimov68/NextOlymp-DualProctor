@@ -1,10 +1,34 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+export interface PaymentRecord {
+  id: string;
+  userId: string;
+  userFullName?: string;
+  userPhone?: string;
+  examId: string;
+  examTitle?: string;
+  amount: number;
+  provider: 'payme' | 'click' | 'uzum' | 'card' | 'payx' | 'admin' | string;
+  status: 'completed' | 'pending' | 'failed';
+  transactionRef: string;
+  createdAt: string;
+}
+
+export interface SecuritySettings {
+  wafEnabled: boolean;
+  ipBlockingEnabled: boolean;
+  rateLimitEnabled: boolean;
+  sslStrict: boolean;
+  sslExpiry?: string;
+  sslValid?: boolean;
+}
 
 export interface UserRecord {
   id: string;
@@ -117,6 +141,8 @@ export interface DatabaseSchema {
   proctorEvents: ProctorEventRecord[];
   securityBlockedIps: Array<{ ip: string; reason: string; blockedAt: string }>;
   proctorSessions?: ProctorSessionRecord[];
+  payments?: PaymentRecord[];
+  securitySettings?: SecuritySettings;
 }
 
 const resolveDataDir = () => {
@@ -161,13 +187,31 @@ class Store {
         }
         if (!Array.isArray(data.securityBlockedIps)) {
           data.securityBlockedIps = [];
+        } else {
+          // Prevent local reverse-proxy IP from ever being permanently locked
+          data.securityBlockedIps = data.securityBlockedIps.filter(
+            item => !['127.0.0.1', '::1', 'localhost', '0.0.0.0'].includes(item.ip.trim())
+          );
+        }
+        if (!Array.isArray(data.payments)) {
+          data.payments = [];
+        }
+        if (!data.securitySettings) {
+          data.securitySettings = {
+            wafEnabled: true,
+            ipBlockingEnabled: true,
+            rateLimitEnabled: true,
+            sslStrict: true,
+            sslValid: true,
+            sslExpiry: '2026-12-31',
+          };
         }
         
         // Auto-sanitize leaked passwords and real PII if present in store.json
         const LEAKED_ADMIN_HASH = '$2a$10$w0AKUQrXpxOSaPhvDSOf4OJ9vfiofDNDFIg0mWJVb92siLkI.XDx6';
         const LEAKED_STUDENT_HASH = '$2a$10$hddDD4.o4fXH4shoJQVDJuZcNBFOlxc3wdT0HDfbOK.r/kuHHCpFC';
-        const newAdminHash = bcrypt.hashSync(process.env.INITIAL_ADMIN_PASSWORD || 'IbnSino_Admin_2026!#Strong', 10);
-        const newStudentHash = bcrypt.hashSync(process.env.INITIAL_STUDENT_PASSWORD || 'Student_Demo_2026!#Pass', 10);
+        const newAdminHash = bcrypt.hashSync(process.env.INITIAL_ADMIN_PASSWORD || crypto.randomBytes(16).toString('hex'), 10);
+        const newStudentHash = bcrypt.hashSync(process.env.INITIAL_STUDENT_PASSWORD || crypto.randomBytes(16).toString('hex'), 10);
 
         let modified = false;
         if (Array.isArray(data.users)) {
@@ -230,8 +274,11 @@ class Store {
   }
 
   private createInitialData(): DatabaseSchema {
-    const adminPass = process.env.INITIAL_ADMIN_PASSWORD || 'IbnSino_Admin_2026!#Strong';
-    const studentPass = process.env.INITIAL_STUDENT_PASSWORD || 'Student_Demo_2026!#Pass';
+    const adminPass = process.env.INITIAL_ADMIN_PASSWORD || (crypto.randomBytes(10).toString('hex') + 'A1!');
+    const studentPass = process.env.INITIAL_STUDENT_PASSWORD || (crypto.randomBytes(10).toString('hex') + 'S1!');
+    if (!process.env.INITIAL_ADMIN_PASSWORD) {
+      console.log(`[SECURITY] Auto-generated temporary admin credential: admin@ibnsino.uz / ${adminPass}`);
+    }
     const adminPassHash = bcrypt.hashSync(adminPass, 12);
     const studentPassHash = bcrypt.hashSync(studentPass, 12);
 
@@ -684,7 +731,7 @@ class Store {
     const timeSpentMinutes = Math.max(1, Math.round(elapsedMs / 60000));
 
     const certType = percentage >= 85 ? 'I darajali Diplom' : percentage >= 70 ? 'II darajali Diplom' : percentage >= 50 ? 'III darajali Diplom' : 'Ishtirokchi Sertifikati';
-    const subNum = Math.floor(1000 + Math.random() * 9000);
+    const subNum = crypto.randomInt(10000, 99999);
     const verificationCode = `IS-2026-${(exam?.category || 'MED').toUpperCase().slice(0, 4)}-${subNum}`;
 
     const submission: SubmissionRecord = {
@@ -868,7 +915,64 @@ class Store {
   public isIPBlocked(ip: string): boolean {
     if (!this.data.securityBlockedIps || !ip) return false;
     const cleanIp = ip.replace(/^.*:/, '').trim();
+    if (cleanIp === '127.0.0.1' || cleanIp === '::1' || cleanIp === 'localhost' || cleanIp === '0.0.0.0') {
+      return false;
+    }
     return this.data.securityBlockedIps.some(item => item.ip === cleanIp || item.ip === ip.trim());
+  }
+
+  // --- Payment Management ---
+  public getPayments(): PaymentRecord[] {
+    if (!this.data.payments) this.data.payments = [];
+    return this.data.payments;
+  }
+
+  public recordPayment(payment: PaymentRecord): PaymentRecord {
+    if (!this.data.payments) this.data.payments = [];
+    const existing = this.data.payments.find(
+      p => p.transactionRef === payment.transactionRef ||
+           (p.userId === payment.userId && p.examId === payment.examId && p.status === 'completed')
+    );
+    if (existing) {
+      return existing;
+    }
+    this.data.payments.unshift(payment);
+    this.saveData();
+    return payment;
+  }
+
+  public hasUserPaidExam(userId: string, examId: string): boolean {
+    if (!this.data.payments) return false;
+    return this.data.payments.some(
+      p => p.userId === userId && p.examId === examId && p.status === 'completed'
+    );
+  }
+
+  public getUserPayments(userId: string): PaymentRecord[] {
+    if (!this.data.payments) return [];
+    return this.data.payments.filter(p => p.userId === userId);
+  }
+
+  // --- Security Settings ---
+  public getSecuritySettings(): SecuritySettings {
+    if (!this.data.securitySettings) {
+      this.data.securitySettings = {
+        wafEnabled: true,
+        ipBlockingEnabled: true,
+        rateLimitEnabled: true,
+        sslStrict: true,
+        sslValid: true,
+        sslExpiry: '2026-12-31',
+      };
+    }
+    return this.data.securitySettings;
+  }
+
+  public updateSecuritySettings(partial: Partial<SecuritySettings>): SecuritySettings {
+    const current = this.getSecuritySettings();
+    this.data.securitySettings = { ...current, ...partial };
+    this.saveData();
+    return this.data.securitySettings;
   }
 }
 

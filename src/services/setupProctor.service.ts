@@ -47,8 +47,8 @@ export async function validatePlacementSnapshot(
 ): Promise<AIPlacementEvaluation> {
   const cleanBase64 = imageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
-  
-  const geminiKey = options?.apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.VITE_AI_API_KEY;
+  // API keys should NEVER be exposed in frontend bundles
+  const geminiKey = options?.apiKey;
   if (geminiKey && geminiKey.length > 10) {
     try {
       const response = await fetch(
@@ -402,9 +402,20 @@ export class DualDeviceProctorGateway {
   }
 }
 
+function generateSecureEntropy(): string {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+    const array = new Uint8Array(20);
+    window.crypto.getRandomValues(array);
+    return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+  }
+  return `${Date.now()}-${Math.floor(performance.now() * 1000)}`;
+}
+
 export function createDualDeviceSession(examId: string, studentId: string): DualDeviceSession {
-  const sessionId = 'proctor-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36);
-  const token = 'jwt_' + btoa(JSON.stringify({ s: sessionId, e: examId, u: studentId, exp: Date.now() + 1000 * 60 * 180 }));
+  const uuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : generateSecureEntropy();
+  const sessionId = `proctor-${uuid}`;
+  const entropy = generateSecureEntropy();
+  const token = `prc_${entropy}`;
 
   if (typeof window !== 'undefined') {
     localStorage.setItem('ibnsino_active_proctor_session', sessionId);

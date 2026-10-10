@@ -17,6 +17,7 @@ import { ExamSetupModal } from '../../components/contest/ExamSetupModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useOlympiadStore } from '../../store/useOlympiadStore';
 import { usePaymentStore } from '../../store/usePaymentStore';
+import { apiClient } from '../../services/api';
 import clsx from 'clsx';
 import {
   ShieldCheck,
@@ -110,9 +111,24 @@ export const ContestParticipatePage: React.FC = () => {
   const [isPaid, setIsPaid] = useState(() => {
     if (!id || !user?.id) return false;
     if (isFree) return true;
-    return localStorage.getItem(`paid_olymp_${user.id}_${id}`) === 'true';
+    return false; // Server authoritative
   });
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Authoritative server-side payment verification
+  useEffect(() => {
+    if (!id || !user?.id || isFree) {
+      if (isFree) setIsPaid(true);
+      return;
+    }
+    apiClient.get(`/payments/status/${encodeURIComponent(id)}`)
+      .then((res: any) => {
+        if (res && res.data) {
+          setIsPaid(Boolean(res.data.hasPaid));
+        }
+      })
+      .catch(() => {});
+  }, [id, user?.id, isFree]);
 
   const [isRegistered, setIsRegistered] = useState(() => {
     if (!id || !user?.id) return false;
@@ -173,12 +189,21 @@ export const ContestParticipatePage: React.FC = () => {
     }, 400);
   };
 
-  const handlePaymentSuccess = (txn?: any) => {
+  const handlePaymentSuccess = async (txn?: any) => {
     if (user?.id && id) {
-      localStorage.setItem(`paid_olymp_${user.id}_${id}`, 'true');
-      localStorage.setItem(`reg_olymp_${user.id}_${id}`, 'true');
+      try {
+        await apiClient.post('/payments/verify', {
+          examId: id,
+          amount: olympiadPrice,
+          provider: txn?.paymentMethod || 'payx',
+          transactionRef: txn?.id || `PAYX-${Date.now()}`,
+        });
+      } catch (err) {
+        console.warn('Backend payment verification notice:', err);
+      }
       setIsPaid(true);
       setIsRegistered(true);
+      localStorage.setItem(`reg_olymp_${user.id}_${id}`, 'true');
 
       usePaymentStore.getState().addPayment({
         userName: user.fullName || "O'quvchi",
@@ -492,8 +517,25 @@ export const ContestParticipatePage: React.FC = () => {
     }
   });
 
-  const proceedToStartExam = () => {
-    
+  const proceedToStartExam = async () => {
+    if (!olympiad || !id) return;
+
+    // Strict server-side verification before starting exam
+    try {
+      await apiClient.post(`/exams/${encodeURIComponent(id)}/start`);
+    } catch (err: any) {
+      if (err?.response?.status === 402 || err?.response?.data?.code === 'PAYMENT_REQUIRED') {
+        alert("⚠️ Ushbu musobaqa uchun to'lov amalga oshirilmagan yoki serverda tasdiqlanmagan. Iltimos, to'lovni bajaring.");
+        setIsPaid(false);
+        setIsPaymentModalOpen(true);
+        return;
+      }
+      if (err?.response?.data?.error) {
+        alert(`⚠️ ${err.response.data.error}`);
+        return;
+      }
+    }
+
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
     }

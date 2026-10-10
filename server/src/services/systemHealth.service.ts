@@ -36,6 +36,19 @@ export interface SystemHealthData {
     uptime: string;
     uptimeSeconds: number;
   };
+  backend: {
+    uptime: string;
+    uptimeSeconds: number;
+    uptimeMinutes: number;
+    nodeVersion: string;
+    pid: number;
+  };
+  ssl: {
+    valid: boolean;
+    expiryDate: string;
+    daysRemaining: number;
+    issuer: string;
+  };
   ports: Array<{
     port: number;
     name: string;
@@ -51,6 +64,7 @@ export interface SystemHealthData {
     heapUsedMb: number;
     heapTotalMb: number;
     processUptimeMinutes: number;
+    backendUptime: string;
     databaseName: string;
     databaseStatus: string;
     databaseRecordsCount: number;
@@ -116,6 +130,17 @@ class SystemHealthService {
     const submissions = dbStore.getSubmissions() || [];
     const totalRecords = users.length + exams.length + submissions.length;
 
+    const procUptimeSec = Math.floor(process.uptime());
+    const procDays = Math.floor(procUptimeSec / (3600 * 24));
+    const procHours = Math.floor((procUptimeSec % (3600 * 24)) / 3600);
+    const procMins = Math.floor((procUptimeSec % 3600) / 60);
+    const procSecs = procUptimeSec % 60;
+    const backendUptimeStr = procDays > 0
+      ? `${procDays} kun ${procHours} soat ${procMins} daqiqa`
+      : procHours > 0
+      ? `${procHours} soat ${procMins} daqiqa`
+      : `${procMins} daqiqa ${procSecs} soniya`;
+
     return {
       ram: {
         totalMb: Math.round(totalMem / (1024 * 1024)),
@@ -153,12 +178,15 @@ class SystemHealthService {
         uptime: `${days} kun ${hours} soat ${minutes} daqiqa`,
         uptimeSeconds,
       },
-      ports: [
-        { port: 80, name: 'HTTP Web Server', protocol: 'TCP', status: 'Ochiq & Faol', color: 'emerald' },
-        { port: 443, name: 'HTTPS SSL/TLS', protocol: 'TCP', status: 'Ochiq & Himoyalangan', color: 'emerald' },
-        { port: 5000, name: 'Ibn Sino API Server', protocol: 'TCP', status: 'Faol & Tinglanmoqda', color: 'emerald' },
-        { port: 22, name: 'SSH Shell Access', protocol: 'TCP', status: 'Himoyalangan (Port 22)', color: 'indigo' },
-      ],
+      backend: {
+        uptime: backendUptimeStr,
+        uptimeSeconds: procUptimeSec,
+        uptimeMinutes: Math.floor(procUptimeSec / 60),
+        nodeVersion: process.version,
+        pid: process.pid,
+      },
+      ssl: this.checkSslCertificate(),
+      ports: this.scanOpenPorts(),
       environment: {
         runtime: 'Node.js Engine',
         nodeVersion: process.version,
@@ -167,6 +195,7 @@ class SystemHealthService {
         heapUsedMb: Math.round(memUsage.heapUsed / (1024 * 1024)),
         heapTotalMb: Math.round(memUsage.heapTotal / (1024 * 1024)),
         processUptimeMinutes: Math.floor(process.uptime() / 60),
+        backendUptime: backendUptimeStr,
         databaseName: 'JSON Store & Prisma DB',
         databaseStatus: 'Faol & Sinxronlangan',
         databaseRecordsCount: totalRecords,
@@ -204,6 +233,17 @@ class SystemHealthService {
       const hours = Math.floor((uptimeSeconds % (3600 * 24)) / 3600);
       const minutes = Math.floor((uptimeSeconds % 3600) / 60);
       const uptimeStr = `${days} kun ${hours} soat ${minutes} daqiqa`;
+
+      const procUptimeSec = Math.floor(process.uptime());
+      const procDays = Math.floor(procUptimeSec / (3600 * 24));
+      const procHours = Math.floor((procUptimeSec % (3600 * 24)) / 3600);
+      const procMins = Math.floor((procUptimeSec % 3600) / 60);
+      const procSecs = procUptimeSec % 60;
+      const backendUptimeStr = procDays > 0
+        ? `${procDays} kun ${procHours} soat ${procMins} daqiqa`
+        : procHours > 0
+        ? `${procHours} soat ${procMins} daqiqa`
+        : `${procMins} daqiqa ${procSecs} soniya`;
 
       // 4. Detailed metrics using systeminformation where available
       let cpuPercent = Math.min(100, Math.max(1, Math.round((loadAvgRaw[0] / (cpuCores || 1)) * 100)));
@@ -337,6 +377,14 @@ class SystemHealthService {
           uptime: uptimeStr,
           uptimeSeconds,
         },
+        backend: {
+          uptime: backendUptimeStr,
+          uptimeSeconds: procUptimeSec,
+          uptimeMinutes: Math.floor(procUptimeSec / 60),
+          nodeVersion: process.version,
+          pid: process.pid,
+        },
+        ssl: this.checkSslCertificate(),
         ports: openPorts,
         environment: {
           runtime: 'Node.js Engine',
@@ -346,6 +394,7 @@ class SystemHealthService {
           heapUsedMb: Math.round(memUsage.heapUsed / (1024 * 1024)),
           heapTotalMb: Math.round(memUsage.heapTotal / (1024 * 1024)),
           processUptimeMinutes: Math.floor(process.uptime() / 60),
+          backendUptime: backendUptimeStr,
           databaseName: 'JSON Store & Prisma DB',
           databaseStatus: 'Faol & Sinxronlangan',
           databaseRecordsCount: totalRecords,
@@ -364,6 +413,36 @@ class SystemHealthService {
     } finally {
       this.isUpdating = false;
     }
+  }
+
+  private checkSslCertificate(): { valid: boolean; expiryDate: string; daysRemaining: number; issuer: string } {
+    if (process.platform === 'linux') {
+      try {
+        const out = execSync("echo | openssl s_client -servername ibnsino.uz -connect 127.0.0.1:443 2>/dev/null | openssl x509 -noout -enddate -issuer 2>/dev/null").toString();
+        const endMatch = out.match(/notAfter=(.+)/);
+        const issuerMatch = out.match(/issuer=(.+)/);
+        if (endMatch && endMatch[1]) {
+          const expDate = new Date(endMatch[1].trim());
+          const now = new Date();
+          const daysRemaining = Math.max(0, Math.floor((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+          return {
+            valid: expDate.getTime() > now.getTime(),
+            expiryDate: expDate.toISOString().slice(0, 10),
+            daysRemaining,
+            issuer: issuerMatch ? issuerMatch[1].slice(0, 40) : "Let's Encrypt Authority",
+          };
+        }
+      } catch {}
+    }
+    const settings = dbStore.getSecuritySettings();
+    const expDate = settings.sslExpiry ? new Date(settings.sslExpiry) : new Date(Date.now() + 180 * 24 * 3600 * 1000);
+    const daysRemaining = Math.max(0, Math.floor((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    return {
+      valid: settings.sslValid ?? true,
+      expiryDate: expDate.toISOString().slice(0, 10),
+      daysRemaining,
+      issuer: "Let's Encrypt TLS (ibnsino.uz)",
+    };
   }
 
   private scanOpenPorts(): Array<{ port: number; name: string; protocol: string; status: string; color: string }> {
@@ -408,21 +487,19 @@ class SystemHealthService {
       }
     } catch {}
 
-    // Ensure our app listening port is registered (5000 / 3000)
+    // Ensure our app listening port is registered
     const serverPort = parseInt(process.env.PORT || '5000', 10);
     detectedPorts.add(serverPort);
 
     // Filter to known services or top ports
     const portList = Array.from(detectedPorts);
     
-    // Prioritize key server ports: 80, 443, 5000, 5173, 22, 3306, 5432, 6379, 21, 587, 8080
+    // Prioritize key server ports
     const prioritized = portList.filter(p => KNOWN_SERVICES[p] !== undefined);
     const otherPorts = portList.filter(p => KNOWN_SERVICES[p] === undefined && p < 40000);
 
+    // SECURITY & REALISM FIX: Only show genuine detected ports, never inject fake ports
     const chosenPorts = [...prioritized, ...otherPorts].slice(0, 8);
-    if (chosenPorts.length === 0) {
-      chosenPorts.push(80, 443, serverPort, 22);
-    }
 
     return chosenPorts.map(p => {
       const known = KNOWN_SERVICES[p];

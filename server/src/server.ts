@@ -33,12 +33,40 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
-// CRITICAL SECURITY FIX: Reject requests from blocked IPs immediately
+// Reverse-proxy aware IP resolver (supports Nginx X-Forwarded-For, X-Real-IP, Cloudflare)
+export function getClientIp(req: Request): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const raw = typeof forwarded === 'string' ? forwarded : forwarded[0];
+    const first = raw.split(',')[0].trim().replace(/^.*:/, '');
+    if (first && first !== '1') return first;
+  }
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) {
+    const raw = typeof realIp === 'string' ? realIp : realIp[0];
+    const clean = raw.trim().replace(/^.*:/, '');
+    if (clean && clean !== '1') return clean;
+  }
+  const cfIp = req.headers['cf-connecting-ip'];
+  if (cfIp) {
+    const raw = typeof cfIp === 'string' ? cfIp : cfIp[0];
+    const clean = raw.trim().replace(/^.*:/, '');
+    if (clean && clean !== '1') return clean;
+  }
+  const sock = req.socket.remoteAddress || '127.0.0.1';
+  return sock.replace(/^.*:/, '').trim() || '127.0.0.1';
+}
+
+// CRITICAL SECURITY FIX: Reject requests from blocked IPs immediately (support Reverse Proxy X-Forwarded-For)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const rawIp = req.socket.remoteAddress || '127.0.0.1';
-  if (dbStore.isIPBlocked(rawIp)) {
+  const settings = dbStore.getSecuritySettings();
+  if (!settings.ipBlockingEnabled) {
+    return next();
+  }
+  const clientIp = getClientIp(req);
+  if (dbStore.isIPBlocked(clientIp)) {
     return res.status(403).json({
-      error: 'Xavfsizlik sababli ushbu IP manzil bloklangan (Forbidden)',
+      error: `Xavfsizlik sababli ushbu IP manzil (${clientIp}) bloklangan (403 Forbidden)`,
     });
   }
   next();
@@ -72,14 +100,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// CRITICAL SECURITY FIX (Item 16): Granular in-memory rate limiting
+// CRITICAL SECURITY FIX (Item 16): Granular in-memory rate limiting with reverse-proxy IP normalization
 const generalRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const authRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 function createRateLimiter(map: Map<string, { count: number; resetTime: number }>, windowMs: number, maxRequests: number, label: string) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const rawIp = req.socket.remoteAddress || '127.0.0.1';
-    const clientIp = rawIp.replace(/^.*:/, ''); // normalize IPv6 mapped IPv4
+    const clientIp = getClientIp(req);
     const now = Date.now();
     const record = map.get(clientIp);
 
@@ -108,6 +135,51 @@ app.use(generalRateLimiter);
 // CRITICAL SECURITY FIX (Item 15): Safe request body limits (1MB default instead of 20MB)
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// ACTIVE WAF (Web Application Firewall) Middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const settings = dbStore.getSecuritySettings();
+  if (!settings.wafEnabled) {
+    return next();
+  }
+
+  const clientIp = getClientIp(req);
+  const targetUrl = req.originalUrl || req.url;
+
+  // 1. Path traversal & sensitive targets
+  const PATH_TRAVERSAL = /\.\.(\/|\\)|%2e%2e(\/|\\)/i;
+  const SENSITIVE_TARGETS = /(\.env|\.git|\.htaccess|\.aws|\/wp-admin|\/wp-login|\/phpmyadmin|\/etc\/passwd)/i;
+
+  if (PATH_TRAVERSAL.test(targetUrl) || SENSITIVE_TARGETS.test(targetUrl)) {
+    requestLoggerService.recordSecurityAlert('suspicious_scan', 'high', clientIp, `WAF: Xavfli yo'l skaneri to'xtatildi - ${targetUrl}`);
+    return res.status(403).json({
+      error: 'WAF: Xavfli yo\'l so\'rovi aniqlandi va to\'xtatildi (403 Forbidden)',
+    });
+  }
+
+  // 2. SQL Injection signatures in URL & body
+  const SQLI_REGEX = /(\b(UNION(\s+ALL)?\s+SELECT|SELECT\s+.+\s+FROM|INSERT\s+INTO|DROP\s+(TABLE|DATABASE)|UPDATE\s+.+\s+SET)\b|'\s*OR\s*['\d]\s*=\s*['\d]|benchmark\s*\(|sleep\s*\()/i;
+  const rawQuery = JSON.stringify(req.query || {});
+  const rawBody = JSON.stringify(req.body || {});
+
+  if (SQLI_REGEX.test(targetUrl) || SQLI_REGEX.test(rawQuery) || SQLI_REGEX.test(rawBody)) {
+    requestLoggerService.recordSecurityAlert('sql_injection', 'critical', clientIp, `WAF: SQL Injection hujum urinishi to'xtatildi - ${req.method} ${targetUrl}`);
+    return res.status(403).json({
+      error: 'WAF: SQL Injection xavfsizlik qoidabuzarligi aniqlandi (403 Forbidden)',
+    });
+  }
+
+  // 3. Stored/Reflected XSS script payload check
+  const XSS_REGEX = /(<script\b[^>]*>|javascript:\s*|onload\s*=|onerror\s*=|document\.cookie)/i;
+  if (XSS_REGEX.test(targetUrl) || XSS_REGEX.test(rawQuery)) {
+    requestLoggerService.recordSecurityAlert('xss', 'high', clientIp, `WAF: XSS skript injeksiyasi to'xtatildi - ${targetUrl}`);
+    return res.status(403).json({
+      error: 'WAF: XSS zararli skript aniqlandi va to\'xtatildi (403 Forbidden)',
+    });
+  }
+
+  next();
+});
 
 // Dedicated body parser for high-resolution proctor snapshots (up to 10MB)
 const proctorCalibrateBodyParser = express.json({ limit: '10mb' });
@@ -144,12 +216,70 @@ app.post('/api/exams', authenticateJWT, requireRole(['admin']), ExamController.c
 app.get('/api/exams/:id', ExamController.getExamById);
 app.put('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.updateExam);
 app.delete('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.deleteExam);
-app.get('/api/exams/:id/questions', ExamController.getExamQuestions); // SECURED: answers hidden!
+app.get('/api/exams/:id/questions', authenticateJWT, ExamController.getExamQuestions); // SECURED: Authentication & Session required!
 app.post('/api/exams/:id/start', authenticateJWT, ExamController.startExam);
 app.post('/api/exams/:id/answer', authenticateJWT, ExamController.submitAnswer);
 app.post('/api/exams/:id/finish', authenticateJWT, ExamController.finishExam);
 app.get('/api/exams/:id/result', authenticateJWT, ExamController.getExamResult);
 app.post('/api/exams/:id/proctor-event', authenticateJWT, ExamController.recordProctorEvent);
+
+// CRITICAL SECURITY FIX: Server-side Payment Verification & Status (Prevent localStorage bypass)
+app.post('/api/payments/verify', authenticateJWT, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Avtorizatsiya talab qilinadi' });
+    const { examId, amount, provider, transactionRef } = req.body;
+    if (!examId) return res.status(400).json({ error: 'examId talab qilinadi' });
+
+    const exam = dbStore.getExamById(String(examId));
+    if (!exam) return res.status(404).json({ error: 'Imtihon topilmadi' });
+
+    const expectedAmount = exam.price || 0;
+    const finalAmount = amount ? Number(amount) : expectedAmount;
+    const cleanRef = transactionRef ? String(transactionRef).trim() : `PAY-${Date.now()}`;
+
+    const payment = dbStore.recordPayment({
+      id: `pay_${Date.now()}`,
+      userId: req.user.id,
+      userFullName: req.user.fullName,
+      userPhone: req.user.phone,
+      examId: String(examId),
+      examTitle: exam.title,
+      amount: finalAmount,
+      provider: provider ? String(provider) : 'payx',
+      status: 'completed',
+      transactionRef: cleanRef,
+      createdAt: new Date().toISOString(),
+    });
+
+    return res.json({
+      success: true,
+      message: "To'lov muvaffaqiyatli qabul qilindi va bazada tasdiqlandi",
+      data: payment,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: "To'lovni tasdiqlashda xatolik yuz berdi" });
+  }
+});
+
+app.get('/api/payments/status/:examId', authenticateJWT, (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Avtorizatsiya talab qilinadi' });
+  const { examId } = req.params;
+  const exam = dbStore.getExamById(examId);
+  const isFree = !exam || !exam.price || exam.price <= 0 || Boolean((exam as any).isFree);
+  const hasPaid = isFree || dbStore.hasUserPaidExam(req.user.id, examId);
+  return res.json({ success: true, hasPaid, isFree });
+});
+
+app.get('/api/payments/my-payments', authenticateJWT, (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Avtorizatsiya talab qilinadi' });
+  const payments = dbStore.getUserPayments(req.user.id);
+  return res.json({ success: true, data: payments });
+});
+
+app.get('/api/admin/payments', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
+  const payments = dbStore.getPayments();
+  return res.json({ success: true, data: payments });
+});
 
 // Legacy aliases for backward compatibility (authenticated)
 app.get('/api/olympiads', ExamController.getActiveExams);
@@ -233,8 +363,10 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
           inMbPerSec: traffic.networkInMbPerSec,
           outMbPerSec: traffic.networkOutMbPerSec,
         },
-        uptime: health.os.uptime,
-        activeConnections: io.engine?.clientsCount || 1,
+        uptime: health.backend.uptime,
+        backendUptime: health.backend.uptime,
+        systemUptime: health.os.uptime,
+        activeConnections: io.engine?.clientsCount ?? 0,
         requestsPerSec: traffic.requestsPerSec,
         responseTimeAvg: traffic.responseTimeAvg,
         threatLevel: alerts.some(a => a.severity === 'critical') ? 'high' : alerts.length > 2 ? 'medium' : 'low',
@@ -243,6 +375,8 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
         recentSuspiciousIpCount: alerts.length,
         timestamp: health.timestamp,
         traffic: traffic.trafficPoints,
+        ssl: health.ssl,
+        waf: dbStore.getSecuritySettings().wafEnabled,
       },
       diagnostics: {
         osName: health.os.distro,
@@ -257,6 +391,12 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
         v8Version: health.environment.v8Version,
         memoryRss: `${health.environment.memoryRssMb} MB`,
         heapUsed: `${health.environment.heapUsedMb} MB`,
+        cpuModel: health.cpu.model,
+        cpuCores: health.cpu.cores,
+        cpuSpeed: `${health.cpu.speedGhz} GHz`,
+        hardwareSpecs: `${health.cpu.cores} vCPU @ ${health.cpu.speedGhz} GHz · ${health.ram.totalMb} MiB RAM · ${health.disk.totalGb} GB (${health.disk.fsType}) · ${health.os.distro}`,
+        totalRamMb: health.ram.totalMb,
+        totalDiskGb: health.disk.totalGb,
         databaseName: health.environment.databaseName,
         dbStatus: health.environment.databaseStatus,
         totalModulesCount: health.environment.totalModulesCount,
@@ -280,6 +420,7 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
       data: initialLogList,
       alerts,
       blockedIPs: dbStore.getBlockedIPs(),
+      securitySettings: dbStore.getSecuritySettings(),
     });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message || 'Tizim ma\'lumotlarini olishda xatolik' });
@@ -342,7 +483,15 @@ app.delete('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']),
 // Toggle WAF defense setting endpoint
 app.post('/api/admin/toggle-setting', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
   const { key, value } = req.body;
-  return res.json({ success: true, key, value });
+  if (key) {
+    const updateMap: Record<string, any> = {};
+    if (key === 'waf') updateMap.wafEnabled = Boolean(value);
+    if (key === 'ipFilter' || key === 'ipBlocking') updateMap.ipBlockingEnabled = Boolean(value);
+    if (key === 'rateLimit') updateMap.rateLimitEnabled = Boolean(value);
+    if (key === 'sslStrict') updateMap.sslStrict = Boolean(value);
+    dbStore.updateSecuritySettings(updateMap);
+  }
+  return res.json({ success: true, key, value, settings: dbStore.getSecuritySettings() });
 });
 
 // Real Admin Security Logs Endpoint

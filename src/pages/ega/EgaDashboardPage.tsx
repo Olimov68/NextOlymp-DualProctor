@@ -155,6 +155,48 @@ export const EgaDashboardPage: React.FC = () => {
     };
   }, [users]);
 
+  // Real-time server telemetry fetch for Admin Dashboard
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchTelemetry = async () => {
+      try {
+        const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+        const headers: Record<string, string> = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/admin/system-metrics', { headers });
+        if (res.ok && isMounted) {
+          const json = await res.json();
+          if (json.metrics) {
+            securityStore.updateServerMetrics({
+              ram: json.metrics.ram?.usagePercent ?? 0,
+              ramTotalMb: json.metrics.ram?.totalMb ?? 0,
+              ramUsedMb: json.metrics.ram?.usedMb ?? 0,
+              disk: json.metrics.disk?.usagePercent ?? 0,
+              diskTotalGb: json.metrics.disk?.totalGb ?? 0,
+              diskUsedGb: json.metrics.disk?.usedGb ?? 0,
+              cpu: json.metrics.cpu?.usagePercent ?? 0,
+              uptime: json.metrics.backendUptime || json.metrics.uptime || 'Aniqlanmoqda...',
+              backendUptime: json.metrics.backendUptime || 'Aniqlanmoqda...',
+              systemUptime: json.metrics.systemUptime || json.metrics.uptime || 'Aniqlanmoqda...',
+              activeConnections: json.metrics.activeConnections ?? 0,
+              hardwareSpecs: json.diagnostics?.hardwareSpecs,
+              sslValid: json.metrics.ssl?.valid ?? true,
+              sslExpiry: json.metrics.ssl?.validTo ?? 'Aniqlanmoqda...',
+            });
+          }
+        }
+      } catch {}
+    };
+
+    fetchTelemetry();
+    const interval = setInterval(fetchTelemetry, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <EgaLayout>
       <div className="space-y-6 font-sans text-xs pb-8">
@@ -217,7 +259,7 @@ export const EgaDashboardPage: React.FC = () => {
                 </span>
               </div>
               <span className="text-[10px] text-slate-400 font-mono">
-                2 vCPU @ 2.40GHz · Uptime: {securityStore.serverMetrics.uptime}
+                {securityStore.serverMetrics.hardwareSpecs || 'Linux VPS Node'} · Backend: {securityStore.serverMetrics.backendUptime || securityStore.serverMetrics.uptime}
               </span>
             </div>
           </div>
@@ -227,8 +269,8 @@ export const EgaDashboardPage: React.FC = () => {
             <div className={clsx("px-3 py-1.5 rounded-xl border flex items-center gap-2", isDark ? "bg-[#0D1832] border-[#1E335E]" : "bg-white border-slate-200")}>
               <MemoryStick className="w-3.5 h-3.5 text-cyan-400" />
               <div>
-                <span className="text-slate-400 block text-[9px]">RAM (4096 MiB)</span>
-                <span className="font-bold text-cyan-300 font-mono">{securityStore.serverMetrics.ramUsedMb || 418}MB ({securityStore.serverMetrics.ram}%)</span>
+                <span className="text-slate-400 block text-[9px]">RAM ({securityStore.serverMetrics.ramTotalMb ? `${securityStore.serverMetrics.ramTotalMb} MiB` : 'Server'})</span>
+                <span className="font-bold text-cyan-300 font-mono">{securityStore.serverMetrics.ramUsedMb || 0}MB ({securityStore.serverMetrics.ram}%)</span>
               </div>
             </div>
 
@@ -236,8 +278,8 @@ export const EgaDashboardPage: React.FC = () => {
             <div className={clsx("px-3 py-1.5 rounded-xl border flex items-center gap-2", isDark ? "bg-[#0D1832] border-[#1E335E]" : "bg-white border-slate-200")}>
               <HardDrive className="w-3.5 h-3.5 text-indigo-400" />
               <div>
-                <span className="text-slate-400 block text-[9px]">NVMe SSD (50 GB)</span>
-                <span className="font-bold text-indigo-300 font-mono">{securityStore.serverMetrics.diskUsedGb || 8.4}GB ({securityStore.serverMetrics.disk}%)</span>
+                <span className="text-slate-400 block text-[9px]">Disk ({securityStore.serverMetrics.diskTotalGb ? `${securityStore.serverMetrics.diskTotalGb} GB` : 'NVMe'})</span>
+                <span className="font-bold text-indigo-300 font-mono">{securityStore.serverMetrics.diskUsedGb || 0}GB ({securityStore.serverMetrics.disk}%)</span>
               </div>
             </div>
 
@@ -246,7 +288,7 @@ export const EgaDashboardPage: React.FC = () => {
               <Flame className="w-3.5 h-3.5 text-amber-400" />
               <div>
                 <span className="text-slate-400 block text-[9px]">DDoS / WAF</span>
-                <span className="font-bold text-emerald-400 font-mono">Faol & Himoyalangan</span>
+                <span className="font-bold text-emerald-400 font-mono">{securityStore.defenseStatus.waf ? 'Faol & Himoyalangan' : 'Faol'}</span>
               </div>
             </div>
 

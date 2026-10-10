@@ -23,26 +23,12 @@ export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: 
       user = dbStore.getUserByEmailOrPhone(decoded.email);
     }
 
-    if (!user && decoded.role === 'admin') {
-      user = {
-        id: decoded.id || 'admin-root',
-        fullName: decoded.fullName || 'Ibn Sino Bosh Admin',
-        phone: '+998901234567',
-        email: decoded.email || 'admin@ibnsinoschool.uz',
-        passwordHash: '',
-        role: 'admin',
-        grade: 0,
-        region: 'Toshkent',
-        district: 'Yunusobod',
-        school: 'Ibn Sino',
-        score: 100,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-      };
+    if (!user) {
+      return res.status(401).json({ error: 'Foydalanuvchi topilmadi yoki hisob o\'chirilgan (Unauthorized)' });
     }
 
-    if (!user) {
-      return res.status(401).json({ error: 'Foydalanuvchi topilmadi yoki token eskirgan' });
+    if (user.status === 'blocked') {
+      return res.status(403).json({ error: 'Ushbu hisob xavfsizlik sababli bloklangan (Forbidden)' });
     }
 
     req.user = user;

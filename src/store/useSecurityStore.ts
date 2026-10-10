@@ -26,11 +26,16 @@ export interface ServerMetrics {
   diskFreeGb: number; 
   network: { in: number; out: number };
   uptime: string;
+  backendUptime?: string;
+  systemUptime?: string;
+  hardwareSpecs?: string;
   activeConnections: number;
   requestsPerSec: number;
   responseTimeAvg: number;
   sslValid: boolean;
   sslExpiry: string;
+  sslIssuer?: string;
+  sslDaysRemaining?: number;
   openPorts: number[];
   processes: number;
   threatLevel: 'low' | 'medium' | 'high';
@@ -102,11 +107,13 @@ const DEFAULT_METRICS: ServerMetrics = {
   diskFreeGb: 0,
   network: { in: 0.0, out: 0.0 },
   uptime: 'Aniqlanmoqda...',
-  activeConnections: 1,
+  backendUptime: 'Aniqlanmoqda...',
+  systemUptime: 'Aniqlanmoqda...',
+  activeConnections: 0,
   requestsPerSec: 0,
   responseTimeAvg: 0,
   sslValid: true,
-  sslExpiry: '2027-03-15',
+  sslExpiry: 'Aniqlanmoqda...',
   openPorts: [],
   processes: 0,
   threatLevel: 'low',

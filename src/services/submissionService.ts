@@ -446,8 +446,16 @@ export const submissionService = {
       if (serverRes && serverRes.data) {
         serverGradingResult = serverRes.data;
       }
-    } catch (e) {
-      console.warn('Backend server-side grading notice:', e);
+    } catch (e: any) {
+      console.error('Backend server-side grading error:', e);
+      throw new Error(
+        e?.response?.data?.error ||
+        "Imtihon natijalari faqat markaziy server tomonidan tasdiqlanishi shart. Server bilan bog'lanishda xatolik yuz berdi."
+      );
+    }
+
+    if (!serverGradingResult || typeof serverGradingResult.score !== 'number') {
+      throw new Error("Serverdan imtihon bahosi va rasmiy tasdiq kodi olinmadi. Qayta urinib ko'ring.");
     }
 
     // 2. Report proctor incidents to server
@@ -462,22 +470,22 @@ export const submissionService = {
       });
     }
 
-    const verifiedScore = serverGradingResult ? serverGradingResult.score : finalScore;
-    const verifiedMax = serverGradingResult ? serverGradingResult.maxScore : finalMaxScore;
-    const verifiedPct = serverGradingResult ? serverGradingResult.percentage : percentage;
+    const verifiedScore = serverGradingResult.score;
+    const verifiedMax = serverGradingResult.maxScore || finalMaxScore;
+    const verifiedPct = serverGradingResult.percentage !== undefined ? serverGradingResult.percentage : percentage;
     const isWinner = verifiedPct >= 70;
     const certType: CertificateType = isWinner ? 'winner' : 'participant';
-    const verifyCode = serverGradingResult?.verificationCode || `IS-2026-MED-${Math.floor(1000 + Math.random() * 9000)}`;
+    const verifyCode = serverGradingResult.verificationCode;
 
     const cert: Certificate = {
-      id: `cert_${Date.now()}`,
+      id: serverGradingResult.id || `cert_${Date.now()}`,
       userId,
       userName: currentUser?.fullName || 'Ishtirokchi',
       olympiadId,
       olympiadTitle: title,
       subject,
       type: certType,
-      issuedAt: new Date().toISOString(),
+      issuedAt: serverGradingResult.submittedAt || new Date().toISOString(),
       verificationCode: verifyCode,
       score: verifiedScore,
       maxScore: verifiedMax,

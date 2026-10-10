@@ -29,7 +29,11 @@ export class HmacRequestSigner {
     userId: string
   ): Promise<SignedRequestPayload<T>> {
     const timestamp = Date.now();
-    const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const randomBytes = new Uint8Array(16);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(randomBytes);
+    }
+    const nonce = Array.from(randomBytes, (b) => b.toString(16).padStart(2, '0')).join('');
     const keyString = this.generateSessionKey(sessionId, userId);
 
     const messageString = `${sessionId}:${userId}:${timestamp}:${nonce}:${JSON.stringify(data)}`;

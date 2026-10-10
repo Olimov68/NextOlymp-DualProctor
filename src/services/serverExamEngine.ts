@@ -232,7 +232,7 @@ export class ServerExamEngine {
     const existing = DB_ANSWERS.get(sessionId) || [];
     const filtered = existing.filter((a) => a.question_id !== questionId);
     filtered.push({
-      id: `ans_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      id: `ans_${Date.now()}_${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Date.now().toString(36)}`,
       session_id: sessionId,
       question_id: questionId,
       selected_option_id: selectedOptionId,
