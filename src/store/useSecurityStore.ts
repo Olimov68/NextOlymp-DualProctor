@@ -81,27 +81,34 @@ interface SecurityState {
   recordRateLimitHit: (ip: string, path: string) => void;
 }
 
-const STORAGE_KEY = 'ega_security_v6';
+const STORAGE_KEY = 'ega_security_v7_real';
+
+// Clear legacy fake cache if present
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('ega_security_v6');
+  } catch {}
+}
 
 const DEFAULT_METRICS: ServerMetrics = {
-  cpu: 2,
-  ram: 4,
-  disk: 1,
-  ramTotalMb: 1024,
-  ramUsedMb: 48,
-  ramFreeMb: 976,
-  diskTotalGb: 25,
-  diskUsedGb: 0.1,
-  diskFreeGb: 24.9,
+  cpu: 0,
+  ram: 0,
+  disk: 0,
+  ramTotalMb: 0,
+  ramUsedMb: 0,
+  ramFreeMb: 0,
+  diskTotalGb: 0,
+  diskUsedGb: 0,
+  diskFreeGb: 0,
   network: { in: 0.0, out: 0.0 },
-  uptime: '0 kun 1 soat 24 daqiqa',
+  uptime: 'Aniqlanmoqda...',
   activeConnections: 1,
   requestsPerSec: 0,
-  responseTimeAvg: 12,
+  responseTimeAvg: 0,
   sslValid: true,
   sslExpiry: '2027-03-15',
-  openPorts: [80, 443, 22],
-  processes: 12,
+  openPorts: [],
+  processes: 0,
   threatLevel: 'low',
   rateLimitHits: 0,
   failedLoginAttemptsCount: 0,
@@ -125,11 +132,11 @@ const DEFAULT_DEFENSE: DefenseStatus = {
 export const useSecurityStore = create<SecurityState>()(
   persist(
     (set, get) => ({
-      accessLogs: initialAccessLogs,
-      actionLogs: initialActionLogs,
-      trafficData: initialTrafficData,
-      alerts: initialSecurityAlerts,
-      blockedIPs: initialBlockedIPs,
+      accessLogs: [],
+      actionLogs: [],
+      trafficData: [],
+      alerts: [],
+      blockedIPs: [],
       liveMode: true,
       serverMetrics: DEFAULT_METRICS,
       defenseStatus: DEFAULT_DEFENSE,

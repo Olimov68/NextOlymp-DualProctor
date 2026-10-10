@@ -173,41 +173,49 @@ export const EgaSecurityPage: React.FC = () => {
   const [serverHostStats, setServerHostStats] = useState({
     hostingAccountsCount: 1,
     currentAccount: 'root (ibnsinoschool.uz)',
-    accountRamLimit: '4096 MiB',
-    accountDiskQuota: '50 GB NVMe SSD',
-    serverNode: 'Ibn Sino VPS Server · Toshkent DC'
+    accountRamLimit: 'Yuklanmoqda...',
+    accountDiskQuota: 'NVMe SSD',
+    serverNode: 'Ibn Sino VPS Server'
   });
 
-  const [diagnostics, setDiagnostics] = useState({
-    osName: 'Ubuntu 22.04 LTS / Linux x86_64',
-    kernel: '5.15.0-91-generic',
+  const [diagnostics, setDiagnostics] = useState<any>({
+    osName: 'Aniqlanmoqda...',
+    platformName: 'Linux',
+    kernel: 'Aniqlanmoqda...',
     hostname: 'server.ibnsinoschool.uz',
-    arch: 'x86_64',
-    loadAvg: [0.08, 0.12, 0.15],
-    ports: [
-      { port: 80, name: 'HTTP Web Server', protocol: 'TCP', status: 'Ochiq & Faol', color: 'emerald' },
-      { port: 443, name: 'HTTPS SSL/TLS', protocol: 'TCP', status: 'Ochiq & Himoyalangan', color: 'emerald' },
-      { port: 3306, name: 'MySQL Database', protocol: 'TCP', status: 'Lokal Ulanish Faol', color: 'cyan' },
-      { port: 22, name: 'SSH Shell Access', protocol: 'TCP', status: 'Himoyalangan (Port 22)', color: 'indigo' },
-      { port: 587, name: 'SMTP Mail Relay', protocol: 'TCP', status: 'Faol (Port 587)', color: 'blue' },
-      { port: 21, name: 'FTP File Transfer', protocol: 'TCP', status: 'Faol (Port 21)', color: 'purple' }
-    ],
-    phpVersion: '8.2.x',
-    phpSapi: 'fpm-fcgi',
-    memoryLimit: '512M',
-    maxExecutionTime: '60',
-    uploadMaxFilesize: '64M',
+    arch: 'x64',
+    loadAvg: [0.00, 0.00, 0.00],
+    ports: [] as Array<{ port: number; name: string; protocol: string; status: string; color: string }>,
+    runtime: 'Node.js Engine',
+    nodeVersion: 'v20.x',
+    v8Version: '12.0',
+    memoryRss: '...',
+    heapUsed: '...',
+    databaseName: 'JSON Store & Prisma DB',
+    dbStatus: 'Faol',
     totalModulesCount: 48,
-    keyModules: ['pdo_mysql', 'curl', 'openssl', 'mbstring', 'json', 'gd', 'zip', 'zlib'],
-    mysqlVersion: '8.0'
+    keyModules: ['Express.js', 'Socket.IO', 'TypeScript', 'Prisma', 'JWT Guard', 'RateLimiter', 'Bcrypt', 'SystemInfo'],
   });
 
-  
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      const adminRaw = localStorage.getItem('ibn_sino_admin_session_v2');
+      if (adminRaw) {
+        try {
+          const parsed = JSON.parse(adminRaw);
+          if (parsed?.token) return parsed.token;
+        } catch {}
+      }
+      return localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token') || '';
+    }
+    return '';
+  };
+
   useEffect(() => {
     let isMounted = true;
     const fetchRealLogs = async () => {
       try {
-        const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
+        const token = getAuthToken();
         const res = await fetch('/api/admin/system-metrics', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -217,23 +225,22 @@ export const EgaSecurityPage: React.FC = () => {
         if (res.ok) {
           const json = await res.json();
           if (isMounted && json.status === 'success') {
-            
             if (json.metrics) {
               store.updateServerMetrics({
-                ram: json.metrics.ram?.usagePercent ?? 4,
-                ramTotalMb: json.metrics.ram?.totalMb ?? 4096,
-                ramUsedMb: json.metrics.ram?.usedMb ?? 418,
-                ramFreeMb: json.metrics.ram?.freeMb ?? 3678,
-                disk: json.metrics.disk?.usagePercent ?? 17,
-                diskTotalGb: json.metrics.disk?.totalGb ?? 50,
-                diskUsedGb: json.metrics.disk?.usedGb ?? 8.4,
-                diskFreeGb: json.metrics.disk?.freeGb ?? 41.6,
-                cpu: json.metrics.cpu?.usagePercent ?? 5,
-                network: json.metrics.network ?? { in: 0.02, out: 0.08 },
-                uptime: json.metrics.uptime ?? '0 kun 3 soat 45 daqiqa',
-                activeConnections: json.metrics.activeConnections ?? 2,
-                requestsPerSec: json.metrics.requestsPerSec ?? 1,
-                responseTimeAvg: json.metrics.responseTimeAvg ?? 14,
+                ram: json.metrics.ram?.usagePercent ?? 0,
+                ramTotalMb: json.metrics.ram?.totalMb ?? 0,
+                ramUsedMb: json.metrics.ram?.usedMb ?? 0,
+                ramFreeMb: json.metrics.ram?.freeMb ?? 0,
+                disk: json.metrics.disk?.usagePercent ?? 0,
+                diskTotalGb: json.metrics.disk?.totalGb ?? 0,
+                diskUsedGb: json.metrics.disk?.usedGb ?? 0,
+                diskFreeGb: json.metrics.disk?.freeGb ?? 0,
+                cpu: json.metrics.cpu?.usagePercent ?? 0,
+                network: json.metrics.network ?? { in: 0, out: 0 },
+                uptime: json.metrics.uptime ?? 'Aniqlanmoqda...',
+                activeConnections: json.metrics.activeConnections ?? 1,
+                requestsPerSec: json.metrics.requestsPerSec ?? 0,
+                responseTimeAvg: json.metrics.responseTimeAvg ?? 0,
                 threatLevel: json.metrics.threatLevel ?? 'low'
               });
 
@@ -242,17 +249,18 @@ export const EgaSecurityPage: React.FC = () => {
               }
             }
 
-            
-            if (Array.isArray(json.data) && json.data.length > 0) {
+            if (Array.isArray(json.data)) {
               useSecurityStore.setState({ accessLogs: json.data });
             }
 
-            
+            if (Array.isArray(json.alerts)) {
+              useSecurityStore.setState({ alerts: json.alerts });
+            }
+
             if (Array.isArray(json.blockedIPs)) {
               store.setBlockedIPs(json.blockedIPs);
             }
 
-            
             if (json.platformStats) {
               setPlatformStats(json.platformStats);
             }
@@ -260,7 +268,6 @@ export const EgaSecurityPage: React.FC = () => {
               setServerHostStats(json.serverHostStats);
             }
 
-            
             if (json.diagnostics) {
               setDiagnostics(json.diagnostics);
             }
@@ -272,7 +279,7 @@ export const EgaSecurityPage: React.FC = () => {
     };
 
     fetchRealLogs();
-    const logInterval = setInterval(fetchRealLogs, 4000);
+    const logInterval = setInterval(fetchRealLogs, 3000);
     return () => {
       isMounted = false;
       clearInterval(logInterval);
@@ -607,15 +614,15 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 pt-1 text-[10px]">
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Jami RAM</span>
-                    <span className="font-bold text-white font-mono">{m.ramTotalMb ?? 4096} MiB</span>
+                    <span className="font-bold text-white font-mono">{m.ramTotalMb ? `${m.ramTotalMb} MiB` : '...'}</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Band RAM</span>
-                    <span className="font-bold text-cyan-300 font-mono">{m.ramUsedMb ?? 418} MiB</span>
+                    <span className="font-bold text-cyan-300 font-mono">{m.ramUsedMb ? `${m.ramUsedMb} MiB` : '...'}</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Bo'sh RAM</span>
-                    <span className="font-bold text-emerald-400 font-mono">{m.ramFreeMb ?? 3678} MiB</span>
+                    <span className="font-bold text-emerald-400 font-mono">{m.ramFreeMb ? `${m.ramFreeMb} MiB` : '...'}</span>
                   </div>
                 </div>
               </div>
@@ -628,7 +635,7 @@ export const EgaSecurityPage: React.FC = () => {
                     <span className="font-bold text-xs">NVMe SSD Xotirasi (Server)</span>
                   </div>
                   <span className={clsx('font-black text-xs font-mono', m.disk > 80 ? 'text-rose-400' : 'text-indigo-300')}>
-                    {m.disk}%
+                    {m.disk ? `${m.disk}%` : '...'}
                   </span>
                 </div>
 
@@ -643,15 +650,15 @@ export const EgaSecurityPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 pt-1 text-[10px]">
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Jami SSD</span>
-                    <span className="font-bold text-white font-mono">{m.diskTotalGb ?? 50} GB</span>
+                    <span className="font-bold text-white font-mono">{m.diskTotalGb ? `${m.diskTotalGb} GB` : '...'}</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Band SSD</span>
-                    <span className="font-bold text-indigo-300 font-mono">{m.diskUsedGb ?? 8.4} GB</span>
+                    <span className="font-bold text-indigo-300 font-mono">{m.diskUsedGb !== undefined ? `${m.diskUsedGb} GB` : '...'}</span>
                   </div>
                   <div className={clsx('p-2 rounded-lg text-center', isDark ? 'bg-[#091024]' : 'bg-slate-50')}>
                     <span className="text-slate-400 block text-[9px] uppercase">Bo'sh SSD</span>
-                    <span className="font-bold text-emerald-400 font-mono">{m.diskFreeGb ?? 41.6} GB</span>
+                    <span className="font-bold text-emerald-400 font-mono">{m.diskFreeGb !== undefined ? `${m.diskFreeGb} GB` : '...'}</span>
                   </div>
                 </div>
               </div>
@@ -736,27 +743,27 @@ export const EgaSecurityPage: React.FC = () => {
                     <span className="font-bold text-xs">Operatsion Tizim & Yadro (Kernel)</span>
                   </div>
                   <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    Linux x64
+                    {diagnostics.platformName || 'Linux'} {diagnostics.arch || 'x64'}
                   </span>
                 </div>
 
                 <div className="space-y-2 text-[11px]">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">OS (Tizim):</span>
-                    <span className="font-bold font-mono text-white text-right truncate max-w-[180px]" title={diagnostics.osName}>{diagnostics.osName}</span>
+                    <span className="font-bold font-mono text-white text-right truncate max-w-[180px]" title={diagnostics.osName}>{diagnostics.osName || 'Aniqlanmoqda...'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Kernel (Yadro):</span>
-                    <span className="font-mono text-cyan-300 text-[10px]">{diagnostics.kernel}</span>
+                    <span className="font-mono text-cyan-300 text-[10px] truncate max-w-[180px]" title={diagnostics.kernel}>{diagnostics.kernel || 'Aniqlanmoqda...'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Uptime (Ishlash vaqti):</span>
-                    <span className="font-bold text-emerald-400 font-mono text-[10px]">{m.uptime}</span>
+                    <span className="font-bold text-emerald-400 font-mono text-[10px]">{m.uptime || 'Aniqlanmoqda...'}</span>
                   </div>
                   <div className="flex items-center justify-between pt-1 border-t border-slate-700/20">
                     <span className="text-slate-400">Load Average (Yuklama):</span>
                     <span className="font-mono text-amber-300 text-[10px]">
-                      {diagnostics.loadAvg?.[0]} (1m) · {diagnostics.loadAvg?.[1]} (5m) · {diagnostics.loadAvg?.[2]} (15m)
+                      {diagnostics.loadAvg?.[0] ?? '0.00'} (1m) · {diagnostics.loadAvg?.[1] ?? '0.00'} (5m) · {diagnostics.loadAvg?.[2] ?? '0.00'} (15m)
                     </span>
                   </div>
                 </div>
@@ -770,21 +777,27 @@ export const EgaSecurityPage: React.FC = () => {
                     <span className="font-bold text-xs">Ochiq Tarmoq Portlari & Xizmatlar</span>
                   </div>
                   <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                    netstat -tuln
+                    ss -tuln / netstat
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
-                  {diagnostics.ports.map((p) => (
-                    <div key={p.port} className={clsx('p-2 rounded-lg border flex flex-col justify-between', isDark ? 'bg-[#091024] border-[#182A4D]' : 'bg-slate-50 border-slate-200')}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono font-black text-white">Port {p.port}</span>
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  {diagnostics.ports && diagnostics.ports.length > 0 ? (
+                    diagnostics.ports.map((p: any) => (
+                      <div key={p.port} className={clsx('p-2 rounded-lg border flex flex-col justify-between', isDark ? 'bg-[#091024] border-[#182A4D]' : 'bg-slate-50 border-slate-200')}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-black text-white">Port {p.port}</span>
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        </div>
+                        <span className="text-slate-400 text-[9px] mt-1 truncate" title={p.name}>{p.name}</span>
+                        <span className="text-emerald-400 font-bold text-[8px] mt-0.5 uppercase">{p.status}</span>
                       </div>
-                      <span className="text-slate-400 text-[9px] mt-1">{p.name}</span>
-                      <span className="text-emerald-400 font-bold text-[8px] mt-0.5 uppercase">{p.status}</span>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center text-slate-500 py-3 text-[10px]">
+                      Ochiq portlar tekshirilmoqda...
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -792,38 +805,35 @@ export const EgaSecurityPage: React.FC = () => {
               <div className={clsx('p-4 rounded-xl border space-y-3 shadow-sm', isDark ? 'bg-[#0D1832] border-[#182A4D]' : 'bg-white border-slate-200')}>
                 <div className="flex items-center justify-between pb-2 border-b border-slate-700/20">
                   <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-amber-400" />
-                    <span className="font-bold text-xs">PHP & MySQL Dasturiy Muhiti</span>
+                    <Database className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-xs">Node.js & Backend Muhiti</span>
                   </div>
-                  <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                    PHP {diagnostics.phpVersion}
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    Node {diagnostics.nodeVersion || 'v20.x'}
                   </span>
                 </div>
 
                 <div className="space-y-2 text-[10px]">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">PHP SAPI / Rejim:</span>
-                    <span className="font-mono text-white">{diagnostics.phpSapi}</span>
+                    <span className="text-slate-400">Runtime & Engine:</span>
+                    <span className="font-mono text-white">V8 {diagnostics.v8Version || '12.0'} · {diagnostics.arch || 'x64'}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Memory Limit / Vaqt:</span>
-                    <span className="font-mono text-cyan-300">{diagnostics.memoryLimit} · {diagnostics.maxExecutionTime}s</span>
+                    <span className="text-slate-400">Node RSS / Heap:</span>
+                    <span className="font-mono text-cyan-300">{diagnostics.memoryRss || '64 MB'} · Heap: {diagnostics.heapUsed || '32 MB'}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">MySQL Versiyasi:</span>
-                    <span className="font-mono text-emerald-400 font-bold">{diagnostics.mysqlVersion}</span>
+                    <span className="text-slate-400">Ma'lumotlar Bazasi:</span>
+                    <span className="font-mono text-emerald-400 font-bold">{diagnostics.databaseName || 'JSON / PostgreSQL DB'} ({diagnostics.dbStatus || 'Faol'})</span>
                   </div>
                   <div className="pt-1 border-t border-slate-700/20">
-                    <span className="text-slate-400 block mb-1">Faol PHP Modullari ({diagnostics.totalModulesCount} ta):</span>
+                    <span className="text-slate-400 block mb-1">Faol Xizmatlar & Modullar ({diagnostics.totalModulesCount || 8} ta):</span>
                     <div className="flex flex-wrap gap-1">
-                      {diagnostics.keyModules.map((m) => (
-                        <span key={m} className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                          {m}
+                      {(diagnostics.keyModules && diagnostics.keyModules.length > 0 ? diagnostics.keyModules : ['Express.js', 'Socket.IO', 'TypeScript', 'Prisma', 'JWT Guard', 'RateLimiter', 'Bcrypt', 'SystemInfo']).map((mod: string) => (
+                        <span key={mod} className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                          {mod}
                         </span>
                       ))}
-                      <span className="px-1.5 py-0.5 rounded text-[8px] font-mono text-slate-400 bg-slate-800/40">
-                        +{Math.max(0, diagnostics.totalModulesCount - diagnostics.keyModules.length)} boshqa
-                      </span>
                     </div>
                   </div>
                 </div>
