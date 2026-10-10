@@ -32,19 +32,39 @@ for (const envPath of envPaths) {
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 export const PORT = Number(process.env.PORT) || 5000;
 
-// Safe JWT Secret initialization
-const LEAKED_SECRETS = ['ibn_sino_super_secret_jwt_key_2026_x92!', 'secret', 'default_secret'];
-const configuredJwtSecret = process.env.JWT_SECRET?.trim();
+// Dynamic cryptographically secure JWT Secret initialization (No hardcoded secrets)
+const LEAKED_SECRETS = [
+  'ibn_sino_super_secret_jwt_key_2026_x92!',
+  'secret',
+  'default_secret',
+  '8f5a43b7e61d49209581c7e997a3bf2361d7637841893c87023c914efbe887d1'
+];
 
-export const JWT_SECRET = configuredJwtSecret && !LEAKED_SECRETS.includes(configuredJwtSecret) && configuredJwtSecret.length >= 16
-  ? configuredJwtSecret
-  : '8f5a43b7e61d49209581c7e997a3bf2361d7637841893c87023c914efbe887d1';
+function resolveJwtSecret(): string {
+  const configured = process.env.JWT_SECRET?.trim();
+  if (configured && !LEAKED_SECRETS.includes(configured) && configured.length >= 32) {
+    return configured;
+  }
 
-if (!configuredJwtSecret || configuredJwtSecret.length < 16) {
-  console.warn(
-    '[SECURITY NOTICE] JWT_SECRET is not set in .env. A secure cryptographic secret is active.'
-  );
+  // Generate or load a unique server-bound cryptographic secret
+  const secretPath = path.resolve(process.cwd(), '.jwt_secret');
+  try {
+    if (fs.existsSync(secretPath)) {
+      const existing = fs.readFileSync(secretPath, 'utf-8').trim();
+      if (existing.length >= 32 && !LEAKED_SECRETS.includes(existing)) {
+        return existing;
+      }
+    }
+    const generated = crypto.randomBytes(64).toString('hex');
+    fs.writeFileSync(secretPath, generated, { encoding: 'utf-8', mode: 0o600 });
+    console.warn('[SECURITY] Generated unique server JWT secret persisted to .jwt_secret');
+    return generated;
+  } catch {
+    return crypto.randomBytes(64).toString('hex');
+  }
 }
+
+export const JWT_SECRET = resolveJwtSecret();
 
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 export const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';

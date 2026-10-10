@@ -1,5 +1,7 @@
 
 
+import QRCode from 'qrcode';
+
 export type PayxPaymentMethod = 'payme' | 'click' | 'uzumpay' | 'paynet' | 'uzcard_humo' | 'visa_mastercard' | 'card' | 'all' | 'uzum';
 
 export interface PayxConfig {
@@ -150,7 +152,12 @@ export const payxService = {
     const randomSuffix = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Date.now().toString(36);
     const invoiceId = `payx_inv_${Date.now()}_${randomSuffix}`;
     const checkoutUrl = `https://payx.uz/checkout/${invoiceId}?merchant=${this.getConfig().merchantId}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(checkoutUrl)}`;
+    let qrCodeUrl = '';
+    try {
+      qrCodeUrl = await QRCode.toDataURL(checkoutUrl, { width: 250 });
+    } catch {
+      qrCodeUrl = '';
+    }
 
     const response: PayXInvoiceResponse = {
       success: true,

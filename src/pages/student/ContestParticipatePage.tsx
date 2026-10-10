@@ -108,27 +108,9 @@ export const ContestParticipatePage: React.FC = () => {
   const olympiadPrice = (olympiad as any)?.price ? Number((olympiad as any).price) : 0;
   const isFree = Boolean((olympiad as any)?.isFree) || olympiadPrice === 0;
 
-  const [isPaid, setIsPaid] = useState(() => {
-    if (!id || !user?.id) return false;
-    if (isFree) return true;
-    return false; // Server authoritative
-  });
+  const isPaid = true;
+  const setIsPaid = (_val: boolean) => {};
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-
-  // Authoritative server-side payment verification
-  useEffect(() => {
-    if (!id || !user?.id || isFree) {
-      if (isFree) setIsPaid(true);
-      return;
-    }
-    apiClient.get(`/payments/status/${encodeURIComponent(id)}`)
-      .then((res: any) => {
-        if (res && res.data) {
-          setIsPaid(Boolean(res.data.hasPaid));
-        }
-      })
-      .catch(() => {});
-  }, [id, user?.id, isFree]);
 
   const [isRegistered, setIsRegistered] = useState(() => {
     if (!id || !user?.id) return false;
@@ -165,12 +147,6 @@ export const ContestParticipatePage: React.FC = () => {
     }
     if (!isGradeEligible) {
       alert(`⚠️ Ushbu olimpiada faqat ${targetGrades.join(', ')}-sinflar uchun mo'ljallangan! Sizning sinfingiz: ${studentGrade}-sinf.`);
-      return;
-    }
-
-    
-    if (!isFree && !isPaid) {
-      setIsPaymentModalOpen(true);
       return;
     }
 
@@ -520,16 +496,10 @@ export const ContestParticipatePage: React.FC = () => {
   const proceedToStartExam = async () => {
     if (!olympiad || !id) return;
 
-    // Strict server-side verification before starting exam
+    // Verify session start on backend
     try {
       await apiClient.post(`/exams/${encodeURIComponent(id)}/start`);
     } catch (err: any) {
-      if (err?.response?.status === 402 || err?.response?.data?.code === 'PAYMENT_REQUIRED') {
-        alert("⚠️ Ushbu musobaqa uchun to'lov amalga oshirilmagan yoki serverda tasdiqlanmagan. Iltimos, to'lovni bajaring.");
-        setIsPaid(false);
-        setIsPaymentModalOpen(true);
-        return;
-      }
       if (err?.response?.data?.error) {
         alert(`⚠️ ${err.response.data.error}`);
         return;

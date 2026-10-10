@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Certificate, CertificateConfig } from '../../types';
 import { Award, ShieldCheck, CheckCircle2, Sparkles, Trophy, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
 
 interface CertificateCanvasProps {
   certificate: Certificate;
@@ -15,6 +16,7 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
   className = '',
   id = 'certificate-canvas-element'
 }) => {
+  const [localQrSrc, setLocalQrSrc] = useState<string>('');
   const fontChoice = certificate.fontFamily || config?.fontFamily || 'cinzel';
 
   
@@ -80,8 +82,13 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
   };
 
   
-  const verifyUrl = `${window.location.origin}/verify-certificate/${certificate.verificationCode}`;
-  const qrImageSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=2&data=${encodeURIComponent(verifyUrl)}`;
+  const verifyUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-certificate/${certificate.verificationCode}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(verifyUrl, { width: 180, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } })
+      .then(url => setLocalQrSrc(url))
+      .catch(() => {});
+  }, [verifyUrl]);
 
   const subjectDisplay = config?.subjectName || certificate.subject || 'Akademik Fan';
 
@@ -191,7 +198,7 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
         <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-xl border border-white/20 shadow-sm mx-2">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-md bg-white p-0.5 flex items-center justify-center shrink-0 shadow-inner">
             <img
-              src={qrImageSrc}
+              src={localQrSrc || undefined}
               alt="QR Code Verification"
               className="w-full h-full object-contain"
               loading="eager"

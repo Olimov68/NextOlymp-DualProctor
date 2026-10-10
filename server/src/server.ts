@@ -223,62 +223,9 @@ app.post('/api/exams/:id/finish', authenticateJWT, ExamController.finishExam);
 app.get('/api/exams/:id/result', authenticateJWT, ExamController.getExamResult);
 app.post('/api/exams/:id/proctor-event', authenticateJWT, ExamController.recordProctorEvent);
 
-// CRITICAL SECURITY FIX: Server-side Payment Verification & Status (Prevent localStorage bypass)
-app.post('/api/payments/verify', authenticateJWT, (req: AuthenticatedRequest, res: Response) => {
-  try {
-    if (!req.user) return res.status(401).json({ error: 'Avtorizatsiya talab qilinadi' });
-    const { examId, amount, provider, transactionRef } = req.body;
-    if (!examId) return res.status(400).json({ error: 'examId talab qilinadi' });
-
-    const exam = dbStore.getExamById(String(examId));
-    if (!exam) return res.status(404).json({ error: 'Imtihon topilmadi' });
-
-    const expectedAmount = exam.price || 0;
-    const finalAmount = amount ? Number(amount) : expectedAmount;
-    const cleanRef = transactionRef ? String(transactionRef).trim() : `PAY-${Date.now()}`;
-
-    const payment = dbStore.recordPayment({
-      id: `pay_${Date.now()}`,
-      userId: req.user.id,
-      userFullName: req.user.fullName,
-      userPhone: req.user.phone,
-      examId: String(examId),
-      examTitle: exam.title,
-      amount: finalAmount,
-      provider: provider ? String(provider) : 'payx',
-      status: 'completed',
-      transactionRef: cleanRef,
-      createdAt: new Date().toISOString(),
-    });
-
-    return res.json({
-      success: true,
-      message: "To'lov muvaffaqiyatli qabul qilindi va bazada tasdiqlandi",
-      data: payment,
-    });
-  } catch (error: any) {
-    return res.status(500).json({ error: "To'lovni tasdiqlashda xatolik yuz berdi" });
-  }
-});
-
-app.get('/api/payments/status/:examId', authenticateJWT, (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: 'Avtorizatsiya talab qilinadi' });
-  const { examId } = req.params;
-  const exam = dbStore.getExamById(examId);
-  const isFree = !exam || !exam.price || exam.price <= 0 || Boolean((exam as any).isFree);
-  const hasPaid = isFree || dbStore.hasUserPaidExam(req.user.id, examId);
-  return res.json({ success: true, hasPaid, isFree });
-});
-
-app.get('/api/payments/my-payments', authenticateJWT, (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: 'Avtorizatsiya talab qilinadi' });
-  const payments = dbStore.getUserPayments(req.user.id);
-  return res.json({ success: true, data: payments });
-});
-
-app.get('/api/admin/payments', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
-  const payments = dbStore.getPayments();
-  return res.json({ success: true, data: payments });
+// PAYMENT SYSTEM DISABLED: All olympiads are fully accessible without payment barriers.
+app.get('/api/payments/status/:examId', (req: Request, res: Response) => {
+  return res.json({ success: true, hasPaid: true, isFree: true });
 });
 
 // Legacy aliases for backward compatibility (authenticated)
@@ -470,9 +417,14 @@ export const getSystemHealth = async (req: Request, res: Response) => {
   }
 };
 
-// Real-time system metrics endpoints (accessible with optionalAuth for live dashboard telemetry)
-app.get(['/api/admin/system-metrics', '/api/admin/system-stats'], optionalAuth, handleSystemMetrics);
-app.get(['/api/admin/security/system-stats', '/api/admin/system-health', '/api/security/health', '/api/system/health'], optionalAuth, getSystemHealth);
+// SECURED: Real-time system metrics endpoints strictly restricted to authenticated Admins only (No guest leakage)
+app.get(['/api/admin/system-metrics', '/api/admin/system-stats'], authenticateJWT, requireRole(['admin']), handleSystemMetrics);
+app.get(['/api/admin/security/system-stats', '/api/admin/system-health'], authenticateJWT, requireRole(['admin']), getSystemHealth);
+
+// Public health check endpoint: Returns minimal status without leaking system diagnostics, ports, or logs
+app.get(['/api/health', '/api/system/health', '/api/security/health'], (req: Request, res: Response) => {
+  return res.json({ status: 'ok', uptime: Math.round(process.uptime()), timestamp: Date.now() });
+});
 
 // Clear logs endpoint
 app.delete('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {

@@ -154,14 +154,10 @@ export class AuthController {
       // 15 minutes expiration
       const expiresAt = Date.now() + 15 * 60 * 1000;
       AuthController.resetTokens.set(email, { codeHash, expiresAt });
-
-      console.log(`[Security Alert] Parol tiklash kodi (${email}): ${code}`);
-
+      // SECURED: Never leak OTP reset codes to console logs or API response bodies
       return res.json({
         success: true,
-        message: "Tasdiqlash kodi elektron pochtangizga yuborildi",
-        // In non-production, return debugCode so user testing can continue
-        debugCode: process.env.NODE_ENV === 'production' ? undefined : code,
+        message: "Tasdiqlash kodi elektron pochtangizga yuborildi. Iltimos, pochtangizni tekshiring.",
       });
     } catch (error: any) {
       return res.status(500).json({ error: 'Serverda xatolik yuz berdi' });

@@ -42,8 +42,7 @@
     "argparse": "^2.0.1",
     "uuid": "^11.1.1",
     "postcss-selector-parser": "^7.1.6",
-    "braces": "^3.0.3",
-    "micromatch": "^4.0.8"
+    "chokidar": "^4.0.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

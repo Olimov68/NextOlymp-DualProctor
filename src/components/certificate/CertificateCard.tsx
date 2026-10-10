@@ -6,6 +6,7 @@ import { Modal } from '../common/Modal';
 import { CertificateCanvas } from './CertificateCanvas';
 import { Award, Download, CheckCircle2, ExternalLink, Printer, Image as ImageIcon } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import QRCode from 'qrcode';
 
 interface CertificateCardProps {
   certificate: Certificate;
@@ -99,17 +100,23 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
     link.click();
   };
 
-  const handlePrintPdf = () => {
+  const handlePrintPdf = async () => {
     confetti({
       particleCount: 60,
       spread: 60,
       origin: { y: 0.6 }
     });
     
+    const verifyUrl = `${window.location.origin}/verify-certificate/${certificate.verificationCode}`;
+    let qrSrc = '';
+    try {
+      qrSrc = await QRCode.toDataURL(verifyUrl, { width: 150, margin: 4 });
+    } catch {
+      qrSrc = '';
+    }
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      const verifyUrl = `${window.location.origin}/verify-certificate/${certificate.verificationCode}`;
-      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=4&data=${encodeURIComponent(verifyUrl)}`;
       
       printWindow.document.write(`
         <!DOCTYPE html>

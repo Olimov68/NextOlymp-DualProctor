@@ -37,6 +37,7 @@ import {
   createDualDeviceSession,
   validatePlacementSnapshot,
 } from '../../services/setupProctor.service';
+import QRCode from 'qrcode';
 
 interface ExamSetupModalProps {
   isOpen: boolean;
@@ -103,9 +104,18 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
     const url = `${protocol}//${targetHost}/proctor/stream?sessionId=${encodeURIComponent(session.sessionId)}&token=${encodeURIComponent(session.token)}`;
     setMobileStreamUrl(url);
 
-    
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=2&color=0f172a&bgcolor=ffffff&data=${encodeURIComponent(url)}`;
-    setQrCodeUrl(qrUrl);
+    // SECURED: Generate QR code in-memory on the client, never leaking proctoring token to third-party services
+    QRCode.toDataURL(url, {
+      width: 320,
+      margin: 2,
+      color: { dark: '#0f172a', light: '#ffffff' },
+    })
+      .then((dataUrl) => {
+        setQrCodeUrl(dataUrl);
+      })
+      .catch((err) => {
+        console.error('[ExamSetupModal] QR generation error:', err);
+      });
 
     
     const gateway = new DualDeviceProctorGateway();

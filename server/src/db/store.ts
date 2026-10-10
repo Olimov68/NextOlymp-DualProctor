@@ -277,7 +277,7 @@ class Store {
     const adminPass = process.env.INITIAL_ADMIN_PASSWORD || (crypto.randomBytes(10).toString('hex') + 'A1!');
     const studentPass = process.env.INITIAL_STUDENT_PASSWORD || (crypto.randomBytes(10).toString('hex') + 'S1!');
     if (!process.env.INITIAL_ADMIN_PASSWORD) {
-      console.log(`[SECURITY] Auto-generated temporary admin credential: admin@ibnsino.uz / ${adminPass}`);
+      console.warn('[SECURITY] Initial admin created with secure password. Set INITIAL_ADMIN_PASSWORD in .env for custom configuration.');
     }
     const adminPassHash = bcrypt.hashSync(adminPass, 12);
     const studentPassHash = bcrypt.hashSync(studentPass, 12);

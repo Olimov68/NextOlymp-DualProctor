@@ -51,19 +51,6 @@ export class ExamController {
         return res.status(404).json({ error: 'Imtihon topilmadi' });
       }
 
-      // Check payment requirement for students
-      const isPaidExam = exam.price && Number(exam.price) > 0 && !(exam as any).isFree;
-      if (isPaidExam && req.user.role === 'student') {
-        const hasPaid = dbStore.hasUserPaidExam(req.user.id, id);
-        if (!hasPaid) {
-          return res.status(402).json({
-            error: "Ushbu imtihon pullik. Savollarni ko'rish uchun avval to'lovni tasdiqlang (402 Payment Required).",
-            code: 'PAYMENT_REQUIRED',
-            price: exam.price,
-          });
-        }
-      }
-
       // For students, verify that an active session was started
       if (req.user.role === 'student') {
         const session = dbStore.getActiveSession(req.user.id, id);
@@ -102,19 +89,6 @@ export class ExamController {
       const exam = dbStore.getExamById(id);
       if (!exam) {
         return res.status(404).json({ error: 'Imtihon topilmadi' });
-      }
-
-      // STRICT PAYMENT VERIFICATION
-      const isPaidExam = exam.price && Number(exam.price) > 0 && !(exam as any).isFree;
-      if (isPaidExam && req.user.role !== 'admin') {
-        const hasPaid = dbStore.hasUserPaidExam(userId, exam.id);
-        if (!hasPaid) {
-          return res.status(402).json({
-            error: "Ushbu imtihonda qatnashish uchun to'lov qilinmagan (402 Payment Required). Iltimos, to'lovni amalga oshiring.",
-            code: 'PAYMENT_REQUIRED',
-            price: exam.price,
-          });
-        }
       }
 
       const now = Date.now();
@@ -289,19 +263,17 @@ export class ExamController {
         return res.status(400).json({ error: 'Imtihon vaqti tugagan. Kechiktirilgan so\'rov qabul qilinmaydi.' });
       }
 
-      // ATOMIC TRANSITION: Transition state immediately to prevent parallel duplicates
-      session.status = 'COMPLETED';
-
-      // Input validation for answers map (Item 11)
+      // Save all answers passed in the finish payload before marking session completed
       if (answers && typeof answers === 'object' && !Array.isArray(answers)) {
         const entries = Object.entries(answers).slice(0, 200); // limit to 200 answers
         for (const [qId, opt] of entries) {
           const cleanQId = String(qId).slice(0, 100);
           const cleanOpt = String(opt).slice(0, 200);
-          dbStore.recordAnswer(targetSessionId, cleanQId, cleanOpt);
+          session.answers[cleanQId] = cleanOpt;
         }
       }
 
+      // Transition session state and perform authoritative server-side grading
       const submission = dbStore.finishAndGradeExam(targetSessionId);
       if (!submission) {
         return res.status(400).json({ error: 'Imtihonni baholashda xatolik yuz berdi' });
