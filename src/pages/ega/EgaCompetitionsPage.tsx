@@ -172,44 +172,52 @@ export const EgaCompetitionsPage: React.FC = () => {
   };
 
   
-  const handleCreateNewOlympiad = () => {
-    const created = addOlympiad({
-      title: 'Yangi Olimpiada',
-      subject: 'Matematika',
-      format: 'online',
-      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80',
-      price: 35000,
-      status: 'ochiq',
-      isPinned: false,
-      startDate: '2025-10-01 10:00',
-      endDate: '2025-10-01 18:00',
-      registrationStartDate: '2025-09-15 09:00',
-      registrationEndDate: '2025-09-30 23:59',
-      description: 'Musobaqa haqida batafsil ma\'lumot...',
-      organizer: 'Ibn Sino Kengashi'
-    });
-    setSelectedOlympiadForEdit(created);
+  const handleCreateNewOlympiad = async () => {
+    try {
+      const created = await addOlympiad({
+        title: 'Yangi Olimpiada',
+        subject: 'Matematika',
+        format: 'online',
+        image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80',
+        price: 0,
+        status: 'ochiq',
+        isPinned: false,
+        startDate: '2026-10-01 10:00',
+        endDate: '2026-10-01 18:00',
+        registrationStartDate: '2026-09-15 09:00',
+        registrationEndDate: '2026-09-30 23:59',
+        description: 'Musobaqa haqida batafsil ma\'lumot...',
+        organizer: 'Ibn Sino Kengashi'
+      });
+      setSelectedOlympiadForEdit(created);
+    } catch (err: any) {
+      alert(`Xatolik: ${err.message || 'Olimpiada yaratishda server xatoligi yuz berdi'}`);
+    }
   };
 
-  
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOlympiad || !editingOlympiad.title.trim()) return;
 
-    updateOlympiad(editingOlympiad.id, {
-      title: editingOlympiad.title.trim(),
-      subject: editingOlympiad.subject,
-      format: editingOlympiad.format,
-      price: Number(editingOlympiad.price) || 0,
-      status: editingOlympiad.status,
-      startDate: editingOlympiad.startDate,
-      endDate: editingOlympiad.endDate,
-      description: editingOlympiad.description,
-      location: editingOlympiad.format === 'offline' ? editingOlympiad.location : undefined,
-      image: editingOlympiad.image
-    });
+    try {
+      await updateOlympiad(editingOlympiad.id, {
+        title: editingOlympiad.title.trim(),
+        subject: editingOlympiad.subject,
+        format: editingOlympiad.format,
+        price: Number(editingOlympiad.price) || 0,
+        status: editingOlympiad.status,
+        startDate: editingOlympiad.startDate,
+        endDate: editingOlympiad.endDate,
+        description: editingOlympiad.description,
+        location: editingOlympiad.format === 'offline' ? editingOlympiad.location : undefined,
+        image: editingOlympiad.image
+      });
 
-    setEditingOlympiad(null);
+      showToast('Olimpiada muvaffaqiyatli saqlandi');
+      setEditingOlympiad(null);
+    } catch (err: any) {
+      alert(`Xatolik: ${err.message || 'Saqlashda xatolik yuz berdi'}`);
+    }
   };
 
   
@@ -563,7 +571,16 @@ export const EgaCompetitionsPage: React.FC = () => {
                         </button>
 
                         <button
-                          onClick={() => deleteOlympiad(item.id)}
+                          onClick={async () => {
+                            if (window.confirm(t("Ushbu olimpiadani o'chirishga ishonchingiz komilmi?"))) {
+                              try {
+                                await deleteOlympiad(item.id);
+                                showToast(t("Olimpiada o'chirildi"));
+                              } catch (err: any) {
+                                alert(`Xatolik: ${err.message || 'O\'chirishda xatolik yuz berdi'}`);
+                              }
+                            }
+                          }}
                           className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[11px] font-semibold cursor-pointer transition-all"
                           title={t("O'chirish")}
                         >
@@ -641,7 +658,20 @@ export const EgaCompetitionsPage: React.FC = () => {
                           <button onClick={() => setSelectedOlympiadForEdit(item)} className="px-2 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded text-[11px] font-semibold flex items-center gap-1">
                             <Pencil className="w-3 h-3 text-amber-400" /> <span>{t("Tahrirlash")}</span>
                           </button>
-                          <button onClick={() => deleteOlympiad(item.id)} className="p-1.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded text-[11px]">
+                          <button
+                            onClick={async () => {
+                              if (window.confirm(t("Ushbu olimpiadani o'chirishga ishonchingiz komilmi?"))) {
+                                try {
+                                  await deleteOlympiad(item.id);
+                                  showToast(t("Olimpiada o'chirildi"));
+                                } catch (err: any) {
+                                  alert(`Xatolik: ${err.message || 'O\'chirishda xatolik yuz berdi'}`);
+                                }
+                              }
+                            }}
+                            className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[11px] cursor-pointer"
+                            title={t("O'chirish")}
+                          >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>

@@ -3,63 +3,41 @@ import { OlympiadItem } from '../data/initialOlympiads';
 import { apiClient } from '../services/api';
 import { submissionService } from '../services/submissionService';
 
-const STORAGE_KEY = 'ibn_sino_exams';
-
-const getStoredOlympiads = (): OlympiadItem[] => {
-  if (typeof window === 'undefined') return [];
+// CRITICAL ARCHITECTURE RULE:
+// LocalStorage must NOT be used for exams, questions, results, or user roles.
+// Server REST API is the single source of truth.
+if (typeof window !== 'undefined') {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (e) {
-    console.warn('LocalStorage load error for olympiads:', e);
-  }
-  return [];
-};
-
-const persistOlympiads = (items: OlympiadItem[]) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch (e) {
-    console.warn('LocalStorage save error for olympiads:', e);
-  }
-};
+    localStorage.removeItem('ibn_sino_exams');
+  } catch {}
+}
 
 interface OlympiadStore {
   olympiads: OlympiadItem[];
   loading: boolean;
   fetchFromApi: () => Promise<void>;
   fetchOlympiads: () => Promise<void>;
-  createOlympiad: (data: any) => Promise<void>;
-  addOlympiad: (item: Omit<OlympiadItem, 'id' | 'registeredCount' | 'submittedCount' | 'paidCount' | 'totalRevenue'>) => OlympiadItem;
-  updateOlympiad: (id: string, updated: Partial<OlympiadItem>) => void;
-  deleteOlympiad: (id: string) => void;
-  togglePinOlympiad: (id: string) => void;
-  toggleOlympiadStatus: (id: string) => void;
+  createOlympiad: (data: any) => Promise<OlympiadItem>;
+  addOlympiad: (item: Omit<OlympiadItem, 'id' | 'registeredCount' | 'submittedCount' | 'paidCount' | 'totalRevenue'>) => Promise<OlympiadItem>;
+  updateOlympiad: (id: string, updated: Partial<OlympiadItem>) => Promise<any>;
+  deleteOlympiad: (id: string) => Promise<void>;
+  togglePinOlympiad: (id: string) => Promise<void>;
+  toggleOlympiadStatus: (id: string) => Promise<void>;
   resetOlympiads: () => void;
 }
 
 export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
-  olympiads: getStoredOlympiads(),
+  olympiads: [],
   loading: false,
 
   fetchFromApi: async () => {
     set({ loading: true });
     try {
       const json = await apiClient.get('/exams');
-      const data = Array.isArray(json) ? json : (json?.data || []);
-      if (Array.isArray(data) && data.length > 0) {
-        persistOlympiads(data);
-        set({ olympiads: data, loading: false });
-      } else {
-        
-        set({ loading: false });
-      }
+      const list = Array.isArray(json) ? json : (json?.data ?? []);
+      set({ olympiads: Array.isArray(list) ? list : [], loading: false });
     } catch (err) {
-      
+      console.error('API fetch error for exams:', err);
       set({ loading: false });
     }
   },
@@ -67,117 +45,121 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
   fetchOlympiads: async () => {
     set({ loading: true });
     try {
-      const data = await apiClient.get('/exams');
-      const list = Array.isArray(data) ? data : (data?.data || []);
-      if (Array.isArray(list) && list.length > 0) {
-        persistOlympiads(list);
-        set({ olympiads: list, loading: false });
-      } else {
-        set({ loading: false });
-      }
-    } catch (e) {
+      const json = await apiClient.get('/exams');
+      const list = Array.isArray(json) ? json : (json?.data ?? []);
+      set({ olympiads: Array.isArray(list) ? list : [], loading: false });
+    } catch (err) {
+      console.error('API fetch error for exams:', err);
       set({ loading: false });
     }
   },
 
   createOlympiad: async (data: any) => {
-    const current = get().olympiads;
-    const updated = [data, ...current.filter((o) => o.id !== data.id)];
-    persistOlympiads(updated);
-    set({ olympiads: updated });
-
+    set({ loading: true });
     try {
-      await apiClient.post('/exams', data);
-      const res = await apiClient.get('/exams');
-      const list = Array.isArray(res) ? res : (res?.data || []);
-      if (Array.isArray(list) && list.length > 0) {
-        persistOlympiads(list);
-        set({ olympiads: list });
-      }
+      const response = await apiClient.post('/exams', data);
+      const saved: OlympiadItem = response?.data || response;
+      set((state) => ({
+        olympiads: [saved, ...state.olympiads.filter((o) => o.id !== saved.id)],
+        loading: false,
+      }));
+      return saved;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  addOlympiad: async (newItem) => {
+    set({ loading: true });
+    try {
+      const current = get().olympiads;
+      const nextIdNum = 100 + current.length + 1;
+      const id = `OLY-${nextIdNum}`;
+
+      const payload: OlympiadItem = {
+        ...newItem,
+        id,
+        questions: newItem.questions || [],
+        registeredCount: 0,
+        submittedCount: 0,
+        paidCount: 0,
+        totalRevenue: 0,
+      };
+
+      const response = await apiClient.post('/exams', payload);
+      const saved: OlympiadItem = response?.data || payload;
+      set((state) => ({
+        olympiads: [saved, ...state.olympiads.filter((o) => o.id !== saved.id)],
+        loading: false,
+      }));
+      return saved;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  updateOlympiad: async (id, updatedFields) => {
+    set({ loading: true });
+    try {
+      const response = await apiClient.put(`/exams/${encodeURIComponent(id)}`, updatedFields);
+      const saved = response?.data || { ...get().olympiads.find((o) => o.id === id), ...updatedFields, id };
+      set((state) => ({
+        olympiads: state.olympiads.map((item) => (item.id === id ? saved : item)),
+        loading: false,
+      }));
+      return saved;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  deleteOlympiad: async (id) => {
+    set({ loading: true });
+    try {
+      await apiClient.delete(`/exams/${encodeURIComponent(id)}`);
+      set((state) => ({
+        olympiads: state.olympiads.filter((item) => item.id !== id),
+        loading: false,
+      }));
+      submissionService.deleteOlympiadData(id);
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  togglePinOlympiad: async (id) => {
+    const current = get().olympiads.find((o) => o.id === id);
+    if (!current) return;
+    const newPinned = !current.isPinned;
+    try {
+      await apiClient.put(`/exams/${encodeURIComponent(id)}`, { isPinned: newPinned });
+      set((state) => ({
+        olympiads: state.olympiads.map((o) => (o.id === id ? { ...o, isPinned: newPinned } : o)),
+      }));
     } catch (e) {
-      console.warn('API sync fallback to localStorage:', e);
+      console.error('API togglePin error:', e);
     }
   },
 
-  addOlympiad: (newItem) => {
-    const current = get().olympiads;
-    const nextIdNum = 100 + current.length + 1;
-    const id = `OLY-${nextIdNum}`;
-
-    const olympiad: OlympiadItem = {
-      ...newItem,
-      id,
-      questions: newItem.questions || [],
-      registeredCount: (newItem as any).registeredCount || 0,
-      submittedCount: (newItem as any).submittedCount || 0,
-      paidCount: (newItem as any).paidCount || 0,
-      totalRevenue: (newItem as any).totalRevenue || 0,
-    };
-
-    const updated = [olympiad, ...current];
-    persistOlympiads(updated);
-    set({ olympiads: updated });
-
-    
-    apiClient.post('/exams', olympiad).catch((e) => console.warn('API sync warning:', e));
-
-    return olympiad;
-  },
-
-  updateOlympiad: (id, updatedFields) => {
-    const updated = get().olympiads.map((o) => (o.id === id ? { ...o, ...updatedFields } : o));
-    persistOlympiads(updated);
-    set({ olympiads: updated });
-
-    const itemToSync = updated.find((o) => o.id === id);
-    if (itemToSync) {
-      apiClient.post('/exams', itemToSync).catch((e) => console.warn('API sync warning:', e));
-    }
-  },
-
-  deleteOlympiad: (id) => {
-    const updated = get().olympiads.filter((o) => o.id !== id);
-    persistOlympiads(updated);
-    set({ olympiads: updated });
-
-    
-    submissionService.deleteOlympiadData(id);
-
-    
-    apiClient.delete(`/exams?id=${encodeURIComponent(id)}`).catch((e) => console.warn('API delete warning:', e));
-  },
-
-  togglePinOlympiad: (id) => {
-    const updated = get().olympiads.map((o) => (o.id === id ? { ...o, isPinned: !o.isPinned } : o));
-    persistOlympiads(updated);
-    set({ olympiads: updated });
-
-    const itemToSync = updated.find((o) => o.id === id);
-    if (itemToSync) {
-      apiClient.post('/exams', itemToSync).catch((e) => console.warn('API sync warning:', e));
-    }
-  },
-
-  toggleOlympiadStatus: (id) => {
-    const updated = get().olympiads.map((o) => {
-      if (o.id === id) {
-        const nextStatus: 'ochiq' | 'yopiq' = o.status === 'ochiq' ? 'yopiq' : 'ochiq';
-        return { ...o, status: nextStatus };
-      }
-      return o;
-    });
-
-    persistOlympiads(updated);
-    set({ olympiads: updated });
-
-    const itemToSync = updated.find((o) => o.id === id);
-    if (itemToSync) {
-      apiClient.post('/exams', itemToSync).catch((e) => console.warn('API sync warning:', e));
+  toggleOlympiadStatus: async (id) => {
+    const current = get().olympiads.find((o) => o.id === id);
+    if (!current) return;
+    const nextStatus: 'ochiq' | 'yopiq' = current.status === 'ochiq' ? 'yopiq' : 'ochiq';
+    try {
+      await apiClient.put(`/exams/${encodeURIComponent(id)}`, { status: nextStatus });
+      set((state) => ({
+        olympiads: state.olympiads.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)),
+      }));
+    } catch (e) {
+      console.error('API toggleStatus error:', e);
     }
   },
 
   resetOlympiads: () => {
-    persistOlympiads([]);
     set({ olympiads: [] });
   },
 }));

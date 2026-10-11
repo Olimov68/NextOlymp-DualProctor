@@ -155,29 +155,33 @@ export const EgaBaholashPage: React.FC = () => {
   const [selectedExamForEdit, setSelectedExamForEdit] = useState<NationalExamItem | null>(null);
 
   
-  const handleCreateNewExam = () => {
-    const created = addExam({
-      title: 'Yangi Milliy Sertifikat Sinovi',
-      subject: 'Kimyo',
-      format: 'online',
-      image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=600&q=80',
-      price: 175000,
-      status: 'ochiq',
-      isPinned: false,
-      startDate: '2025-10-15 09:00',
-      endDate: '2025-10-15 12:30',
-      registrationStartDate: '2025-09-20 09:00',
-      registrationEndDate: '2025-10-14 23:59',
-      description: 'BMBA davlat standarti va Rasch modeli asosida standartlashtirilgan milliy sertifikat sinovi.',
-      organizer: 'BMBA & Next Olymp Ilmiy Ekspertlar Markazi',
-      calculationMethod: 'rasch',
-      maxScore: 75,
-      aThreshold: 65,
-      specType: 'spec_1',
-      durationMinutes: 150,
-      totalQuestions: 43
-    });
-    setSelectedExamForEdit(created);
+  const handleCreateNewExam = async () => {
+    try {
+      const created = await addExam({
+        title: 'Yangi Milliy Sertifikat Sinovi',
+        subject: 'Kimyo',
+        format: 'online',
+        image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=600&q=80',
+        price: 0,
+        status: 'ochiq',
+        isPinned: false,
+        startDate: '2026-10-15 09:00',
+        endDate: '2026-10-15 12:30',
+        registrationStartDate: '2026-09-20 09:00',
+        registrationEndDate: '2026-10-14 23:59',
+        description: 'BMBA davlat standarti va Rasch modeli asosida standartlashtirilgan milliy sertifikat sinovi.',
+        organizer: 'BMBA & Next Olymp Ilmiy Ekspertlar Markazi',
+        calculationMethod: 'rasch',
+        maxScore: 75,
+        aThreshold: 65,
+        specType: 'spec_1',
+        durationMinutes: 150,
+        totalQuestions: 43
+      });
+      setSelectedExamForEdit(created);
+    } catch (err: any) {
+      alert(`Xatolik: ${err.message || 'Yaratishda xatolik yuz berdi'}`);
+    }
   };
 
   

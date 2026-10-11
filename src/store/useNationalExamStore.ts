@@ -2,140 +2,136 @@ import { create } from 'zustand';
 import { NationalExamItem } from '../data/initialNationalExams';
 import { apiClient } from '../services/api';
 
-const STORAGE_KEY = 'next_olymp_national_exams';
-
-const getStoredExams = (): NationalExamItem[] => {
-  if (typeof window === 'undefined') return [];
+// Clean up stale localStorage cache
+if (typeof window !== 'undefined') {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (e) {
-    console.warn('LocalStorage load error for national exams:', e);
-  }
-  return [];
-};
-
-const persistExams = (items: NationalExamItem[]) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch (e) {
-    console.warn('LocalStorage save error for national exams:', e);
-  }
-};
+    localStorage.removeItem('next_olymp_national_exams');
+  } catch {}
+}
 
 interface NationalExamStore {
   exams: NationalExamItem[];
   loading: boolean;
   fetchFromApi: () => Promise<void>;
-  addExam: (item: Omit<NationalExamItem, 'id' | 'registeredCount' | 'submittedCount' | 'paidCount' | 'totalRevenue'>) => NationalExamItem;
-  updateExam: (id: string, updated: Partial<NationalExamItem>) => void;
-  deleteExam: (id: string) => void;
-  togglePinExam: (id: string) => void;
-  toggleExamStatus: (id: string) => void;
+  addExam: (item: Omit<NationalExamItem, 'id' | 'registeredCount' | 'submittedCount' | 'paidCount' | 'totalRevenue'>) => Promise<NationalExamItem>;
+  updateExam: (id: string, updated: Partial<NationalExamItem>) => Promise<any>;
+  deleteExam: (id: string) => Promise<void>;
+  togglePinExam: (id: string) => Promise<void>;
+  toggleExamStatus: (id: string) => Promise<void>;
   resetExams: () => void;
 }
 
 export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
-  exams: getStoredExams(),
+  exams: [],
   loading: false,
 
   fetchFromApi: async () => {
     set({ loading: true });
     try {
       const json = await apiClient.get('/exams');
-      const data = Array.isArray(json) ? json : (json?.data || []);
-      if (Array.isArray(data) && data.length > 0) {
-        persistExams(data);
-        set({ exams: data, loading: false });
-      } else {
-        set({ loading: false });
-      }
+      const data = Array.isArray(json) ? json : (json?.data ?? []);
+      set({ exams: Array.isArray(data) ? data : [], loading: false });
     } catch (err) {
+      console.error('API fetch error for national exams:', err);
       set({ loading: false });
     }
   },
 
-  addExam: (newItem) => {
-    const current = get().exams;
-    const nextIdNum = 100 + current.length + 1;
-    const id = `NC-${nextIdNum}`;
+  addExam: async (newItem) => {
+    set({ loading: true });
+    try {
+      const current = get().exams;
+      const nextIdNum = 100 + current.length + 1;
+      const id = `NC-${nextIdNum}`;
 
-    const exam: NationalExamItem = {
-      ...newItem,
-      id,
-      questions: newItem.questions || [],
-      registeredCount: 0,
-      submittedCount: 0,
-      paidCount: 0,
-      totalRevenue: 0,
-      calculationMethod: 'rasch',
-      maxScore: newItem.maxScore || 75,
-      aThreshold: newItem.aThreshold || 65,
-      specType: newItem.specType || 'spec_1',
-      durationMinutes: newItem.durationMinutes || 150,
-      totalQuestions: newItem.questions ? newItem.questions.length : 0,
-    };
+      const exam: NationalExamItem = {
+        ...newItem,
+        id,
+        questions: newItem.questions || [],
+        registeredCount: 0,
+        submittedCount: 0,
+        paidCount: 0,
+        totalRevenue: 0,
+        calculationMethod: 'rasch',
+        maxScore: newItem.maxScore || 75,
+        aThreshold: newItem.aThreshold || 65,
+        specType: newItem.specType || 'spec_1',
+        durationMinutes: newItem.durationMinutes || 150,
+        totalQuestions: newItem.questions ? newItem.questions.length : 0,
+      };
 
-    const updated = [exam, ...current];
-    persistExams(updated);
-    set({ exams: updated });
-
-    apiClient.post('/exams', exam).catch((e) => console.warn('National Exam API sync error:', e));
-
-    return exam;
-  },
-
-  updateExam: (id, updatedFields) => {
-    const updated = get().exams.map((e) => (e.id === id ? { ...e, ...updatedFields } : e));
-    persistExams(updated);
-    set({ exams: updated });
-
-    const target = updated.find((e) => e.id === id);
-    if (target) {
-      apiClient.put(`/exams/${encodeURIComponent(id)}`, target).catch((e) => console.warn('National Exam API sync error:', e));
+      const res = await apiClient.post('/exams', exam);
+      const saved: NationalExamItem = res?.data || exam;
+      set((state) => ({
+        exams: [saved, ...state.exams.filter((e) => e.id !== saved.id)],
+        loading: false,
+      }));
+      return saved;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
     }
   },
 
-  deleteExam: (id) => {
-    const updated = get().exams.filter((e) => e.id !== id);
-    persistExams(updated);
-    set({ exams: updated });
-
-    apiClient.delete(`/exams/${encodeURIComponent(id)}`).catch((e) =>
-      console.warn('National Exam API delete error:', e)
-    );
-  },
-
-  togglePinExam: (id) => {
-    const updated = get().exams.map((e) => (e.id === id ? { ...e, isPinned: !e.isPinned } : e));
-    persistExams(updated);
-    set({ exams: updated });
-
-    const target = updated.find((e) => e.id === id);
-    if (target) {
-      apiClient.put(`/exams/${encodeURIComponent(id)}`, target).catch((e) => console.warn('National Exam API sync error:', e));
+  updateExam: async (id, updatedFields) => {
+    set({ loading: true });
+    try {
+      const res = await apiClient.put(`/exams/${encodeURIComponent(id)}`, updatedFields);
+      const saved = res?.data || { ...get().exams.find((e) => e.id === id), ...updatedFields, id };
+      set((state) => ({
+        exams: state.exams.map((e) => (e.id === id ? saved : e)),
+        loading: false,
+      }));
+      return saved;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
     }
   },
 
-  toggleExamStatus: (id) => {
-    const updated = get().exams.map((e) =>
-      e.id === id ? { ...e, status: (e.status === 'ochiq' ? 'yopiq' : 'ochiq') as 'ochiq' | 'yopiq' } : e
-    );
-    persistExams(updated);
-    set({ exams: updated });
+  deleteExam: async (id) => {
+    set({ loading: true });
+    try {
+      await apiClient.delete(`/exams/${encodeURIComponent(id)}`);
+      set((state) => ({
+        exams: state.exams.filter((e) => e.id !== id),
+        loading: false,
+      }));
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
 
-    const target = updated.find((e) => e.id === id);
-    if (target) {
-      apiClient.put(`/exams/${encodeURIComponent(id)}`, target).catch((e) => console.warn('National Exam API sync error:', e));
+  togglePinExam: async (id) => {
+    const current = get().exams.find((e) => e.id === id);
+    if (!current) return;
+    const newPinned = !current.isPinned;
+    try {
+      await apiClient.put(`/exams/${encodeURIComponent(id)}`, { isPinned: newPinned });
+      set((state) => ({
+        exams: state.exams.map((e) => (e.id === id ? { ...e, isPinned: newPinned } : e)),
+      }));
+    } catch (e) {
+      console.error('API togglePin error for national exam:', e);
+    }
+  },
+
+  toggleExamStatus: async (id) => {
+    const current = get().exams.find((e) => e.id === id);
+    if (!current) return;
+    const nextStatus: 'ochiq' | 'yopiq' = current.status === 'ochiq' ? 'yopiq' : 'ochiq';
+    try {
+      await apiClient.put(`/exams/${encodeURIComponent(id)}`, { status: nextStatus });
+      set((state) => ({
+        exams: state.exams.map((e) => (e.id === id ? { ...e, status: nextStatus } : e)),
+      }));
+    } catch (e) {
+      console.error('API toggleStatus error for national exam:', e);
     }
   },
 
   resetExams: () => {
-    persistExams([]);
     set({ exams: [] });
   },
 }));

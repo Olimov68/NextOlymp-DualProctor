@@ -3,44 +3,28 @@ import { UserItem, INITIAL_USERS } from '../data/initialUsers';
 import { useLeaderboardStore } from './useLeaderboardStore';
 import { apiClient } from '../services/api';
 
-const STORAGE_KEY = 'next_olymp_users';
-
-const getStoredUsers = (): UserItem[] => {
-  if (typeof window === 'undefined') return INITIAL_USERS;
+// CRITICAL SECURITY RULE:
+// User accounts and roles must NOT be stored in localStorage.
+// Server REST API is the single source of truth.
+if (typeof window !== 'undefined') {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    console.warn('LocalStorage load error for users:', e);
-  }
-  return INITIAL_USERS;
-};
-
-const persistUsers = (items: UserItem[]) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch (e) {
-    console.warn('LocalStorage save error for users:', e);
-  }
-};
+    localStorage.removeItem('next_olymp_users');
+  } catch {}
+}
 
 interface UserState {
   users: UserItem[];
   loading: boolean;
   fetchFromApi: () => Promise<void>;
-  addUser: (user: Omit<UserItem, 'id' | 'createdAt' | 'participationCount'>) => void;
-  updateUser: (id: string, user: Partial<Omit<UserItem, 'id' | 'createdAt'>>) => void;
-  deleteUser: (id: string) => void;
-  toggleUserStatus: (id: string) => void;
+  addUser: (user: Omit<UserItem, 'id' | 'createdAt' | 'participationCount'>) => Promise<void>;
+  updateUser: (id: string, user: Partial<Omit<UserItem, 'id' | 'createdAt'>>) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
+  toggleUserStatus: (id: string) => Promise<void>;
   resetToDefaults: () => void;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
-  users: getStoredUsers(),
+  users: [],
   loading: false,
 
   fetchFromApi: async () => {
@@ -53,7 +37,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         ? json.data
         : null;
 
-      if (usersList && usersList.length > 0) {
+      if (usersList && Array.isArray(usersList)) {
         const cleanUsers: UserItem[] = usersList
           .filter((u: any) => u && u.id)
           .map((u: any) => ({
@@ -72,74 +56,83 @@ export const useUserStore = create<UserState>((set, get) => ({
             participationCount: Number(u.participationCount) || 0,
           }));
 
-        persistUsers(cleanUsers);
         set({ users: cleanUsers, loading: false });
       } else {
-        set({ loading: false });
+        set({ users: [], loading: false });
       }
     } catch (e) {
+      console.error('API fetch error for users:', e);
       set({ loading: false });
     }
   },
 
-  addUser: (userData) => {
-    const { users } = get();
-    const newUser: UserItem = {
-      ...userData,
-      id: `USR-${1000 + users.length + 1}`,
-      createdAt: new Date().toISOString().split('T')[0],
-      participationCount: 0,
-      status: userData.status || 'active',
-    };
-    const updated = [newUser, ...users];
-    persistUsers(updated);
-    set({ users: updated });
-
-    apiClient.post('/users', newUser).catch((e) => console.warn('User API sync warning:', e));
-  },
-
-  updateUser: (id, userData) => {
-    const { users } = get();
-    const updated = users.map((u) => (u.id === id ? { ...u, ...userData } : u));
-    persistUsers(updated);
-    set({ users: updated });
-
-    apiClient.put(`/users/${encodeURIComponent(id)}`, userData).catch((e) => console.warn('User API sync warning:', e));
-  },
-
-  deleteUser: (id) => {
-    const { users } = get();
-    const updated = users.filter((u) => u.id !== id);
-    persistUsers(updated);
-    set({ users: updated });
-
-    apiClient.delete(`/users/${encodeURIComponent(id)}`).catch((e) => console.warn('User API delete warning:', e));
-
+  addUser: async (userData) => {
+    set({ loading: true });
     try {
-      useLeaderboardStore.getState().removeUser(id);
-    } catch {}
+      const { users } = get();
+      const newUser: UserItem = {
+        ...userData,
+        id: `USR-${1000 + users.length + 1}`,
+        createdAt: new Date().toISOString().split('T')[0],
+        participationCount: 0,
+        status: userData.status || 'active',
+      };
+      const res = await apiClient.post('/users', newUser);
+      const saved = res?.data || newUser;
+      set({ users: [saved, ...users], loading: false });
+    } catch (e) {
+      set({ loading: false });
+      throw e;
+    }
   },
 
-  toggleUserStatus: (id) => {
-    const { users } = get();
-    const updated = users.map((u) => {
-      if (u.id === id) {
-        return { ...u, status: u.status === 'active' ? ('blocked' as const) : ('active' as const) };
-      }
-      return u;
-    });
-    persistUsers(updated);
-    set({ users: updated });
+  updateUser: async (id, userData) => {
+    set({ loading: true });
+    try {
+      await apiClient.put(`/users/${encodeURIComponent(id)}`, userData);
+      set((state) => ({
+        users: state.users.map((u) => (u.id === id ? { ...u, ...userData } : u)),
+        loading: false,
+      }));
+    } catch (e) {
+      set({ loading: false });
+      throw e;
+    }
+  },
 
-    const target = updated.find((u) => u.id === id);
-    if (target) {
-      apiClient.put(`/users/${encodeURIComponent(id)}`, target).catch((e) => console.warn('User API sync warning:', e));
+  deleteUser: async (id) => {
+    set({ loading: true });
+    try {
+      await apiClient.delete(`/users/${encodeURIComponent(id)}`);
+      set((state) => ({
+        users: state.users.filter((u) => u.id !== id),
+        loading: false,
+      }));
+      try {
+        useLeaderboardStore.getState().removeUser(id);
+      } catch {}
+    } catch (e) {
+      set({ loading: false });
+      throw e;
+    }
+  },
+
+  toggleUserStatus: async (id) => {
+    const current = get().users.find((u) => u.id === id);
+    if (!current) return;
+    const nextStatus = current.status === 'active' ? ('blocked' as const) : ('active' as const);
+    try {
+      await apiClient.put(`/users/${encodeURIComponent(id)}`, { status: nextStatus });
+      set((state) => ({
+        users: state.users.map((u) => (u.id === id ? { ...u, status: nextStatus } : u)),
+      }));
+    } catch (e) {
+      console.error('Failed to toggle user status:', e);
     }
   },
 
   resetToDefaults: () => {
-    persistUsers(INITIAL_USERS);
-    set({ users: INITIAL_USERS });
+    set({ users: [] });
   },
 }));
 

@@ -140,31 +140,21 @@ function getInitialSeededCheatLogs(): Record<string, any[]> {
   return {};
 }
 
-function loadCheatLogsFromStorage(): Record<string, any[]> {
-  if (typeof window === 'undefined') return getInitialSeededCheatLogs();
+let memoryCheatLogs: Record<string, any[]> = getInitialSeededCheatLogs();
+
+if (typeof window !== 'undefined') {
   try {
-    const raw = localStorage.getItem(STORAGE_CHEAT_LOGS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return parsed;
-    }
-  } catch (e) {
-    console.warn('Error loading cheat logs from storage:', e);
-  }
-  const initial = getInitialSeededCheatLogs();
-  try {
-    localStorage.setItem(STORAGE_CHEAT_LOGS_KEY, JSON.stringify(initial));
+    localStorage.removeItem(STORAGE_CHEAT_LOGS_KEY);
+    localStorage.removeItem('next_olymp_user_submissions');
   } catch {}
-  return initial;
+}
+
+function loadCheatLogsFromStorage(): Record<string, any[]> {
+  return memoryCheatLogs;
 }
 
 function saveCheatLogsToStorage(allLogs: Record<string, any[]>): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_CHEAT_LOGS_KEY, JSON.stringify(allLogs));
-  } catch (e) {
-    console.error('Error saving cheat logs to localStorage:', e);
-  }
+  memoryCheatLogs = allLogs;
 }
 
 const draftAnswersMap = new Map<string, any>();
@@ -396,11 +386,7 @@ export const submissionService = {
 
     userSubmissionsCache.unshift(verifiedSubmission);
 
-    try {
-      const existingSubs = JSON.parse(localStorage.getItem('next_olymp_user_submissions') || '[]');
-      existingSubs.unshift(verifiedSubmission);
-      localStorage.setItem('next_olymp_user_submissions', JSON.stringify(existingSubs));
-    } catch {}
+    // Stored in in-memory cache and sent to backend API, not localStorage
 
     const cert: Certificate = {
       id: serverGradingResult.id || `cert_${Date.now()}`,
@@ -436,13 +422,8 @@ export const submissionService = {
   },
 
   getUserSubmissions(userId: string): any[] {
-    let localSubs: any[] = [];
-    try {
-      localSubs = JSON.parse(localStorage.getItem('next_olymp_user_submissions') || '[]');
-    } catch {}
-    const merged = [...userSubmissionsCache, ...localSubs];
     const seen = new Set<string>();
-    return merged.filter((s) => {
+    return userSubmissionsCache.filter((s) => {
       const sUser = s.userId || s.user_id;
       const sId = s.id || `${sUser}_${s.olympiadId || s.olympiad_id}_${s.submitted_at}`;
       if (sUser !== userId) return false;
@@ -514,14 +495,8 @@ export const submissionService = {
     const fromCache = olympiadSubmissionsCache.get(olympiadId);
     if (fromCache && fromCache.length > 0) return fromCache;
 
-    let localSubs: any[] = [];
-    try {
-      localSubs = JSON.parse(localStorage.getItem('next_olymp_user_submissions') || '[]');
-    } catch {}
-
-    const allSubs = [...userSubmissionsCache, ...localSubs];
     const seen = new Set<string>();
-    const uniqueSubs = allSubs.filter((s) => {
+    const uniqueSubs = userSubmissionsCache.filter((s) => {
       if (s.olympiadId !== olympiadId && s.olympiad_id !== olympiadId) return false;
       const sUser = s.userId || s.user_id || s.id;
       if (seen.has(sUser)) return false;
@@ -562,10 +537,6 @@ export const submissionService = {
 
     
     let registeredUsers: any[] = [];
-    try {
-      const rawReg = localStorage.getItem(`next_olymp_registrations_${olympiadId}`);
-      if (rawReg) registeredUsers = JSON.parse(rawReg);
-    } catch {}
 
     
     const isDemoOlympiad = olympiadId === 'OLY-101' || olympiadId === 'OLY-102';
@@ -624,18 +595,6 @@ export const submissionService = {
         userSubmissionsCache.splice(i, 1);
       }
     }
-
-    
-    try {
-      const raw = localStorage.getItem('next_olymp_user_submissions');
-      if (raw) {
-        const subs = JSON.parse(raw);
-        if (Array.isArray(subs)) {
-          const filtered = subs.filter((s: any) => s.olympiadId !== olympiadId && s.olympiad_id !== olympiadId);
-          localStorage.setItem('next_olymp_user_submissions', JSON.stringify(filtered));
-        }
-      }
-    } catch {}
 
     
     try {

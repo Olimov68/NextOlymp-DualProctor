@@ -19,6 +19,9 @@ const mapEndpoint = (endpoint: string): string => {
   } else if (clean.includes('/national-exams.php?id=')) {
     const id = clean.split('/national-exams.php?id=')[1];
     clean = `/exams/${id}`;
+  } else if (clean.includes('/exams?id=')) {
+    const id = clean.split('/exams?id=')[1];
+    clean = `/exams/${id}`;
   } else if (clean.startsWith('/olympiads.php')) {
     clean = clean.replace('/olympiads.php', '/exams');
   } else if (clean.startsWith('/national-exams.php')) {

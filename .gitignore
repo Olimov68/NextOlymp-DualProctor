@@ -45,3 +45,7 @@ scratch/
 # Database runtime stores
 server/data/store.json
 !server/data/store.example.json
+
+# Tool artifacts
+.manus/
+

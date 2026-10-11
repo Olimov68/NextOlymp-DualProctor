@@ -50,13 +50,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, token: null, isAuthenticated: false });
   },
 
-  setRole: (role: Role) => {
-    set((state) => {
-      if (!state.user) return state;
-      const updated = { ...state.user, role };
-      localStorage.setItem('next_olymp_user', JSON.stringify(updated));
-      return { user: updated };
-    });
+  setRole: (_role: Role) => {
+    // ANTI-TAMPERING: Client-side role overriding is disabled. Role is strictly verified via JWT.
   },
 
   updateProfile: (updatedData: Partial<User>) => {

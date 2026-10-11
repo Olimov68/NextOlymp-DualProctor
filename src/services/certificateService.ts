@@ -10,13 +10,6 @@ export const certificateService = {
     } catch {}
 
     if (subs.length === 0) {
-      try {
-        const localSubs = JSON.parse(localStorage.getItem('next_olymp_user_submissions') || '[]');
-        subs = localSubs.filter((s: any) => (s.userId === userId || s.user_id === userId));
-      } catch {}
-    }
-
-    if (subs.length === 0) {
       return [];
     }
 

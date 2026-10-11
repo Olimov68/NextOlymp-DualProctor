@@ -583,7 +583,8 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
       imageUrl: qImageUrl || undefined,
       options,
       optionImages,
-      correctAnswer: qCorrectAnswer || undefined
+      correctAnswer: qCorrectAnswer || undefined,
+      correct_answer: qCorrectAnswer || undefined
     };
 
     if (editingQuestion) {
@@ -604,7 +605,8 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
         imageUrl: qImageUrl || undefined,
         options,
         optionImages,
-        correctAnswer: qCorrectAnswer || undefined
+        correctAnswer: qCorrectAnswer || undefined,
+        correct_answer: qCorrectAnswer || undefined
       };
       const updated = [...questionsList, newQ];
       setQuestionsList(updated);
@@ -731,7 +733,7 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
   };
 
   
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (dateValidationErrorMsg) {
@@ -739,83 +741,92 @@ export const OlympiadFullEditor: React.FC<OlympiadFullEditorProps> = ({ olympiad
       return;
     }
 
-    MOCK_QUESTIONS[olympiad.id] = questionsList;
+    try {
+      await updateOlympiad(olympiad.id, {
+        title,
+        subject,
+        format,
+        status,
+        location: format === 'offline' ? location : undefined,
+        organizer,
+        image,
+        description,
+        showResultsToStudent,
+        resultsPublishDate,
+        aiAnalysisEnabled: false,
+        retakeAllowed,
+        maxRetakeAttempts: retakeAllowed ? maxRetakeAttempts : 1,
+        allowedLanguages,
+        targetGrades,
+        paymentMethods: [],
+        isFreeForAll: true,
+        separatePricesEnabled: false,
+        price: 0,
+        onlinePrice: 0,
+        offlinePrice: 0,
+        discountPercent: 0,
+        discountAmount: 0,
+        isAlwaysOpen,
+        registrationStartDate,
+        registrationEndDate,
+        startDate,
+        endDate,
+        durationMinutes,
+        totalQuestions: questionsList.length,
+        questions: questionsList.map((q) => ({
+          ...q,
+          correct_answer: q.correctAnswer || (q as any).correct_answer || 'A',
+          correctAnswer: q.correctAnswer || (q as any).correct_answer || 'A',
+          content: q.content || (q as any).question_text || '',
+          question_text: q.content || (q as any).question_text || '',
+        })),
+        certificateConfig: {
+          fontFamily: certFont,
+          subjectName: certSubject,
+          isMultiRound,
+          awardCriteria,
+          topRankLimit,
+          minScoreLimit,
+          winnerText: certWinnerText,
+          participantText: certParticipantText,
+          round1PassedText: certRound1PassedText,
+          round1FailedText: certRound1FailedText,
+          signatureName: certSignatureName,
+          signatureRole: certSignatureRole
+        },
+        antiCheatConfig: {
+          enabled: antiCheatEnabled,
+          blockTabSwitch,
+          blockCopyPaste,
+          requireFullscreen,
+          requireWebcam,
+          requireMic,
+          blockDevTools,
+          maxViolationsAllowed: maxViolations,
+          blockDuplicateIP,
+          heartbeatIntervalSec,
+          cameraFaceSnapshotEnabled,
+          snapshotOnMultipleFaces,
+          snapshotOnNoFace,
+          proctoringMode,
+          requireBothEyesVisible,
+          strictFaceCheck,
+          minFaceConfidence,
+          maxAbsenceGracePeriod,
+          trackGazeDirection,
+          requireVoiceBiometrics,
+          detectUnknownSpeakers,
+          detectMultipleSpeakers,
+          voiceSimilarityThreshold
+        }
+      });
 
-    updateOlympiad(olympiad.id, {
-      title,
-      subject,
-      format,
-      status,
-      location: format === 'offline' ? location : undefined,
-      organizer,
-      image,
-      description,
-      showResultsToStudent,
-      resultsPublishDate,
-      aiAnalysisEnabled: false,
-      retakeAllowed,
-      maxRetakeAttempts: retakeAllowed ? maxRetakeAttempts : 1,
-      allowedLanguages,
-      targetGrades,
-      paymentMethods: [],
-      isFreeForAll: true,
-      separatePricesEnabled: false,
-      price: 0,
-      onlinePrice: 0,
-      offlinePrice: 0,
-      discountPercent: 0,
-      discountAmount: 0,
-      isAlwaysOpen,
-      registrationStartDate,
-      registrationEndDate,
-      startDate,
-      endDate,
-      durationMinutes,
-      totalQuestions: questionsList.length,
-      questions: questionsList,
-      certificateConfig: {
-        fontFamily: certFont,
-        subjectName: certSubject,
-        isMultiRound,
-        awardCriteria,
-        topRankLimit,
-        minScoreLimit,
-        winnerText: certWinnerText,
-        participantText: certParticipantText,
-        round1PassedText: certRound1PassedText,
-        round1FailedText: certRound1FailedText,
-        signatureName: certSignatureName,
-        signatureRole: certSignatureRole
-      },
-      antiCheatConfig: {
-        enabled: antiCheatEnabled,
-        blockTabSwitch,
-        blockCopyPaste,
-        requireFullscreen,
-        requireWebcam,
-        requireMic,
-        blockDevTools,
-        maxViolationsAllowed: maxViolations,
-        blockDuplicateIP,
-        heartbeatIntervalSec,
-        cameraFaceSnapshotEnabled,
-        snapshotOnMultipleFaces,
-        snapshotOnNoFace,
-        proctoringMode,
-        requireBothEyesVisible,
-        strictFaceCheck,
-        minFaceConfidence,
-        maxAbsenceGracePeriod,
-        trackGazeDirection,
-        requireVoiceBiometrics,
-        detectUnknownSpeakers,
-        detectMultipleSpeakers,
-        voiceSimilarityThreshold
-      }
-    });
-
-    setSavedSuccessMsg(true);
-    setTimeout(() => setSavedSuccessMsg(false), 3000);
+      setSavedSuccessMsg(true);
+      setTimeout(() => setSavedSuccessMsg(false), 3000);
+    } catch (err: any) {
+      console.error('Save olympiad error:', err);
+      alert(`❌ Saqlashda xatolik yuz berdi: ${err.message || 'Server xatosi'}`);
+    }
   };
 
   return (

@@ -79,6 +79,7 @@ export interface Question {
   options?: string[];        
   optionImages?: string[];   
   correctAnswer?: string;    
+  correct_answer?: string;
   points: number;
   timeLimit?: number;       
   order: number;

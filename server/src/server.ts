@@ -206,6 +206,7 @@ app.post('/api/exams', authenticateJWT, requireRole(['admin']), ExamController.c
 app.get('/api/exams/:id', ExamController.getExamById);
 app.put('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.updateExam);
 app.delete('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.deleteExam);
+app.delete('/api/exams', authenticateJWT, requireRole(['admin']), ExamController.deleteExam);
 app.get('/api/exams/:id/questions', authenticateJWT, ExamController.getExamQuestions); // SECURED: Authentication & Session required!
 app.post('/api/exams/:id/start', authenticateJWT, ExamController.startExam);
 app.post('/api/exams/:id/answer', authenticateJWT, ExamController.submitAnswer);

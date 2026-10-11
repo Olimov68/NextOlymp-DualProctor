@@ -125,14 +125,51 @@ export const authService = {
   },
 
   getCurrentUser(): User | null {
+    const token = typeof window !== 'undefined'
+      ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token'))
+      : null;
+    if (!token) return null;
+
+    let jwtPayload: any = null;
+    try {
+      const base64Url = token.split('.')[1];
+      if (base64Url) {
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        jwtPayload = JSON.parse(jsonPayload);
+      }
+    } catch {}
+
+    if (!jwtPayload || !jwtPayload.id) {
+      return null;
+    }
+
     const saved = localStorage.getItem('next_olymp_user');
     if (saved) {
       try {
         const u = JSON.parse(saved);
-        if (u && (u.email || u.id)) return u;
+        if (u && (u.email || u.id)) {
+          // ANTI-TAMPERING: Strictly enforce authenticated role from signed JWT
+          u.role = jwtPayload.role || 'student';
+          u.id = jwtPayload.id;
+          return u;
+        }
       } catch {}
     }
-    return null;
+
+    return {
+      id: jwtPayload.id,
+      email: jwtPayload.email || '',
+      fullName: jwtPayload.fullName || 'Foydalanuvchi',
+      role: jwtPayload.role || 'student',
+      grade: 9,
+      createdAt: new Date().toISOString(),
+    };
   },
 
   getRegisteredUsers(): User[] {

@@ -62,14 +62,22 @@ export class ExamController {
         }
       }
 
-      const sanitizedQuestions = dbStore.getSanitizedQuestions(id);
+      // Admins receive full questions with correctAnswer; students receive strictly sanitized questions
+      const questions = req.user.role === 'admin'
+        ? dbStore.getRawQuestions(id).map(q => ({
+            ...q,
+            content: q.question_text,
+            correctAnswer: q.correct_answer,
+            correct_answer: q.correct_answer,
+          }))
+        : dbStore.getSanitizedQuestions(id);
 
       return res.json({
         success: true,
         examId: id,
-        totalQuestions: sanitizedQuestions.length,
-        questions: sanitizedQuestions,
-        data: sanitizedQuestions,
+        totalQuestions: questions.length,
+        questions,
+        data: questions,
       });
     } catch (error: any) {
       console.error('[ExamController.getExamQuestions Error]:', error);
@@ -393,6 +401,9 @@ export class ExamController {
 
       const questionsList = Array.isArray(examData.questions) ? examData.questions : [];
 
+      const startTime = examData.startTime || examData.startDate || new Date().toISOString();
+      const endTime = examData.endTime || examData.endDate || new Date(Date.now() + 86400000 * 7).toISOString();
+
       const exam: ExamRecord = {
         id,
         title,
@@ -401,10 +412,10 @@ export class ExamController {
         format: examData.format === 'offline' ? 'offline' : 'online',
         description: String(examData.description || '').trim().replace(/[<>]/g, ''),
         image: typeof examData.image === 'string' && examData.image.startsWith('http') ? examData.image : '',
-        startTime: examData.startTime || new Date().toISOString(),
-        endTime: examData.endTime || new Date(Date.now() + 86400000 * 7).toISOString(),
+        startTime,
+        endTime,
         durationMinutes,
-        price: 0, // All exams are free
+        price: Number(examData.price) || 0,
         status: ['active', 'upcoming', 'completed', 'ochiq', 'yopiq'].includes(examData.status) ? examData.status : 'active',
         maxScore: Math.max(10, Number(examData.maxScore) || 100),
         totalQuestions: questionsList.length > 0 ? questionsList.length : (Number(examData.totalQuestions) || 0),
@@ -414,20 +425,42 @@ export class ExamController {
         createdAt: new Date().toISOString(),
       };
 
+      // Retain extra UI/config fields if provided
+      if (examData.certificateConfig) (exam as any).certificateConfig = examData.certificateConfig;
+      if (examData.antiCheatConfig) (exam as any).antiCheatConfig = examData.antiCheatConfig;
+      if (examData.isPinned !== undefined) (exam as any).isPinned = Boolean(examData.isPinned);
+      if (examData.isAlwaysOpen !== undefined) (exam as any).isAlwaysOpen = Boolean(examData.isAlwaysOpen);
+      if (examData.registrationStartDate) (exam as any).registrationStartDate = examData.registrationStartDate;
+      if (examData.registrationEndDate) (exam as any).registrationEndDate = examData.registrationEndDate;
+
       dbStore.saveExam(exam);
 
-      // Item 13: Save questions to store if provided
+      // Save questions to store if provided (unifying correctAnswer and correct_answer)
       if (questionsList.length > 0) {
-        const sanitizedQuestions = questionsList.map((q: any, idx: number) => ({
-          id: q.id || `q_${id}_${idx + 1}`,
-          examId: id,
-          question_text: String(q.question_text || q.content || '').trim(),
-          options: Array.isArray(q.options) ? q.options : [],
-          correct_answer: String(q.correct_answer || 'A').trim().toUpperCase(),
-          points: Number(q.points) || 10,
-          orderNum: idx + 1,
-          explanation: String(q.explanation || '').trim(),
-        }));
+        const sanitizedQuestions = questionsList.map((q: any, idx: number) => {
+          let formattedOptions = Array.isArray(q.options) ? q.options : [];
+          if (formattedOptions.length > 0 && typeof formattedOptions[0] === 'string') {
+            formattedOptions = formattedOptions.map((opt: string, optIdx: number) => ({
+              id: String.fromCharCode(65 + optIdx),
+              text: opt,
+            }));
+          }
+
+          const rawCorrect = q.correct_answer !== undefined
+            ? q.correct_answer
+            : (q.correctAnswer !== undefined ? q.correctAnswer : 'A');
+
+          return {
+            id: q.id || `q_${id}_${idx + 1}`,
+            examId: id,
+            question_text: String(q.question_text || q.questionText || q.content || q.text || '').trim(),
+            options: formattedOptions,
+            correct_answer: String(rawCorrect || 'A').trim().toUpperCase(),
+            points: Number(q.points) || 10,
+            orderNum: idx + 1,
+            explanation: String(q.explanation || '').trim(),
+          };
+        });
         dbStore.saveQuestions(id, sanitizedQuestions);
       }
 
@@ -440,17 +473,23 @@ export class ExamController {
 
   public static async updateExam(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id || (req.query.id as string);
+      if (!id) {
+        return res.status(400).json({ error: 'Imtihon ID talab qilinadi' });
+      }
+
       const existing = dbStore.getExamById(id);
       if (!existing) {
         return res.status(404).json({ error: 'Imtihon topilmadi' });
       }
 
-      // Item 13 & 29: Strict allowlist to prevent mass assignment
       const ALLOWED_FIELDS = [
         'title', 'subject', 'category', 'format', 'description',
-        'image', 'startTime', 'endTime', 'durationMinutes', 'status',
-        'maxScore', 'organizer', 'targetGrades'
+        'image', 'startTime', 'endTime', 'startDate', 'endDate', 'durationMinutes', 'status',
+        'maxScore', 'organizer', 'targetGrades', 'certificateConfig', 'antiCheatConfig',
+        'isPinned', 'isAlwaysOpen', 'registrationStartDate', 'registrationEndDate', 'price',
+        'showResultsToStudent', 'resultsPublishDate', 'retakeAllowed', 'maxRetakeAttempts',
+        'allowedLanguages', 'location'
       ];
 
       const updates: Partial<ExamRecord> = {};
@@ -458,7 +497,7 @@ export class ExamController {
         if (req.body[field] !== undefined) {
           if (field === 'title' || field === 'subject' || field === 'category' || field === 'organizer' || field === 'description') {
             (updates as any)[field] = String(req.body[field]).trim().replace(/[<>]/g, '');
-          } else if (field === 'durationMinutes' || field === 'maxScore') {
+          } else if (field === 'durationMinutes' || field === 'maxScore' || field === 'price') {
             (updates as any)[field] = Number(req.body[field]);
           } else if (field === 'targetGrades' && Array.isArray(req.body[field])) {
             updates.targetGrades = req.body[field].map((g: any) => Number(g)).filter((g: number) => !isNaN(g));
@@ -468,18 +507,40 @@ export class ExamController {
         }
       }
 
-      // Handle questions update if provided
+      // Sync startDate / endDate with startTime / endTime
+      if (req.body.startDate && !updates.startTime) {
+        updates.startTime = req.body.startDate;
+      }
+      if (req.body.endDate && !updates.endTime) {
+        updates.endTime = req.body.endDate;
+      }
+
+      // Handle questions update if provided (unifying correctAnswer and correct_answer)
       if (Array.isArray(req.body.questions)) {
-        const sanitizedQuestions = req.body.questions.map((q: any, idx: number) => ({
-          id: q.id || `q_${id}_${idx + 1}`,
-          examId: id,
-          question_text: String(q.question_text || q.content || '').trim(),
-          options: Array.isArray(q.options) ? q.options : [],
-          correct_answer: String(q.correct_answer || 'A').trim().toUpperCase(),
-          points: Number(q.points) || 10,
-          orderNum: idx + 1,
-          explanation: String(q.explanation || '').trim(),
-        }));
+        const sanitizedQuestions = req.body.questions.map((q: any, idx: number) => {
+          let formattedOptions = Array.isArray(q.options) ? q.options : [];
+          if (formattedOptions.length > 0 && typeof formattedOptions[0] === 'string') {
+            formattedOptions = formattedOptions.map((opt: string, optIdx: number) => ({
+              id: String.fromCharCode(65 + optIdx),
+              text: opt,
+            }));
+          }
+
+          const rawCorrect = q.correct_answer !== undefined
+            ? q.correct_answer
+            : (q.correctAnswer !== undefined ? q.correctAnswer : 'A');
+
+          return {
+            id: q.id || `q_${id}_${idx + 1}`,
+            examId: id,
+            question_text: String(q.question_text || q.questionText || q.content || q.text || '').trim(),
+            options: formattedOptions,
+            correct_answer: String(rawCorrect || 'A').trim().toUpperCase(),
+            points: Number(q.points) || 10,
+            orderNum: idx + 1,
+            explanation: String(q.explanation || '').trim(),
+          };
+        });
         dbStore.saveQuestions(id, sanitizedQuestions);
         updates.totalQuestions = sanitizedQuestions.length;
       }
@@ -495,7 +556,10 @@ export class ExamController {
 
   public static async deleteExam(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id || (req.query.id as string);
+      if (!id) {
+        return res.status(400).json({ error: 'Imtihon ID talab qilinadi' });
+      }
       dbStore.deleteExam(id);
       return res.json({ success: true, message: 'Imtihon o\'chirildi' });
     } catch (error: any) {
