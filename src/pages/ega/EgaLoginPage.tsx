@@ -26,14 +26,14 @@ export const EgaLoginPage: React.FC = () => {
     const trimmedPass = password.trim();
 
     if (!trimmedEmail || !trimmedPass) {
-      setError("Iltimos, Admin Email va Parolni to'liq to'ldiring.");
+      setError("Iltimos, Login va Parolni to'liq to'ldiring.");
       return;
     }
 
     try {
       const adminRes = await adminAuthService.createAdminSession(trimmedEmail, trimmedPass);
       if (!adminRes.success) {
-        setError(adminRes.error || "Noto'g'ri Admin Email yoki Parol kiritildi.");
+        setError(adminRes.error || "Noto'g'ri Login yoki Parol kiritildi.");
         return;
       }
 
@@ -45,7 +45,7 @@ export const EgaLoginPage: React.FC = () => {
       
       navigate('/ega', { replace: true });
     } catch (err: any) {
-      const msg = err?.message || "Noto'g'ri Admin Email yoki Parol kiritildi.";
+      const msg = err?.message || "Noto'g'ri Login yoki Parol kiritildi.";
       setError(msg);
     }
   };
@@ -70,7 +70,7 @@ export const EgaLoginPage: React.FC = () => {
           
           <div className="space-y-1.5">
             <label htmlFor="admin-email" className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-              Admin Email
+              Admin Login / Email
             </label>
             <div className="relative flex items-center">
               <div className="absolute left-3.5 pointer-events-none text-cyan-400/80">
@@ -78,15 +78,15 @@ export const EgaLoginPage: React.FC = () => {
               </div>
               <input
                 id="admin-email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (error) setError('');
                 }}
-                placeholder="admin@ibnsino.uz"
+                placeholder="Login yoki email"
                 required
-                autoComplete="email"
+                autoComplete="username"
                 style={{
                   colorScheme: 'dark',
                   WebkitBoxShadow: '0 0 0 1000px #060D1F inset',
@@ -101,7 +101,7 @@ export const EgaLoginPage: React.FC = () => {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="admin-master-key" className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                Parol / Master Key
+                Parol
               </label>
             </div>
             <div className="relative flex items-center">
@@ -116,7 +116,7 @@ export const EgaLoginPage: React.FC = () => {
                   setPassword(e.target.value);
                   if (error) setError('');
                 }}
-                placeholder="Master Key kiritish"
+                placeholder="Parolni kiriting"
                 required
                 autoComplete="current-password"
                 style={{
@@ -158,7 +158,7 @@ export const EgaLoginPage: React.FC = () => {
         <div className="text-center pt-3 border-t border-blue-900/60 space-y-1">
           <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-mono">
             <KeyRound className="w-3 h-3 text-cyan-400" />
-            <span>Xavfsiz Master Key avtorizatsiyasi</span>
+            <span>Xavfsiz administrator avtorizatsiyasi</span>
           </div>
           <span className="text-[9px] text-slate-500 uppercase font-mono block">
             Rate Limiting Himoyasi Faol • Har bir urinish qayd etiladi

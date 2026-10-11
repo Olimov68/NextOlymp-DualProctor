@@ -105,7 +105,10 @@ export async function databaseTransaction<T>(fn: () => Promise<T>): Promise<T> {
 
 export async function checkDatabase(): Promise<void> {
   if (!databasePool) {
-    if (process.env.NODE_ENV === 'production') throw new Error('DATABASE_URL is required in production');
+    if (process.env.NODE_ENV === 'production' && process.env.REQUIRE_PG === 'true') {
+      throw new Error('DATABASE_URL is required in production');
+    }
+    console.warn('[database] DATABASE_URL mavjud emas. Mahalli store.json rejimida ishlamoqda.');
     return;
   }
   await databasePool.query('SELECT kind FROM app_records LIMIT 0');

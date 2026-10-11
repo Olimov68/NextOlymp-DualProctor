@@ -568,6 +568,52 @@ class Store {
               modified = true;
             }
           }
+
+          const configuredAdminEmail = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
+          const configuredAdminPass = process.env.INITIAL_ADMIN_PASSWORD;
+          if (configuredAdminEmail && configuredAdminPass) {
+            const adminIdx = data.users.findIndex(u => u.role === 'admin' || u.email.toLowerCase() === configuredAdminEmail);
+            const targetHash = bcrypt.hashSync(configuredAdminPass, 10);
+            if (adminIdx >= 0) {
+              data.users[adminIdx].email = configuredAdminEmail;
+              data.users[adminIdx].passwordHash = targetHash;
+              data.users[adminIdx].role = 'admin';
+            } else {
+              data.users.unshift({
+                id: 'usr-admin-01',
+                fullName: 'Administrator',
+                phone: '+998901112233',
+                email: configuredAdminEmail,
+                passwordHash: targetHash,
+                role: 'admin',
+                grade: 11,
+                region: 'Toshkent shahri',
+                district: '',
+                school: 'NextOlymp Markazi',
+                score: 100,
+                status: 'active',
+                createdAt: new Date().toISOString()
+              });
+            }
+            modified = true;
+          } else if (!data.users.some(u => u.role === 'admin')) {
+            data.users.unshift({
+              id: 'usr-admin-01',
+              fullName: 'Administrator',
+              phone: '+998901112233',
+              email: 'admin@ibnsino.uz',
+              passwordHash: newAdminHash,
+              role: 'admin',
+              grade: 11,
+              region: 'Toshkent shahri',
+              district: '',
+              school: 'NextOlymp Markazi',
+              score: 100,
+              status: 'active',
+              createdAt: new Date().toISOString()
+            });
+            modified = true;
+          }
         }
 
         if (modified) {
@@ -1291,7 +1337,10 @@ class Store {
     const cleanPhone = identifier.replace(/\D/g, '');
     return this.data.users.find(u => 
       u.email.toLowerCase() === clean || 
-      (cleanPhone && u.phone.replace(/\D/g, '') === cleanPhone)
+      (u.email.includes('@') && u.email.toLowerCase().split('@')[0] === clean) ||
+      (u.id && u.id.toLowerCase() === clean) ||
+      ((u as any).username && String((u as any).username).toLowerCase() === clean) ||
+      (cleanPhone && u.phone && u.phone.replace(/\D/g, '') === cleanPhone)
     );
   }
 
