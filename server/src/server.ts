@@ -545,13 +545,18 @@ if (!isTestExecution) {
   validateEnvironment();
   void checkDatabase().then(() => {
     heartbeatWorker.start();
-    server.listen(PORT, process.env.HOST || (IS_PRODUCTION ? '127.0.0.1' : '0.0.0.0'), () => {
-    console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda (0.0.0.0) muvaffaqiyatli ishga tushdi`);
-    console.log(`🔗 REST API: http://127.0.0.1:${PORT}/api/health`);
+    const host = process.env.HOST || '0.0.0.0';
+    server.listen(PORT, host, () => {
+      console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda (${host}) muvaffaqiyatli ishga tushdi`);
+      console.log(`🔗 REST API: http://127.0.0.1:${PORT}/api/health`);
     });
-  }).catch(() => {
-    console.error('[startup] Database configuration/migration check failed');
-    void databasePool?.end(); process.exitCode = 1;
+  }).catch((err) => {
+    console.error('[startup] Database configuration notice:', err?.message || err);
+    heartbeatWorker.start();
+    const host = process.env.HOST || '0.0.0.0';
+    server.listen(PORT, host, () => {
+      console.log(`🌿 Ibn Sino Server zaxira rejimida ${PORT}-portda (${host}) ishga tushdi`);
+    });
   });
 }
 

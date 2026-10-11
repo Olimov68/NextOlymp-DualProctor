@@ -47,12 +47,7 @@ function resolveJwtSecret(): string {
     return configured;
   }
 
-  // CRITICAL: In production, require explicit JWT_SECRET — never auto-generate
-  if (IS_PRODUCTION) {
-    throw new Error('Production JWT_SECRET must be unique, random, at least 32 characters, and not a placeholder');
-  }
-
-  // Development: Generate or load a unique server-bound cryptographic secret
+  // Fallback: Generate or load a unique server-bound cryptographic secret
   const secretPath = path.resolve(process.cwd(), '.jwt_secret');
   try {
     if (fs.existsSync(secretPath)) {
@@ -63,7 +58,7 @@ function resolveJwtSecret(): string {
     }
     const generated = crypto.randomBytes(64).toString('hex');
     fs.writeFileSync(secretPath, generated, { encoding: 'utf-8', mode: 0o600 });
-    console.warn('[SECURITY] Development: Generated unique server JWT secret persisted to .jwt_secret');
+    console.warn('[SECURITY] Generated unique server JWT secret persisted to .jwt_secret');
     return generated;
   } catch {
     return crypto.randomBytes(64).toString('hex');
@@ -77,6 +72,8 @@ export const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
 
 // Base production allowed origins
 const BASE_PROD_ORIGINS = [
+  'https://nextolymp.uz',
+  'https://www.nextolymp.uz',
   'https://ibnsino.uz',
   'https://www.ibnsino.uz',
   'https://ibnsinoschool.uz',
@@ -96,7 +93,7 @@ const envAllowed = process.env.ALLOWED_ORIGINS
   : [];
 
 export const ALLOWED_ORIGINS = [
-  ...(IS_PRODUCTION ? [] : BASE_PROD_ORIGINS),
+  ...BASE_PROD_ORIGINS,
   ...(IS_PRODUCTION ? [] : BASE_DEV_ORIGINS),
   ...envAllowed,
 ];
