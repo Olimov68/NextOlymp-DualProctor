@@ -54,18 +54,36 @@ export class UserController {
         return res.status(403).json({ error: 'Boshqa foydalanuvchi ma\'lumotlarini o\'zgartirish taqiqlangan' });
       }
 
-      let updatesToApply: Record<string, any> = {};
-
+      const current = dbStore.getUserById(id);
+      if (!current) return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+      const updatesToApply: Partial<UserRecord> = {};
+      for (const field of ['fullName', 'region', 'district', 'school'] as const) {
+        if (req.body[field] === undefined) continue;
+        if (typeof req.body[field] !== 'string' || req.body[field].trim().length > 200) {
+          return res.status(400).json({ error: `${field} noto'g'ri` });
+        }
+        updatesToApply[field] = req.body[field].trim();
+      }
+      if (req.body.grade !== undefined) {
+        if (!Number.isInteger(req.body.grade) || req.body.grade < 1 || req.body.grade > 11) {
+          return res.status(400).json({ error: 'Sinf 1..11 oralig‘ida bo‘lishi kerak' });
+        }
+        updatesToApply.grade = req.body.grade;
+      }
       if (req.user.role === 'admin') {
-        const { password, ...adminUpdates } = req.body;
-        updatesToApply = adminUpdates;
-      } else {
-        // Strict allowlist for normal users to prevent privilege escalation & mass assignment
-        const ALLOWED_FIELDS = ['fullName', 'grade', 'region', 'district', 'school'];
-        for (const field of ALLOWED_FIELDS) {
-          if (req.body[field] !== undefined) {
-            updatesToApply[field] = typeof req.body[field] === 'string' ? req.body[field].trim() : req.body[field];
+        if (req.body.role !== undefined) {
+          if (!['admin', 'teacher', 'student'].includes(req.body.role)) return res.status(400).json({ error: 'Rol noto‘g‘ri' });
+          updatesToApply.role = req.body.role;
+        }
+        if (req.body.status !== undefined) {
+          if (!['active', 'blocked', 'inactive'].includes(req.body.status)) return res.status(400).json({ error: 'Holat noto‘g‘ri' });
+          updatesToApply.status = req.body.status;
+        }
+        if (updatesToApply.role !== undefined || updatesToApply.status !== undefined) {
+          if (id === req.user.id && (updatesToApply.role && updatesToApply.role !== 'admin' || updatesToApply.status && updatesToApply.status !== 'active')) {
+            return res.status(409).json({ error: 'O‘z administrator hisobingizni bu usulda bloklay olmaysiz' });
           }
+          updatesToApply.authVersion = (current.authVersion ?? 0) + 1;
         }
       }
 
@@ -91,6 +109,11 @@ export class UserController {
         return res.status(403).json({ error: 'Foydalanuvchini o\'chirish faqat admin uchun ruxsat etilgan' });
       }
 
+      if (req.user.id === id) return res.status(409).json({ error: 'O‘z admin hisobingizni o‘chira olmaysiz' });
+      if (dbStore.getSessions().some(s => s.userId === id) || dbStore.getSubmissions(id).length ||
+          dbStore.getAllProctorSessions().some(s => s.studentId === id)) {
+        return res.status(409).json({ error: 'Imtihon tarixi mavjud foydalanuvchini o‘chirmang; hisobini bloklang.' });
+      }
       const deleted = dbStore.deleteUser(id);
       if (!deleted) {
         return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
@@ -114,8 +137,8 @@ export class UserController {
         return res.status(400).json({ error: 'Ism-familiya va telefon raqami talab qilinadi' });
       }
 
-      const rawPassword = password ? String(password).trim() : (crypto.randomBytes(8).toString('hex') + 'A1!');
-      if (rawPassword.length < 8) {
+      const rawPassword = typeof password === 'string' ? password : '';
+      if (rawPassword.length < 8 || Buffer.byteLength(rawPassword, 'utf8') > 72) {
         return res.status(400).json({ error: 'Parol kamida 8 ta belgidan iborat bo\'lishi shart' });
       }
 
@@ -123,7 +146,7 @@ export class UserController {
       const passwordHash = bcrypt.hashSync(rawPassword, salt);
 
       const newUser: UserRecord = {
-        id: `usr_${crypto.randomUUID().slice(0, 8)}`,
+        id: `usr_${crypto.randomUUID()}`,
         fullName: String(fullName).trim().replace(/[<>]/g, ''),
         phone: String(phone).trim(),
         email: email ? String(email).trim().toLowerCase() : `user_${Date.now()}@ibnsino.uz`,

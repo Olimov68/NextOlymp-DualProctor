@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { EgaLayout } from '../../components/ega/EgaLayout';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { useOlympiadStore } from '../../store/useOlympiadStore';
 import { useUserStore } from '../../store/useUserStore';
 import { useSupportStore } from '../../store/useSupportStore';
 import { useSecurityStore } from '../../store/useSecurityStore';
+import { apiClient } from '../../services/api';
 import { clsx } from 'clsx';
 import { Link } from 'react-router-dom';
 import {
@@ -47,6 +48,9 @@ export const EgaDashboardPage: React.FC = () => {
   const { olympiads } = useOlympiadStore();
   const { users } = useUserStore();
   const { tickets } = useSupportStore();
+  useEffect(() => { void useSupportStore.getState().fetchTickets().catch(() => undefined); }, []);
+  const [completedSubmissions, setCompletedSubmissions] = React.useState<any[]>([]);
+  useEffect(() => { void apiClient.get<{ data: any[] }>('/submissions').then(response => setCompletedSubmissions(Array.isArray(response?.data) ? response.data : [])).catch(() => setCompletedSubmissions([])); }, []);
   const securityStore = useSecurityStore();
 
   
@@ -107,22 +111,13 @@ export const EgaDashboardPage: React.FC = () => {
     });
 
     
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('submission_completed_') && !key.includes('_att_')) {
-          const val = localStorage.getItem(key);
-          if (val) {
-            const sub = JSON.parse(val);
-            if (sub && sub.completedAt) {
-              const d = new Date(sub.completedAt);
-              const dayIdx = (d.getDay() + 6) % 7;
-              testCounts[dayIdx] = (testCounts[dayIdx] || 0) + 1;
-            }
-          }
-        }
-      }
-    } catch {}
+    completedSubmissions.filter(sub => sub.status === 'completed' && sub.mode !== 'practice').forEach(sub => {
+      const date = sub.submittedAt || sub.completedAt;
+      if (!date) return;
+      const d = new Date(date);
+      const dayIdx = (d.getDay() + 6) % 7;
+      testCounts[dayIdx] = (testCounts[dayIdx] || 0) + 1;
+    });
 
     const totalReg = regCounts.reduce((a, b) => a + b, 0);
     const totalTests = testCounts.reduce((a, b) => a + b, 0);
@@ -136,18 +131,17 @@ export const EgaDashboardPage: React.FC = () => {
       totalReg,
       totalTests
     };
-  }, [users]);
+  }, [users, completedSubmissions]);
 
   // Real-time server telemetry fetch for Admin Dashboard
   React.useEffect(() => {
     let isMounted = true;
     const fetchTelemetry = async () => {
       try {
-        const token = (typeof window !== 'undefined' ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token')) : '') || '';
-        const headers: Record<string, string> = { 'Accept': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const res = await fetch('/api/admin/system-metrics', { headers });
+        const res = await fetch('/api/admin/system-metrics', {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' },
+        });
         if (res.ok && isMounted) {
           const json = await res.json();
           if (json.metrics) {

@@ -9,6 +9,7 @@ const envPaths = [
 ];
 
 for (const envPath of envPaths) {
+  if (process.env.NODE_ENV === 'test') break;
   if (fs.existsSync(envPath)) {
     try {
       if (typeof (process as any).loadEnvFile === 'function') {
@@ -19,7 +20,7 @@ for (const envPath of envPaths) {
           const trimmed = line.trim();
           if (trimmed && !trimmed.startsWith('#')) {
             const [k, ...v] = trimmed.split('=');
-            if (k && v.length) {
+            if (k && v.length && process.env[k.trim()] === undefined) {
               process.env[k.trim()] = v.join('=').trim().replace(/^["']|["']$/g, '');
             }
           }
@@ -42,21 +43,13 @@ const LEAKED_SECRETS = [
 
 function resolveJwtSecret(): string {
   const configured = process.env.JWT_SECRET?.trim();
-  if (configured && !LEAKED_SECRETS.includes(configured) && configured.length >= 32) {
+  if (configured && !LEAKED_SECRETS.includes(configured) && configured.length >= 32 && !/replace|change.?me|your.?secret|example/i.test(configured)) {
     return configured;
   }
 
   // CRITICAL: In production, require explicit JWT_SECRET — never auto-generate
   if (IS_PRODUCTION) {
-    if (!configured || configured.length < 32) {
-      console.error('[FATAL SECURITY] JWT_SECRET muhit o\'zgaruvchisi production muhitda majburiy (kamida 32 belgi).');
-      console.error('Server xavfsizlik sababli to\'xtatildi. .env faylga JWT_SECRET=<64+ belgili random string> qo\'shing.');
-      process.exit(1);
-    }
-    if (LEAKED_SECRETS.includes(configured)) {
-      console.error('[FATAL SECURITY] JWT_SECRET ommaviy ma\'lum bo\'lgan qiymat. Yangi kuchli secret yarating.');
-      process.exit(1);
-    }
+    throw new Error('Production JWT_SECRET must be unique, random, at least 32 characters, and not a placeholder');
   }
 
   // Development: Generate or load a unique server-bound cryptographic secret
@@ -103,7 +96,7 @@ const envAllowed = process.env.ALLOWED_ORIGINS
   : [];
 
 export const ALLOWED_ORIGINS = [
-  ...BASE_PROD_ORIGINS,
+  ...(IS_PRODUCTION ? [] : BASE_PROD_ORIGINS),
   ...(IS_PRODUCTION ? [] : BASE_DEV_ORIGINS),
   ...envAllowed,
 ];
@@ -114,8 +107,7 @@ export function isOriginAllowed(origin?: string): boolean {
 
   if (!IS_PRODUCTION) {
     if (
-      origin.includes('localhost') ||
-      origin.includes('127.0.0.1') ||
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
       origin.startsWith('http://192.168.') ||
       origin.startsWith('http://10.')
     ) {

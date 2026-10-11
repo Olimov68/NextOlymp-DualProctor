@@ -20,13 +20,27 @@ import {
   Send
 } from 'lucide-react';
 import { PROCTOR_SOCKET_EVENTS } from '../../types/dualDeviceProctor';
+import { apiClient } from '../../services/api';
 import { DualDeviceProctorGateway } from '../../services/setupProctor.service';
 
 export const ProctorStreamView: React.FC = () => {
   const [searchParams] = useSearchParams();
   const rawSessionId = searchParams.get('sessionId');
-  const sessionId = rawSessionId || (typeof window !== 'undefined' ? localStorage.getItem('ibnsino_active_proctor_session') || localStorage.getItem('nextolymp_active_proctor_session') || 'proctor-local-session' : 'proctor-local-session');
-  const token = searchParams.get('token') || 'token-' + sessionId;
+  const sessionId = rawSessionId || '';
+  const [token, setToken] = useState('');
+  const pairingPromise = useRef<Promise<{ token: string }> | null>(null);
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.hash.slice(1)).get('pair');
+    if (!sessionId || (!code && !pairingPromise.current)) return;
+    if (!pairingPromise.current) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      pairingPromise.current = apiClient.post('/proctor/session/pair', { sessionId, pairingCode: code });
+    }
+    let cancelled = false;
+    void pairingPromise.current.then(result => { if (!cancelled) setToken(result.token); })
+      .catch(() => { if (!cancelled) setErrorMessage('Ulash kodi eskirgan yoki ishlatilgan. Yangi QR so‘rang.'); });
+    return () => { cancelled = true; };
+  }, [sessionId]);
 
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -85,12 +99,7 @@ export const ProctorStreamView: React.FC = () => {
 
   
   const captureSnapshot = useCallback(() => {
-    if (cameraStatus === 'virtual' && virtualCanvasRef.current) {
-      return virtualCanvasRef.current.toDataURL('image/jpeg', 0.92);
-    }
-
     if (!videoRef.current || !canvasRef.current) {
-      if (virtualCanvasRef.current) return virtualCanvasRef.current.toDataURL('image/jpeg', 0.92);
       return null;
     }
 
@@ -111,103 +120,18 @@ export const ProctorStreamView: React.FC = () => {
     setLastSnapshotTime(new Date().toLocaleTimeString());
 
     return base64;
-  }, [cameraStatus]);
+  }, []);
 
   
   const startVirtualCamera = useCallback(() => {
-    setCameraStatus('virtual');
-    setIsConnectedToPrimary(true);
+    setCameraStatus('error');
+    setErrorMessage('Haqiqiy kameraga ruxsat bering va sahifani qayta oching.');
+  }, []);
 
-    const canvas = virtualCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = 640;
-    canvas.height = 480;
-
-    let tick = 0;
-    const drawVirtualFrame = () => {
-      tick++;
-      
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 640, 480);
-
-      
-      ctx.strokeStyle = '#27272a';
-      ctx.lineWidth = 1;
-      for (let y = 300; y < 480; y += 30) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(640, y);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = '#27272a';
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.roundRect(140, 240, 360, 160, [12]);
-      ctx.fill();
-      ctx.stroke();
-
-      
-      ctx.fillStyle = '#38bdf8';
-      ctx.beginPath();
-      ctx.arc(320, 180 + Math.sin(tick * 0.05) * 2, 35, 0, Math.PI * 2);
-      ctx.fill();
-
-      
-      ctx.fillStyle = '#0284c7';
-      ctx.beginPath();
-      ctx.roundRect(260, 220, 120, 110, [20, 20, 0, 0]);
-      ctx.fill();
-
-      
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(280, 270, 80, 50); 
-      ctx.fillStyle = '#3b82f6';
-      ctx.fillRect(285, 225, 70, 45); 
-      ctx.fillStyle = '#93c5fd';
-      ctx.font = '10px monospace';
-      ctx.fillText('Ibn Sino', 290, 250);
-
-      
-      const handOffset = Math.sin(tick * 0.08) * 3;
-      ctx.fillStyle = '#fbcfe8';
-      ctx.beginPath();
-      ctx.arc(260, 290 + handOffset, 12, 0, Math.PI * 2); 
-      ctx.arc(380, 290 - handOffset, 12, 0, Math.PI * 2); 
-      ctx.fill();
-
-      
-      ctx.fillStyle = '#10b981';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText('● LIVE • VIRTUAL PROCTOR CAMERA 720p', 20, 35);
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '12px monospace';
-      ctx.fillText(`Frame #${tick} • Session: ${sessionId.slice(0, 12)}`, 20, 55);
-
-      if (cameraStatus === 'virtual') {
-        requestAnimationFrame(drawVirtualFrame);
-      }
-    };
-
-    drawVirtualFrame();
-
-    
-    gatewayRef.current?.emit(PROCTOR_SOCKET_EVENTS.DEVICE_CONNECTED, {
-      sessionId,
-      role: 'secondary',
-      batteryLevel: 98,
-      mode: 'virtual_camera',
-    });
-  }, [sessionId, cameraStatus]);
-
-  
   useEffect(() => {
     requestWakeLock();
 
+    if (!sessionId || !token) return;
     let isMounted = true;
     const gateway = new DualDeviceProctorGateway();
     gatewayRef.current = gateway;
@@ -217,6 +141,9 @@ export const ProctorStreamView: React.FC = () => {
       token,
       role: 'secondary',
     });
+    gateway.on('proctor:ready', () => setIsConnectedToPrimary(true));
+    gateway.on('connect_error', () => { setIsConnectedToPrimary(false); setErrorMessage('Server bilan ulanish tasdiqlanmadi.'); });
+    gateway.on('disconnect', () => setIsConnectedToPrimary(false));
 
     
     const pc = new RTCPeerConnection({
@@ -287,7 +214,6 @@ export const ProctorStreamView: React.FC = () => {
             videoRef.current.srcObject = stream;
           }
           setCameraStatus('active');
-          setIsConnectedToPrimary(true);
 
           
           stream.getTracks().forEach((track) => {
@@ -312,7 +238,7 @@ export const ProctorStreamView: React.FC = () => {
           });
         }
       } catch (err: any) {
-        console.warn('Physical camera unavailable, starting virtual proctor camera:', err);
+        console.warn('Camera permission unavailable');
         
         startVirtualCamera();
       }
@@ -333,8 +259,6 @@ export const ProctorStreamView: React.FC = () => {
             ctx.drawImage(videoRef.current, 0, 0, 320, 180);
             frameBase64 = cvs.toDataURL('image/jpeg', 0.45);
           }
-        } else if (virtualCanvasRef.current) {
-          frameBase64 = virtualCanvasRef.current.toDataURL('image/jpeg', 0.45);
         }
 
         if (frameBase64) {
@@ -345,7 +269,7 @@ export const ProctorStreamView: React.FC = () => {
           setFramesSentCount((c) => c + 1);
         }
       } catch {}
-    }, 450);
+    }, 1100);
 
     return () => {
       isMounted = false;
@@ -356,7 +280,7 @@ export const ProctorStreamView: React.FC = () => {
       pc.close();
       gateway.disconnect();
     };
-  }, [sessionId, token, requestWakeLock, captureSnapshot, batteryLevel, startVirtualCamera]);
+  }, [sessionId, token, requestWakeLock, captureSnapshot, startVirtualCamera]);
 
   
   const handleForceConnect = () => {
@@ -364,10 +288,9 @@ export const ProctorStreamView: React.FC = () => {
       gatewayRef.current.emit(PROCTOR_SOCKET_EVENTS.DEVICE_CONNECTED, {
         sessionId,
         role: 'secondary',
-        batteryLevel: batteryLevel ?? 95,
+        batteryLevel,
         connectedAt: Date.now(),
       });
-      setIsConnectedToPrimary(true);
       const snap = captureSnapshot();
       if (snap) {
         gatewayRef.current.emit(PROCTOR_SOCKET_EVENTS.FRAME_PREVIEW, { frame: snap });

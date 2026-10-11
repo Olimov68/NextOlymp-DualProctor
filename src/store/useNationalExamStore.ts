@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { NationalExamItem } from '../data/initialNationalExams';
 import { apiClient } from '../services/api';
+import { toAdminExam } from '../services/adminExamAdapter';
 
 // Clean up stale localStorage cache
 if (typeof window !== 'undefined') {
@@ -13,7 +14,7 @@ interface NationalExamStore {
   exams: NationalExamItem[];
   loading: boolean;
   fetchFromApi: () => Promise<void>;
-  addExam: (item: Omit<NationalExamItem, 'id' | 'registeredCount' | 'submittedCount' | 'paidCount' | 'totalRevenue'>) => Promise<NationalExamItem>;
+  addExam: (item: Omit<NationalExamItem, 'id' | 'registeredCount' | 'submittedCount'>) => Promise<NationalExamItem>;
   updateExam: (id: string, updated: Partial<NationalExamItem>) => Promise<any>;
   deleteExam: (id: string) => Promise<void>;
   togglePinExam: (id: string) => Promise<void>;
@@ -28,9 +29,9 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
   fetchFromApi: async () => {
     set({ loading: true });
     try {
-      const json = await apiClient.get('/exams');
+      const json = await apiClient.get('/exams?kind=national_certificate');
       const data = Array.isArray(json) ? json : (json?.data ?? []);
-      set({ exams: Array.isArray(data) ? data : [], loading: false });
+      set({ exams: Array.isArray(data) ? data.map(item => ({ ...toAdminExam(item), calculationMethod: 'rasch', maxScore: item.maxScore, aThreshold: 0, specType: 'spec_1', durationMinutes: item.durationMinutes, totalQuestions: item.totalQuestions })) : [], loading: false });
     } catch (err) {
       console.error('API fetch error for national exams:', err);
       set({ loading: false });
@@ -50,8 +51,6 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
         questions: newItem.questions || [],
         registeredCount: 0,
         submittedCount: 0,
-        paidCount: 0,
-        totalRevenue: 0,
         calculationMethod: 'rasch',
         maxScore: newItem.maxScore || 75,
         aThreshold: newItem.aThreshold || 65,
@@ -60,8 +59,9 @@ export const useNationalExamStore = create<NationalExamStore>((set, get) => ({
         totalQuestions: newItem.questions ? newItem.questions.length : 0,
       };
 
-      const res = await apiClient.post('/exams', exam);
-      const saved: NationalExamItem = res?.data || exam;
+      const res = await apiClient.post('/exams', { ...exam, kind: 'national_certificate' });
+      if (!res?.data?.id) throw new Error('Server saqlashni tasdiqlamadi');
+      const saved: NationalExamItem = { ...exam, ...toAdminExam(res.data) };
       set((state) => ({
         exams: [saved, ...state.exams.filter((e) => e.id !== saved.id)],
         loading: false,

@@ -9,15 +9,14 @@ export const EgaLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading, user, isAuthenticated } = useAuth();
 
-  
-  if (isAuthenticated && user?.role === 'admin') {
-    return <Navigate to="/ega" replace />;
-  }
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
+  if (isAuthenticated && user?.role === 'admin') {
+    return <Navigate to="/ega" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

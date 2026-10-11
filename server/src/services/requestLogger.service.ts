@@ -49,6 +49,7 @@ class RequestLoggerService {
 
   private totalRequests = 0;
   private totalErrors = 0;
+  private rateLimitHits = 0;
   private totalBytesIn = 0;
   private totalBytesOut = 0;
   private responseTimes: number[] = [];
@@ -61,7 +62,7 @@ class RequestLoggerService {
     setInterval(() => {
       this.currentRps = this.lastSecondRequests;
       this.lastSecondRequests = 0;
-    }, 1000);
+    }, 1000).unref();
   }
 
   public middleware() {
@@ -72,8 +73,8 @@ class RequestLoggerService {
       }
 
       const start = Date.now();
-      const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-      const clientIp = String(Array.isArray(rawIp) ? rawIp[0] : rawIp).split(',')[0].replace(/^.*:/, '').trim() || '127.0.0.1';
+      const rawIp = req.ip || req.socket.remoteAddress || '127.0.0.1';
+      const clientIp = String(rawIp).replace(/^::ffff:/i, '').trim();
 
       this.lastSecondRequests++;
       this.totalRequests++;
@@ -102,6 +103,7 @@ class RequestLoggerService {
           level = 'critical';
           category = 'security';
         } else if (statusCode === 429) {
+          this.rateLimitHits++;
           level = 'warning';
           category = 'rate_limits';
           this.recordSecurityAlert('rate_limit', 'high', clientIp, `So'rovlar chegarasi oshirildi (429 Rate Limit) - ${req.method} ${req.path}`);
@@ -146,10 +148,10 @@ class RequestLoggerService {
           id: `log-${Date.now()}-${crypto.randomInt(1000, 9999)}`,
           timestamp: fullDateStr,
           ip: clientIp === '1' || clientIp === '' ? '127.0.0.1' : clientIp,
-          country: clientIp.startsWith('192.168.') || clientIp === '127.0.0.1' ? 'Lokal Tarmoq' : "O'zbekiston",
-          countryCode: 'UZ',
+          country: clientIp.startsWith('192.168.') || clientIp === '127.0.0.1' ? 'Lokal Tarmoq' : 'Aniqlanmagan',
+          countryCode: '',
           method: req.method as any,
-          path: req.originalUrl || req.url,
+          path: req.path,
           statusCode,
           responseTimeMs: duration,
           userAgent: String(req.headers['user-agent'] || 'Browser Client').slice(0, 80),
@@ -241,6 +243,7 @@ class RequestLoggerService {
       responseTimeAvg: avgResponseTime,
       totalRequests: this.totalRequests,
       totalErrors: this.totalErrors,
+      rateLimitHits: this.rateLimitHits,
       networkInMbPerSec: Number((this.totalBytesIn / (1024 * 1024 * Math.max(1, process.uptime()))).toFixed(3)),
       networkOutMbPerSec: Number((this.totalBytesOut / (1024 * 1024 * Math.max(1, process.uptime()))).toFixed(3)),
       trafficPoints: points,

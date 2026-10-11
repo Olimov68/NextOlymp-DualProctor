@@ -13,8 +13,6 @@ export interface NationalExamItem {
   endDate: string;
   registeredCount: number;
   submittedCount: number;
-  paidCount: number;
-  totalRevenue: number;
   description: string;
   location?: string;
   organizer?: string;
@@ -24,14 +22,12 @@ export interface NationalExamItem {
   specType: 'spec_1' | 'spec_2' | 'lang';
   durationMinutes: number;
   totalQuestions: number;
-  paymentMethods?: ('naqd' | 'karta' | 'hamyon')[];
   isFreeForAll?: boolean;
   separatePricesEnabled?: boolean;
   onlinePrice?: number;
   offlinePrice?: number;
   discountPercent?: number;
   discountAmount?: number;
-  freeForPackageId?: string;
   isAlwaysOpen?: boolean; 
   registrationStartDate?: string;
   registrationEndDate?: string;

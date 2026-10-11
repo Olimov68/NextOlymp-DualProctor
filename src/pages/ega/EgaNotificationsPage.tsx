@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { EgaLayout } from '../../components/ega/EgaLayout';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { useLocationStore } from '../../store/useLocationStore';
@@ -31,6 +31,7 @@ import * as XLSX from 'xlsx';
 
 export const EgaNotificationsPage: React.FC = () => {
   const { notifications, sendNotification, deleteNotification } = useNotificationStore();
+  useEffect(() => { void useNotificationStore.getState().fetchNotifications().catch(() => undefined); }, []);
   const { viloyatlar } = useLocationStore();
   const { users } = useUserStore();
   const { theme } = useThemeStore();
@@ -135,28 +136,11 @@ export const EgaNotificationsPage: React.FC = () => {
   };
 
   
-  const handleSendSms = (e: React.FormEvent) => {
+  const handleSendSms = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!smsText.trim()) return;
 
-    if (selectedAudience === 'custom' && selectedUserIds.length > 0) {
-      const selectedUsersList = users.filter((u) => selectedUserIds.includes(u.id));
-      selectedUsersList.forEach((u) => {
-        sendNotification(
-          smsText.trim(),
-          smsType,
-          u.region,
-          `${u.fullName} (${u.phone})`
-        );
-      });
-    } else {
-      sendNotification(
-        smsText.trim(),
-        smsType,
-        selectedRegion,
-        selectedAudience
-      );
-    }
+    await sendNotification(smsText.trim(), smsType, selectedRegion, selectedAudience, selectedUserIds);
 
     setSmsText('');
     setSelectedUserIds([]);

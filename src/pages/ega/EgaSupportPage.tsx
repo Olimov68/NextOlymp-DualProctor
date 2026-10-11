@@ -34,6 +34,8 @@ export const EgaSupportPage: React.FC = () => {
     deleteTicket
   } = useSupportStore();
 
+  useEffect(() => { void useSupportStore.getState().fetchTickets().catch(() => undefined); }, []);
+
   const { theme } = useThemeStore();
   const { i18n } = useI18nTranslation();
 
@@ -106,15 +108,15 @@ export const EgaSupportPage: React.FC = () => {
   };
 
   
-  const handleSendReply = (closeAfterSend = false) => {
+  const handleSendReply = async (closeAfterSend = false) => {
     if (!currentTicket || (!replyText.trim() && attachedFiles.length === 0)) return;
 
-    addMessageToTicket(currentTicket.id, replyText.trim(), 'admin', attachedFiles.length > 0 ? attachedFiles : undefined);
+    await addMessageToTicket(currentTicket.id, replyText.trim(), 'admin', attachedFiles.length > 0 ? attachedFiles : undefined);
     setReplyText('');
     setAttachedFiles([]);
 
     if (closeAfterSend) {
-      closeTicket(currentTicket.id);
+      await closeTicket(currentTicket.id);
     }
   };
 

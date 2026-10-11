@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from '../../components/common/Sidebar';
 import { useLeaderboardStore } from '../../store/useLeaderboardStore';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,6 +37,7 @@ const UZBEKISTAN_REGIONS = [
 export const StudentLeaderboardPage: React.FC = () => {
   const { user } = useAuth();
   const { entries } = useLeaderboardStore();
+  useEffect(() => { void useLeaderboardStore.getState().fetchFromApi().catch(() => undefined); }, []);
 
   const [scope, setScope] = useState<'national' | 'region' | 'district'>('national');
   const [search, setSearch] = useState('');

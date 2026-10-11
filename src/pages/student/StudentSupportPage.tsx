@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSupportStore } from '../../store/useSupportStore';
 import { useAuth } from '../../hooks/useAuth';
 import {
@@ -24,6 +24,8 @@ import { Link } from 'react-router-dom';
 export const StudentSupportPage: React.FC = () => {
   const { user } = useAuth();
   const { tickets, createTicket, addMessageToTicket } = useSupportStore();
+
+  useEffect(() => { void useSupportStore.getState().fetchTickets().catch(() => undefined); }, []);
 
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -65,11 +67,11 @@ export const StudentSupportPage: React.FC = () => {
     });
   };
 
-  const handleCreateTicket = (e: React.FormEvent) => {
+  const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim() || !messageText.trim() || !user) return;
 
-    createTicket({
+    await createTicket({
       userId: user.id,
       userName: user.fullName || 'O\'quvchi',
       userPhone: user.phone || '+998 90 123 45 67',
@@ -86,12 +88,12 @@ export const StudentSupportPage: React.FC = () => {
     setIsNewModalOpen(false);
   };
 
-  const handleSendReply = (e: React.FormEvent) => {
+  const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() && !attachedFile) return;
     if (!activeTicket || !user) return;
 
-    addMessageToTicket(
+    await addMessageToTicket(
       activeTicket.id,
       replyText.trim() || (attachedFile ? `[Fayl biriktirildi: ${attachedFile.name}]` : ''),
       'user',

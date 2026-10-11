@@ -1,8 +1,7 @@
 
 import { useProctoringStore } from '../store/useProctoringStore';
-import { useNotificationStore } from '../store/useNotificationStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { useSecurityStore } from '../store/useSecurityStore';
+import { apiClient } from './api';
 
 export type ExamViolationType =
   | 'CLIPBOARD_ACTION'
@@ -18,13 +17,17 @@ export type ExamViolationType =
   | 'HEARTBEAT_TIMEOUT';
 
 export interface ExamGuardOptions {
+  enabled?: boolean;
   maxViolations?: number;
   olympiadId?: string;
+  sessionId?: string;
   olympiadTitle?: string;
   requireFullscreen?: boolean;
   blockTabSwitch?: boolean;
   blockCopyPaste?: boolean;
   blockDevTools?: boolean;
+  heartbeatEnabled?: boolean;
+  heartbeatIntervalSec?: number;
   heartbeatIntervalMs?: number;
   onViolation?: (type: ExamViolationType, data: { count: number; max: number; message: string }) => void;
   onDisqualify?: (reason: string) => void;
@@ -33,12 +36,15 @@ export interface ExamGuardOptions {
 export class ExamGuard {
   public maxViolations: number;
   public violationCount: number;
+  private enabled: boolean;
   private olympiadId: string;
+  private sessionId: string;
   private olympiadTitle: string;
   private requireFullscreen: boolean;
   private blockTabSwitch: boolean;
   private blockCopyPaste: boolean;
   private blockDevTools: boolean;
+  private heartbeatEnabled: boolean;
   private heartbeatIntervalMs: number;
   private onViolation: (type: ExamViolationType, data: { count: number; max: number; message: string }) => void;
   private onDisqualify: (reason: string) => void;
@@ -49,19 +55,24 @@ export class ExamGuard {
   private isDestroyed: boolean = false;
 
   constructor(options: ExamGuardOptions = {}) {
+    this.enabled = options.enabled ?? true;
     this.maxViolations = options.maxViolations || 3;
     this.violationCount = 0;
     this.olympiadId = options.olympiadId || 'olymp-current';
+    this.sessionId = options.sessionId || '';
     this.olympiadTitle = options.olympiadTitle || 'Onlayn Olimpiada';
     this.requireFullscreen = options.requireFullscreen ?? true;
     this.blockTabSwitch = options.blockTabSwitch ?? true;
     this.blockCopyPaste = options.blockCopyPaste ?? true;
     this.blockDevTools = options.blockDevTools ?? true;
-    this.heartbeatIntervalMs = options.heartbeatIntervalMs || 6000;
+    this.heartbeatEnabled = options.heartbeatEnabled ?? true;
+    this.heartbeatIntervalMs = options.heartbeatIntervalSec ? options.heartbeatIntervalSec * 1000 : (options.heartbeatIntervalMs || 10000);
     this.onViolation = options.onViolation || (() => {});
     this.onDisqualify = options.onDisqualify || (() => {});
 
-    this.init();
+    if (this.enabled) {
+      this.init();
+    }
   }
 
   private init() {
@@ -86,23 +97,8 @@ export class ExamGuard {
   public recordViolation(type: ExamViolationType, message: string) {
     if (this.isDestroyed) return;
 
-    this.violationCount++;
-    console.warn(`[Xavfsizlik Ogohlantirishi] ${type}: ${message} (${this.violationCount}/${this.maxViolations})`);
-
-    
+    if (!this.enabled || !this.sessionId) return;
     this.reportToServer(type, message);
-
-    
-    this.onViolation(type, {
-      count: this.violationCount,
-      max: this.maxViolations,
-      message,
-    });
-
-    
-    if (this.violationCount >= this.maxViolations) {
-      this.onDisqualify(`Qoidabuzarliklar soni ruxsat etilgan limitdan oshdi (${this.violationCount}/${this.maxViolations})`);
-    }
   }
 
   
@@ -209,13 +205,15 @@ export class ExamGuard {
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('keyup', (e) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'PrintScreen' || e.keyCode === 44) {
         this.recordViolation('CLIPBOARD_ACTION', 'Ekranni rasmga olish (Screenshot / PrintScreen) aniqlandi!');
       }
-    }, true);
+    };
+    window.addEventListener('keyup', handleKeyUp, true);
 
     this.cleanupFns.push(() => {
+      window.removeEventListener('keyup', handleKeyUp, true);
       window.removeEventListener('keydown', handleKeyDown, true);
     });
   }
@@ -243,42 +241,10 @@ export class ExamGuard {
 
   
   private detectDevTools() {
-    const threshold = 160;
-
-    
-    const checkResize = () => {
-      const widthDiff = window.outerWidth - window.innerWidth > threshold;
-      const heightDiff = window.outerHeight - window.innerHeight > threshold;
-
-      if (widthDiff || heightDiff) {
-        this.recordViolation('DEVTOOLS_OPENED', 'Ekranda dasturchi paneli (DevTools) ochilgani aniqlandi!');
-      }
-    };
-
-    window.addEventListener('resize', checkResize);
-    this.cleanupFns.push(() => {
-      window.removeEventListener('resize', checkResize);
-    });
-
-    
-    this.devtoolsInterval = setInterval(() => {
-      if (this.isDestroyed) return;
-      try {
-        const element = new Image();
-        Object.defineProperty(element, 'id', {
-          get: () => {
-            this.recordViolation('DEVTOOLS_DETECTED', 'Konsol inspektori orqali element tekshiruvi aniqlandi!');
-          },
-        });
-        console.log('%c', element);
-        console.clear();
-      } catch {
-        
-      }
-    }, 4500);
+    // Window dimensions and console getters do not prove DevTools use.
+    // Shortcut interception remains advisory; no heuristic auto-penalties.
   }
 
-  
   private enforceFullScreen() {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
@@ -294,6 +260,7 @@ export class ExamGuard {
 
   
   private startHeartbeat() {
+    if (!this.heartbeatEnabled) return;
     this.heartbeatTimer = setInterval(() => {
       if (this.isDestroyed) return;
       this.sendHeartbeat();
@@ -301,95 +268,39 @@ export class ExamGuard {
   }
 
   private sendHeartbeat() {
-    const user = useAuthStore.getState().user;
-    const secStore = useSecurityStore.getState();
-
-    
-    secStore.addAccessLog({
-      id: `hb-${Date.now()}`,
-      timestamp: new Date().toLocaleTimeString(),
-      ip: '127.0.0.1 (Client-Edge)',
-      country: "O'zbekiston",
-      countryCode: 'UZ',
-      method: 'POST',
-      path: `/api/proctoring/heartbeat/${this.olympiadId}`,
-      statusCode: 200,
-      responseTimeMs: 18,
-      userAgent: navigator.userAgent.slice(0, 50),
-      userId: user?.id,
-      userName: user?.fullName,
-      bytesSent: 128,
-      level: 'info',
+    if (!this.heartbeatEnabled || !this.sessionId || this.isDestroyed) return;
+    apiClient.post(`/exams/${encodeURIComponent(this.olympiadId)}/heartbeat`, {
+      sessionId: this.sessionId,
+      clientTime: new Date().toISOString(),
+    }).then((res: any) => {
+      if (res?.isDisqualified) {
+        this.onDisqualify(res.disqualificationReason || 'Heartbeat timeout tufayli diskvalifikatsiya qilindi.');
+      }
+    }).catch((err: any) => {
+      console.warn('[ExamGuard] Heartbeat send error:', err?.message || err);
     });
   }
 
-  
   public reportToServer(type: ExamViolationType, message: string) {
-    const user = useAuthStore.getState().user;
-    const procStore = useProctoringStore.getState();
-    const notifStore = useNotificationStore.getState();
-    const secStore = useSecurityStore.getState();
-
-    const userName = user?.fullName || 'Ishtirokchi';
-    const userEmail = user?.email || 'student@ibnsino.uz';
-
-    
-    procStore.addFlag({
-      user: userName,
-      userEmail: userEmail,
-      olympiad: this.olympiadTitle,
-      category: type.includes('DEVTOOLS') ? 'Dasturchi Paneli' :
-                type.includes('CLIPBOARD') ? 'Nusxa Olish' :
-                type.includes('FULLSCREEN') ? 'Ekran Rejimi' : 'Oyna & Tab',
-      type: type,
-      detail: message,
-      severity: this.violationCount >= 3 ? 'Kritik' : this.violationCount === 2 ? 'Yuqori' : 'O\'rta',
-    });
-
-    
-    const mappedType =
-      type === 'TAB_SWITCH' ? 'tab_switch' :
-      type === 'WINDOW_BLUR' ? 'window_blur' :
-      type === 'CLIPBOARD_ACTION' ? 'copy_paste' :
-      type === 'EXIT_FULLSCREEN' ? 'fullscreen_exit' :
-      type.includes('DEVTOOLS') ? 'devtools_open' : 'tab_switch';
-
-    procStore.addLiveAlert({
-      sessionId: `proc-exam-${user?.id || 'live'}`,
-      userId: user?.id || 'USR-STUDENT',
-      studentName: userName,
-      olympiadTitle: this.olympiadTitle,
-      type: mappedType,
-      title: `ExamGuard: ${message}`,
-      description: `O'quvchi tomonidan ${type} aniqlandi (${this.violationCount}/${this.maxViolations})`,
-      severity: this.violationCount >= 3 ? 'kritik' : 'yuqori',
-      status: 'yangi',
-    });
-
-    
-    notifStore.addNotification({
-      title: `Xavfsizlik Ogohlantirishi (${this.violationCount}/${this.maxViolations})`,
-      desc: message,
-      type: 'warning',
-    });
-
-    
-    secStore.addAccessLog({
-      id: `viol-${Date.now()}`,
-      timestamp: new Date().toLocaleTimeString(),
-      ip: '127.0.0.1 (Edge-Device)',
-      country: "O'zbekiston",
-      countryCode: 'UZ',
-      method: 'POST',
-      path: `/api/proctoring/violation/${type.toLowerCase()}`,
-      statusCode: 403,
-      responseTimeMs: 32,
-      userAgent: navigator.userAgent.slice(0, 50),
-      userId: user?.id,
-      userName: userName,
-      bytesSent: 256,
-      level: this.violationCount >= 3 ? 'critical' : 'warning',
-    });
+    if (this.sessionId) {
+      const eventId = crypto.randomUUID();
+      apiClient.post(`/exams/${encodeURIComponent(this.olympiadId)}/proctor-events`, {
+        eventId,
+        sessionId: this.sessionId,
+        eventType: type,
+        occurredAt: new Date().toISOString(),
+        details: message,
+      }).then((res: { violationCount: number; isDisqualified: boolean; disqualificationReason?: string }) => {
+        if (this.isDestroyed) return;
+        this.violationCount = res.violationCount;
+        this.onViolation(type, { count: res.violationCount, max: this.maxViolations, message });
+        if (res?.isDisqualified) {
+          this.onDisqualify(res.disqualificationReason || 'Qoidabuzarliklar soni limitdan oshdi (server qarori).');
+        }
+      }).catch((err: any) => {
+        console.warn('[ExamGuard] Proctor event API xatosi:', err?.message || err);
+      });
+    }
   }
 
   

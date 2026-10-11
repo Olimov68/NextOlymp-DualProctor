@@ -1,13 +1,37 @@
 /**
- * Ibn Sino Mock Exam & Olympiad Platform - Unified API Client
+ * Ibn Sino Mock Exam & Olympiad Platform - Unified Secure API Client
+ * - Server-Authoritative HttpOnly cookie transport via credentials: 'include'
+ * - Strict typed error contracts
+ * - Proper 204 No Content and non-swallowing JSON parsing
  */
 
-const BASE_URL = (import.meta as any).env?.VITE_API_URL || (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+export interface ApiErrorData {
+  status: number;
+  code?: string;
+  message: string;
+  details?: unknown;
+}
 
-const getToken = (): string => {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem('ibn_sino_token') || localStorage.getItem('next_olymp_jwt') || '';
-};
+export class ApiError extends Error {
+  public status: number;
+  public code?: string;
+  public details?: unknown;
+  public response: { status: number; data: ApiErrorData };
+
+  constructor(status: number, message: string, code?: string, details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+    this.response = {
+      status,
+      data: { status, code, message, details },
+    };
+  }
+}
+
+const BASE_URL = (import.meta as any).env?.VITE_API_URL || (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
 // Map legacy PHP paths to modern REST API endpoints
 const mapEndpoint = (endpoint: string): string => {
@@ -44,55 +68,74 @@ const mapEndpoint = (endpoint: string): string => {
 };
 
 const getHeaders = (extraHeaders?: Record<string, string>): HeadersInit => {
-  const token = getToken();
   const headers: Record<string, string> = {
     'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
     ...(extraHeaders || {}),
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   return headers;
 };
 
 const safeParseJson = async <T>(res: Response): Promise<T> => {
+  if (res.status === 204) {
+    return null as unknown as T;
+  }
   const text = await res.text();
-  if (!text) {
-    return [] as unknown as T;
+  if (!text || text.trim() === '') {
+    return null as unknown as T;
   }
   try {
-    const json = JSON.parse(text);
-    return json;
-  } catch {
-    return [] as unknown as T;
+    return JSON.parse(text) as T;
+  } catch (err: any) {
+    throw new ApiError(res.status, "Serverdan noto'g'ri JSON formatida javob keldi", 'INVALID_JSON_RESPONSE', {
+      rawText: text.slice(0, 200),
+    });
   }
 };
 
-const createApiError = (res: Response, errText: string): Error => {
-  let errMsg = `Server xatoligi: ${res.status}`;
-  let parsedData: any = null;
+const createApiError = (res: Response, errText: string): ApiError => {
+  let errMsg = `Server xatoligi (${res.status})`;
+  let errCode: string | undefined = undefined;
+  let details: unknown = undefined;
+
   try {
-    parsedData = JSON.parse(errText);
-    if (parsedData.error) errMsg = parsedData.error;
-    else if (parsedData.message) errMsg = parsedData.message;
-  } catch {}
-  const error: any = new Error(errMsg);
-  error.response = {
-    status: res.status,
-    data: parsedData || { error: errMsg },
-  };
-  return error;
+    const parsed = JSON.parse(errText);
+    if (parsed.error) errMsg = parsed.error;
+    else if (parsed.message) errMsg = parsed.message;
+    if (parsed.code) errCode = parsed.code;
+    if (parsed.details) details = parsed.details;
+  } catch {
+    if (errText && errText.trim().length > 0) {
+      errMsg = errText.slice(0, 150);
+    }
+  }
+
+  return new ApiError(res.status, errMsg, errCode, details);
 };
 
 export const apiClient = {
   baseURL: BASE_URL,
+
   async get<T = any>(endpoint: string): Promise<T> {
     const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
-    const res = await fetch(targetUrl, {
-      headers: getHeaders(),
-    });
+    let res: Response;
+    try {
+      res = await fetch(targetUrl, {
+        headers: getHeaders(),
+        credentials: 'include',
+      });
+    } catch (networkError: any) {
+      // Safe 1-time retry for idempotent GET requests
+      try {
+        res = await fetch(targetUrl, {
+          headers: getHeaders(),
+          credentials: 'include',
+        });
+      } catch (retryError: any) {
+        throw new ApiError(0, "Internet bilan aloqa uzildi yoki server javob bermadi", 'NETWORK_ERROR', retryError);
+      }
+    }
 
     if (!res.ok) {
       const errText = await res.text();
@@ -104,11 +147,17 @@ export const apiClient = {
 
   async post<T = any>(endpoint: string, data?: any): Promise<T> {
     const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
-    const res = await fetch(targetUrl, {
-      method: 'POST',
-      headers: getHeaders({ 'Content-Type': 'application/json' }),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    });
+    let res: Response;
+    try {
+      res = await fetch(targetUrl, {
+        method: 'POST',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+        credentials: 'include',
+      });
+    } catch (netErr: any) {
+      throw new ApiError(0, "Internet bilan aloqa uzildi yoki server javob bermadi", 'NETWORK_ERROR', netErr);
+    }
 
     if (!res.ok) {
       const errText = await res.text();
@@ -120,11 +169,17 @@ export const apiClient = {
 
   async put<T = any>(endpoint: string, data?: any): Promise<T> {
     const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
-    const res = await fetch(targetUrl, {
-      method: 'PUT',
-      headers: getHeaders({ 'Content-Type': 'application/json' }),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    });
+    let res: Response;
+    try {
+      res = await fetch(targetUrl, {
+        method: 'PUT',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+        credentials: 'include',
+      });
+    } catch (netErr: any) {
+      throw new ApiError(0, "Internet bilan aloqa uzildi yoki server javob bermadi", 'NETWORK_ERROR', netErr);
+    }
 
     if (!res.ok) {
       const errText = await res.text();
@@ -136,10 +191,16 @@ export const apiClient = {
 
   async delete<T = any>(endpoint: string): Promise<T> {
     const targetUrl = `${BASE_URL}${mapEndpoint(endpoint)}`;
-    const res = await fetch(targetUrl, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
+    let res: Response;
+    try {
+      res = await fetch(targetUrl, {
+        method: 'DELETE',
+        headers: getHeaders(),
+        credentials: 'include',
+      });
+    } catch (netErr: any) {
+      throw new ApiError(0, "Internet bilan aloqa uzildi yoki server javob bermadi", 'NETWORK_ERROR', netErr);
+    }
 
     if (!res.ok) {
       const errText = await res.text();
@@ -147,7 +208,7 @@ export const apiClient = {
     }
 
     return safeParseJson<T>(res);
-  }
+  },
 };
 
 export default apiClient;

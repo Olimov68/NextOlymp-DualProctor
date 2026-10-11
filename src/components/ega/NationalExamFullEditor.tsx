@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { loadAdminQuestions } from '../../services/adminExamAdapter';
 import { NationalExamItem } from '../../data/initialNationalExams';
 import { useNationalExamStore } from '../../store/useNationalExamStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -69,6 +70,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { CertificateCanvas } from '../certificate/CertificateCanvas';
 import { AntiCheatSettingsEditor } from './AntiCheatSettingsEditor';
+import apiClient from '../../services/api';
 
 interface NationalExamFullEditorProps {
   exam: NationalExamItem;
@@ -122,7 +124,7 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
   const [certPreviewTab, setCertPreviewTab] = useState<'winner' | 'participant' | 'round_passed' | 'round_failed'>('winner');
 
   
-  const [antiCheatConfig, setAntiCheatConfig] = useState<AntiCheatConfig>({
+  const initialAntiCheat: AntiCheatConfig = useMemo(() => ({
     enabled: exam.antiCheatConfig?.enabled !== false,
     blockTabSwitch: exam.antiCheatConfig?.blockTabSwitch ?? true,
     blockCopyPaste: exam.antiCheatConfig?.blockCopyPaste ?? true,
@@ -146,48 +148,67 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
     detectUnknownSpeakers: exam.antiCheatConfig?.detectUnknownSpeakers ?? false,
     detectMultipleSpeakers: exam.antiCheatConfig?.detectMultipleSpeakers ?? false,
     voiceSimilarityThreshold: exam.antiCheatConfig?.voiceSimilarityThreshold ?? 0.70,
-  });
+  }), [exam.antiCheatConfig]);
 
-  
-  const [cheatLogs, setCheatLogs] = useState<any[]>(() => {
-    return submissionService.getOlympiadCheatLogs(exam.id);
-  });
+  const [antiCheatConfig, setAntiCheatConfig] = useState<AntiCheatConfig>(initialAntiCheat);
+  const [baselineAntiCheatConfig, setBaselineAntiCheatConfig] = useState<AntiCheatConfig>(initialAntiCheat);
+  const [isSavingAntiCheat, setIsSavingAntiCheat] = useState(false);
+
+  // Restore & sync anti-cheat settings from server API on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServerAntiCheat = async () => {
+      try {
+        const res = await apiClient.get<{ config: AntiCheatConfig }>(`/admin/exams/${exam.id}/anti-cheat`);
+        if (res && res.config && isMounted) {
+          setAntiCheatConfig(res.config);
+          setBaselineAntiCheatConfig(res.config);
+        }
+      } catch {
+        if (isMounted) alert('Anti-cheat sozlamalari serverdan olinmadi. Sahifani qayta yuklang.');
+      }
+    };
+    fetchServerAntiCheat();
+    return () => {
+      isMounted = false;
+    };
+  }, [exam.id]);
+
+  // Deep comparison between current form values and baseline
+  const isAntiCheatDirty = useMemo(() => {
+    return JSON.stringify(antiCheatConfig) !== JSON.stringify(baselineAntiCheatConfig);
+  }, [antiCheatConfig, baselineAntiCheatConfig]);
+
+  const handleSaveAntiCheat = async () => {
+    if (!isAntiCheatDirty || isSavingAntiCheat) return;
+    setIsSavingAntiCheat(true);
+    try {
+      const response = await apiClient.put<{ config: AntiCheatConfig }>(`/admin/exams/${encodeURIComponent(exam.id)}/anti-cheat`, antiCheatConfig);
+      setAntiCheatConfig(response.config);
+      setBaselineAntiCheatConfig(response.config);
+      setSavedSuccessMsg(true);
+      setTimeout(() => setSavedSuccessMsg(false), 3000);
+    } catch (err: any) {
+      console.error('Anti-cheat sozlamalarini saqlashda xatolik:', err);
+      alert(`❌ Saqlashda xatolik: ${err.message || 'Server xatosi'}`);
+    } finally {
+      setIsSavingAntiCheat(false);
+    }
+  };
+
+  const [cheatLogs, setCheatLogs] = useState<any[]>([]);
   const [cheatFilter, setCheatFilter] = useState<'all' | 'pending' | 'actioned'>('all');
   const [selectedSnapshotLog, setSelectedSnapshotLog] = useState<any | null>(null);
 
-  
   useEffect(() => {
-    const refreshLogs = () => {
-      const realLogs = submissionService.getOlympiadCheatLogs(exam.id);
-      setCheatLogs(realLogs);
-    };
-
-    refreshLogs();
-
-    const handleLogUpdate = (e: any) => {
-      if (!e.detail?.olympiadId || e.detail?.olympiadId === exam.id) {
-        refreshLogs();
-      }
-    };
-
-    window.addEventListener('next_olymp_cheat_log_updated', handleLogUpdate);
-    window.addEventListener('storage', refreshLogs);
-
-    return () => {
-      window.removeEventListener('next_olymp_cheat_log_updated', handleLogUpdate);
-      window.removeEventListener('storage', refreshLogs);
-    };
+    void submissionService.getOlympiadCheatLogs(exam.id).then(setCheatLogs).catch(() => setCheatLogs([]));
   }, [activeTab, exam.id]);
 
-  const handleCheatAction = (logId: string, newStatus: 'warned' | 'penalized' | 'disqualified' | 'dismissed' | 'pending') => {
-    submissionService.updateCheatLogStatus(exam.id, logId, newStatus);
-    setCheatLogs(prev => prev.map(item => item.id === logId ? { ...item, status: newStatus } : item));
-    if (newStatus === 'disqualified') {
-      const targetLog = cheatLogs.find(l => l.id === logId);
-      if (targetLog?.studentId) {
-        submissionService.disqualifyParticipant(targetLog.studentId, exam.id, targetLog.type);
-      }
-    }
+  const handleCheatAction = async (logId: string, newStatus: 'warned' | 'penalized' | 'disqualified' | 'dismissed' | 'pending') => {
+    try {
+      await submissionService.updateCheatLogStatus(exam.id, logId, newStatus);
+      setCheatLogs(await submissionService.getOlympiadCheatLogs(exam.id));
+    } catch (error: any) { alert(error?.message || 'Server qarorini saqlab bo‘lmadi'); }
   };
 
   
@@ -248,12 +269,6 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
     exam.targetGrades || [9, 10, 11]
   );
 
-  
-  const [paymentMethods, setPaymentMethods] = useState<('naqd' | 'karta' | 'hamyon')[]>(
-    exam.paymentMethods || ['karta', 'hamyon', 'naqd']
-  );
-
-  
   const [price, setPrice] = useState<number>(exam.price);
   const [isFreeForAll, setIsFreeForAll] = useState<boolean>(
     exam.isFreeForAll || exam.price === 0
@@ -267,11 +282,6 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
   
   const [discountPercent, setDiscountPercent] = useState<number>(exam.discountPercent || 0);
   const [discountAmount, setDiscountAmount] = useState<number>(exam.discountAmount || 0);
-
-  
-  const [freeForPackageId, setFreeForPackageId] = useState<string>(
-    exam.freeForPackageId || 'none'
-  );
 
   
   const [isAlwaysOpen, setIsAlwaysOpen] = useState<boolean>(Boolean(exam.isAlwaysOpen));
@@ -296,6 +306,15 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
   });
 
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [questionsBaseline, setQuestionsBaseline] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setQuestionsBaseline(null);
+    void loadAdminQuestions(exam.id).then(questions => {
+      if (!cancelled) { setQuestionsList(questions); setQuestionsBaseline(JSON.stringify(questions)); }
+    }).catch(() => { if (!cancelled) alert('Savollar yuklanmadi. Savollar tahriri saqlanmaydi; sahifani yangilang.'); });
+    return () => { cancelled = true; };
+  }, [exam.id]);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [qContent, setQContent] = useState('');
   const [qType, setQType] = useState<QuestionType>('multiple_choice');
@@ -547,17 +566,6 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
   };
 
   
-  const togglePaymentMethod = (method: 'naqd' | 'karta' | 'hamyon') => {
-    if (isFreeForAll) return;
-    if (paymentMethods.includes(method)) {
-      if (paymentMethods.length === 1) return;
-      setPaymentMethods(paymentMethods.filter((m) => m !== method));
-    } else {
-      setPaymentMethods([...paymentMethods, method]);
-    }
-  };
-
-  
   const getCalculatedPrice = (base: number) => {
     let finalP = base;
     if (discountPercent > 0) {
@@ -594,7 +602,6 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
       'Rasch Balli (75)': p.raschScore,
       'Sertifikat Darajasi': p.certificateGrade,
       'Holat': p.status,
-      'To\'lov Usuli': p.paymentType,
       'Topshirilgan Vaqt': p.submittedAt
     }));
 
@@ -634,7 +641,6 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
         maxRetakeAttempts: retakeAllowed ? maxRetakeAttempts : 1,
         allowedLanguages,
         targetGrades,
-        paymentMethods: [],
         isFreeForAll: true,
         separatePricesEnabled: false,
         price: 0,
@@ -642,19 +648,17 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
         offlinePrice: 0,
         discountPercent: 0,
         discountAmount: 0,
-        freeForPackageId: 'none',
         isAlwaysOpen,
         registrationStartDate,
         registrationEndDate,
         startDate,
         endDate,
-        questions: questionsList.map((q) => ({
-          ...q,
-          correct_answer: q.correctAnswer || (q as any).correct_answer || 'A',
-          correctAnswer: q.correctAnswer || (q as any).correct_answer || 'A',
-          content: q.content || (q as any).question_text || '',
-          question_text: q.content || (q as any).question_text || '',
-        })),
+        ...(questionsBaseline !== null && JSON.stringify(questionsList) !== questionsBaseline ? {
+          questions: questionsList.map(q => ({ ...q,
+            options: q.options?.map((text, index) => ({ id: q.optionIds?.[index] ?? String.fromCharCode(65 + index), text })),
+            correct_answer: q.correctAnswer,
+          })),
+        } : {}),
         certificateConfig: {
           fontFamily: certFont,
           subjectName: certSubject,
@@ -672,6 +676,7 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
         antiCheatConfig: antiCheatConfig
       });
 
+      setBaselineAntiCheatConfig(antiCheatConfig);
       setSavedSuccessMsg(true);
       setTimeout(() => setSavedSuccessMsg(false), 3000);
     } catch (err: any) {
@@ -2008,8 +2013,9 @@ export const NationalExamFullEditor: React.FC<NationalExamFullEditorProps> = ({ 
           <AntiCheatSettingsEditor
             config={antiCheatConfig}
             onChange={setAntiCheatConfig}
-            onSave={() => handleSave({ preventDefault: () => {} } as any)}
-            hasUnsavedChanges={false}
+            onSave={handleSaveAntiCheat}
+            isSaving={isSavingAntiCheat}
+            hasUnsavedChanges={isAntiCheatDirty}
           />
 
           <div

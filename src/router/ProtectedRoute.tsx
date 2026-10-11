@@ -10,8 +10,9 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
+  if (isLoading) return <div role="status" className="p-6 text-center">Sessiya tekshirilmoqda…</div>;
 
   const isEgaPath = location.pathname.startsWith('/ega') || location.pathname.startsWith('/admin');
 
@@ -29,7 +30,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
   

@@ -195,8 +195,8 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
           <button
             type="button"
             onClick={onSave}
-            disabled={isSaving}
-            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl text-xs cursor-pointer shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+            disabled={isSaving || !hasUnsavedChanges}
+            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl text-xs cursor-pointer shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <span>Saqlanmoqda...</span>
@@ -211,6 +211,11 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
       </div>
 
       {/* 2. Preset Segmented Control (Single Row) */}
+      <label className="flex items-center gap-2 rounded-xl border border-white/10 p-3 text-slate-300">
+        <input type="checkbox" disabled={isDisabled || isSaving} checked={config.requireDualDevice ?? false}
+          onChange={e => updateField('requireDualDevice', e.target.checked)} />
+        Ikkinchi kamerani talab qilish — serverdagi Vision provayderi sozlangan bo‘lishi shart.
+      </label>
       <div className="p-2.5 rounded-xl bg-[#091124] border border-[#1a2d54] flex items-center gap-2 overflow-x-auto">
         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 shrink-0">
           Preset Rejimlar:
@@ -369,77 +374,8 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
           )}
         </div>
 
-        {/* Accordion 2: Audio */}
-        <div className="rounded-2xl bg-[#091124] border border-[#1a2d54] overflow-hidden transition-all">
-          <button
-            type="button"
-            onClick={() => toggleSection('audio')}
-            className="w-full px-4 py-3 bg-[#0d1832]/60 flex items-center justify-between cursor-pointer hover:bg-[#0d1832] transition-colors"
-          >
-            <div className="flex items-center gap-2.5">
-              <Mic className="w-4 h-4 text-cyan-400" />
-              <span className="font-bold text-xs text-white">Audio va Ovoz Nazorati</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                Mikrofon va Akustik Tahlil
-              </span>
-            </div>
-            <ChevronDown
-              className={clsx("w-4 h-4 text-slate-400 transition-transform duration-200", openSections.audio && "rotate-180 text-cyan-400")}
-            />
-          </button>
-
-          {openSections.audio && (
-            <div className="p-3 divide-y divide-white/5 space-y-1">
-              <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">Ovozli biometriya faol (Voiceprint)</span>
-                <input
-                  type="checkbox"
-                  disabled={isDisabled}
-                  checked={config.requireVoiceBiometrics ?? false}
-                  onChange={(e) => updateField('requireVoiceBiometrics', e.target.checked)}
-                  className="w-4 h-4 accent-cyan-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">Noma’lum so‘zlovchilarni aniqlash (Unknown Speakers)</span>
-                <input
-                  type="checkbox"
-                  disabled={isDisabled}
-                  checked={config.detectUnknownSpeakers ?? false}
-                  onChange={(e) => updateField('detectUnknownSpeakers', e.target.checked)}
-                  className="w-4 h-4 accent-cyan-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">Bir vaqtda bir nechta ovoz (Multi-Speaker)</span>
-                <input
-                  type="checkbox"
-                  disabled={isDisabled}
-                  checked={config.detectMultipleSpeakers ?? false}
-                  onChange={(e) => updateField('detectMultipleSpeakers', e.target.checked)}
-                  className="w-4 h-4 accent-cyan-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="pt-2 px-3">
-                <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0d1832] border border-white/10 max-w-xs">
-                  <span className="text-[11px] text-slate-400">Ovoz o‘xshashlik chegarasi:</span>
-                  <select
-                    disabled={isDisabled}
-                    value={config.voiceSimilarityThreshold ?? 0.70}
-                    onChange={(e) => updateField('voiceSimilarityThreshold', Number(e.target.value))}
-                    className="p-1 rounded bg-[#091124] border border-white/20 text-xs font-mono font-bold text-cyan-400 outline-none"
-                  >
-                    <option value={0.60}>60%</option>
-                    <option value={0.70}>70% (Standart)</option>
-                    <option value={0.80}>80%</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="rounded-xl border border-white/10 p-3 text-xs text-slate-400">
+          Ovoz biometriyasi, begona ovoz va pichirlash tahlili mavjud emas: tekshirilgan model ulanmagan. Bu qoidalar serverda ham o‘chiq.
         </div>
 
         {/* Accordion 3: Brauzer himoyasi */}
@@ -464,7 +400,7 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
           {openSections.browser && (
             <div className="p-3 divide-y divide-white/5 space-y-1">
               <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">Tab almashishni bloklash (Tab Switch Detection)</span>
+                <span className="text-xs text-slate-300 font-medium">Tab almashishni cheklash va qayd etish (Tab Switch Detection)</span>
                 <input
                   type="checkbox"
                   disabled={isDisabled}
@@ -475,7 +411,7 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
               </div>
 
               <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">Matndan nusxa olish va joylashni cheklash (Copy/Paste)</span>
+                <span className="text-xs text-slate-300 font-medium">Matndan nusxa olish va joylashni cheklash (Copy/Paste Restriction)</span>
                 <input
                   type="checkbox"
                   disabled={isDisabled}
@@ -486,7 +422,7 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
               </div>
 
               <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">To‘liq ekran rejimi majburiy (Require Fullscreen)</span>
+                <span className="text-xs text-slate-300 font-medium">To‘liq ekran rejimi talab etiladi (Require Fullscreen)</span>
                 <input
                   type="checkbox"
                   disabled={isDisabled}
@@ -497,7 +433,7 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
               </div>
 
               <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
-                <span className="text-xs text-slate-300 font-medium">Dasturchi asboblarini cheklash (Block DevTools / F12)</span>
+                <span className="text-xs text-slate-300 font-medium">Dasturchi asboblarini cheklash va serverda qayd etish (DevTools / F12)</span>
                 <input
                   type="checkbox"
                   disabled={isDisabled}
@@ -538,6 +474,17 @@ export const AntiCheatSettingsEditor: React.FC<AntiCheatSettingsEditorProps> = (
                   disabled={isDisabled}
                   checked={config.blockDuplicateIP ?? true}
                   onChange={(e) => updateField('blockDuplicateIP', e.target.checked)}
+                  className="w-4 h-4 accent-purple-500 cursor-pointer"
+                />
+              </div>
+
+              <div className="h-11 px-3 flex items-center justify-between hover:bg-white/5 rounded-lg transition-colors">
+                <span className="text-xs text-slate-300 font-medium">Server Heartbeat monitoringini yoqish (Continuous Heartbeat)</span>
+                <input
+                  type="checkbox"
+                  disabled={isDisabled}
+                  checked={config.heartbeatEnabled ?? true}
+                  onChange={(e) => updateField('heartbeatEnabled', e.target.checked)}
                   className="w-4 h-4 accent-purple-500 cursor-pointer"
                 />
               </div>

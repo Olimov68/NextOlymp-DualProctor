@@ -29,15 +29,27 @@ export class SubmissionController {
 
   public static async getLeaderboard(req: Request, res: Response) {
     try {
+      const examId = typeof req.query.exam_id === 'string' ? req.query.exam_id : undefined;
+      const submissions = dbStore.getSubmissions().filter(s => s.status === 'completed' && s.mode !== 'practice' &&
+        (s.examKind ?? 'olympiad') === 'olympiad' && (!examId || s.examId === examId));
+      const best = new Map<string, (typeof submissions)[number]>();
+      for (const submission of submissions) {
+        if (!best.has(submission.userId) || submission.score > best.get(submission.userId)!.score) best.set(submission.userId, submission);
+      }
       const users = dbStore.getUsers()
-        .filter(u => u.role === 'student')
-        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .filter(u => u.role === 'student' && u.status === 'active' && best.has(u.id))
+        .sort((a, b) => best.get(b.id)!.score - best.get(a.id)!.score || a.id.localeCompare(b.id))
         .slice(0, 50)
         .map((u, idx) => ({
           rank: idx + 1,
           id: u.id,
+          userId: u.id,
+          userName: u.fullName,
           fullName: u.fullName,
-          score: u.score || 0,
+          score: best.get(u.id)!.score,
+          penaltyTime: 0,
+          submittedAt: best.get(u.id)!.submittedAt,
+          status: 'verified',
           region: u.region,
           school: u.school,
           grade: u.grade,

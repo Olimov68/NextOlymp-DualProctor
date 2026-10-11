@@ -1,6 +1,5 @@
 import { User } from '../types';
 import { useSecurityStore } from '../store/useSecurityStore';
-import { useNotificationStore } from '../store/useNotificationStore';
 import { useUserStore } from '../store/useUserStore';
 import { apiClient } from './api';
 
@@ -24,10 +23,12 @@ export interface RegisterParams {
   parentConsent?: boolean;
 }
 
+let currentUser: User | null = null;
+
 export const authService = {
-  async login(params: LoginParams): Promise<{ user: User; token: string }> {
+  async login(params: LoginParams): Promise<{ user: User }> {
     const identifier = params.email.trim();
-    const password = (params.password || '').trim();
+    const password = params.password || '';
 
     try {
       if (!password) {
@@ -40,7 +41,7 @@ export const authService = {
         role: params.role,
       });
 
-      if (res && res.token && res.user) {
+      if (res && res.user) {
         const userProfile: User = {
           id: res.user.id,
           email: res.user.email,
@@ -54,17 +55,10 @@ export const authService = {
           phone: res.user.phone || '',
         };
 
-        localStorage.setItem('ibn_sino_token', res.token);
-        localStorage.setItem('next_olymp_jwt', res.token);
-        localStorage.setItem('next_olymp_user', JSON.stringify(userProfile));
+        // Token is stored securely in HttpOnly cookie by backend server
+        currentUser = userProfile;
 
-        useNotificationStore.getState().addNotification({
-          title: `Xush kelibsiz!`,
-          desc: `${userProfile.fullName} Ibn Sino platformasiga muvaffaqiyatli kirdi`,
-          type: 'success',
-        });
-
-        return { user: userProfile, token: res.token };
+        return { user: userProfile };
       }
     } catch (err: any) {
       throw new Error(err.message || 'Login yoki parol noto\'g\'ri');
@@ -73,17 +67,17 @@ export const authService = {
     throw new Error('Autentifikatsiyada xatolik yuz berdi');
   },
 
-  async register(params: RegisterParams): Promise<{ user: User; token: string }> {
+  async register(params: RegisterParams): Promise<{ user: User }> {
     try {
-      if (!params.password || params.password.trim().length < 6) {
-        throw new Error('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      if (!params.password || params.password.length < 8) {
+        throw new Error('Parol kamida 8 ta belgidan iborat bo\'lishi kerak');
       }
 
       const res = await apiClient.post('/auth/register', {
         fullName: params.fullName.trim(),
         email: params.email?.trim(),
         phone: params.phone?.trim(),
-        password: params.password.trim(),
+        password: params.password,
         role: params.role || 'student',
         grade: params.grade || 9,
         region: params.region || 'Toshkent shahri',
@@ -91,7 +85,7 @@ export const authService = {
         school: params.school || 'Maktab',
       });
 
-      if (res && res.token && res.user) {
+      if (res && res.user) {
         const userProfile: User = {
           id: res.user.id,
           email: res.user.email,
@@ -105,17 +99,10 @@ export const authService = {
           createdAt: res.user.createdAt,
         };
 
-        localStorage.setItem('ibn_sino_token', res.token);
-        localStorage.setItem('next_olymp_jwt', res.token);
-        localStorage.setItem('next_olymp_user', JSON.stringify(userProfile));
+        // Token is stored securely in HttpOnly cookie by backend server
+        currentUser = userProfile;
 
-        useNotificationStore.getState().addNotification({
-          title: `Ro'yxatdan o'tdingiz`,
-          desc: `${userProfile.fullName} Ibn Sino platformasiga muvaffaqiyatli a'zo bo'ldi`,
-          type: 'success',
-        });
-
-        return { user: userProfile, token: res.token };
+        return { user: userProfile };
       }
     } catch (err: any) {
       throw new Error(err.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
@@ -125,51 +112,20 @@ export const authService = {
   },
 
   getCurrentUser(): User | null {
-    const token = typeof window !== 'undefined'
-      ? (localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token'))
-      : null;
-    if (!token) return null;
+    return currentUser;
+  },
 
-    let jwtPayload: any = null;
+  async getMe(): Promise<User | null> {
     try {
-      const base64Url = token.split('.')[1];
-      if (base64Url) {
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-        jwtPayload = JSON.parse(jsonPayload);
+      const res = await apiClient.get('/auth/me');
+      if (res && res.user) {
+        currentUser = res.user;
+        return res.user;
       }
-    } catch {}
-
-    if (!jwtPayload || !jwtPayload.id) {
-      return null;
+    } catch {
+      currentUser = null;
     }
-
-    const saved = localStorage.getItem('next_olymp_user');
-    if (saved) {
-      try {
-        const u = JSON.parse(saved);
-        if (u && (u.email || u.id)) {
-          // ANTI-TAMPERING: Strictly enforce authenticated role from signed JWT
-          u.role = jwtPayload.role || 'student';
-          u.id = jwtPayload.id;
-          return u;
-        }
-      } catch {}
-    }
-
-    return {
-      id: jwtPayload.id,
-      email: jwtPayload.email || '',
-      fullName: jwtPayload.fullName || 'Foydalanuvchi',
-      role: jwtPayload.role || 'student',
-      grade: 9,
-      createdAt: new Date().toISOString(),
-    };
+    return null;
   },
 
   getRegisteredUsers(): User[] {
@@ -191,11 +147,6 @@ export const authService = {
   async requestPasswordReset(email: string): Promise<{ success: boolean; message: string; debugCode?: string }> {
     try {
       const res = await apiClient.post('/auth/forgot-password', { email });
-      useNotificationStore.getState().addNotification({
-        title: 'Parol tiklash so\'rovi',
-        desc: `${email} pochtasiga tasdiqlash kodi yuborildi`,
-        type: 'info',
-      });
       return res;
     } catch (err: any) {
       throw new Error(err.message || 'Parolni tiklash so\'rovi yuborilmadi');
@@ -209,21 +160,19 @@ export const authService = {
         code,
         newPassword,
       });
-      useNotificationStore.getState().addNotification({
-        title: 'Parol muvaffaqiyatli o\'zgartirildi',
-        desc: 'Yangi parol orqali tizimga kirishingiz mumkin',
-        type: 'success',
-      });
       return res.success;
     } catch (err: any) {
       throw new Error(err.message || 'Parolni yangilashda xatolik yuz berdi');
     }
   },
 
-  logout(): void {
+  async logout(): Promise<void> {
+    await apiClient.post('/auth/logout');
+    currentUser = null;
     localStorage.removeItem('ibn_sino_token');
     localStorage.removeItem('next_olymp_jwt');
     localStorage.removeItem('next_olymp_user');
     localStorage.removeItem('next_olymp_admin_session_sig_v3');
+    localStorage.removeItem('ibn_sino_admin_session_v2');
   }
 };

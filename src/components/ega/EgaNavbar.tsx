@@ -77,23 +77,24 @@ export const EgaNavbar: React.FC<EgaNavbarProps> = ({ isCollapsed, onToggleColla
   const PageIcon = pageInfo.icon;
 
   return (
-    <header className="sticky top-0 z-20 w-full h-16 px-6 flex items-center justify-between shadow-md font-sans bg-zinc-900/80 backdrop-blur-md border-b border-white/10 text-zinc-100 shrink-0">
+    <header className="sticky top-0 z-20 w-full h-16 px-3 sm:px-6 flex items-center justify-between shadow-md font-sans bg-zinc-900/80 backdrop-blur-md border-b border-white/10 text-zinc-100 shrink-0">
       
-      <div className="flex items-center gap-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-          <PageIcon className="w-4 h-4 text-emerald-400" />
-          <span>{pageInfo.title}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           onClick={onToggleCollapse}
-          className="p-2 rounded-xl border border-white/10 bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
-          title="Menyuni ko'rsatish / berkitish"
+          className="p-2 rounded-xl border border-white/10 bg-zinc-950/80 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer shrink-0"
+          title="Menyuni ochish / yopish"
         >
           {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
+
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider border bg-emerald-500/10 border-emerald-500/20 text-emerald-400 min-w-0">
+          <PageIcon className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="truncate max-w-[120px] sm:max-w-none">{pageInfo.title}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
 
         <div className="inline-flex items-center p-1 rounded-xl border border-white/10 bg-zinc-950/80 text-xs font-semibold">
           {(['UZ', 'EN', 'RU'] as const).map((l) => (

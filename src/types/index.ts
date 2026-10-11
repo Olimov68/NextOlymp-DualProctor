@@ -70,6 +70,8 @@ export interface Olympiad {
 export type QuestionType = 'multiple_choice' | 'open_text' | 'file_upload' | 'code';
 
 export interface Question {
+  explanation?: string;
+  optionIds?: string[];
   id: string;
   olympiadId: string;
   roundId: string;
@@ -119,33 +121,40 @@ export interface CertificateConfig {
 export type ProctoringPresetMode = 'STRICT' | 'STANDARD' | 'RELAXED' | 'DISABLED';
 
 export interface AntiCheatConfig {
+  requireDualDevice?: boolean;
   enabled: boolean;
+  proctoringMode?: ProctoringPresetMode;
+
+  requireWebcam?: boolean;
+  requireMic?: boolean;
+  requireBothEyesVisible?: boolean;
+  strictFaceCheck?: boolean;
+  trackGazeDirection?: boolean;
+  minFaceConfidence?: number;
+  maxAbsenceGracePeriod?: number;
+  maxViolationsAllowed?: number;
+
+  requireVoiceBiometrics?: boolean;
+  detectUnknownSpeakers?: boolean;
+  detectMultipleSpeakers?: boolean;
+  voiceSimilarityThreshold?: number;
+
   blockTabSwitch?: boolean;
   blockCopyPaste?: boolean;
   requireFullscreen?: boolean;
-  requireWebcam?: boolean;
-  requireMic?: boolean;
   blockDevTools?: boolean;
-  maxViolationsAllowed?: number;
-  blockDuplicateIP?: boolean; 
-  heartbeatIntervalSec?: number; 
-  cameraFaceSnapshotEnabled?: boolean; 
-  snapshotOnMultipleFaces?: boolean; 
-  snapshotOnNoFace?: boolean; 
 
-  
-  proctoringMode?: ProctoringPresetMode; 
-  requireBothEyesVisible?: boolean; 
-  strictFaceCheck?: boolean; 
-  minFaceConfidence?: number; 
-  maxAbsenceGracePeriod?: number; 
-  trackGazeDirection?: boolean; 
+  blockDuplicateIP?: boolean;
+  heartbeatEnabled?: boolean;
+  heartbeatIntervalSec?: number;
 
-  
-  requireVoiceBiometrics?: boolean; 
-  detectUnknownSpeakers?: boolean; 
-  detectMultipleSpeakers?: boolean; 
-  voiceSimilarityThreshold?: number; 
+  cameraFaceSnapshotEnabled?: boolean;
+  snapshotOnMultipleFaces?: boolean;
+  snapshotOnNoFace?: boolean;
+
+  updatedAt?: string;
+  updatedBy?: string;
+  version?: number;
 }
 
 export interface Certificate {

@@ -4,10 +4,11 @@ import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { ShieldAlert, Eye, Radio, AlertTriangle, CheckCircle2, UserX, Copy, Trophy, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { MOCK_OLYMPIADS } from '../../services/mockData';
+import { useOlympiadStore } from '../../store/useOlympiadStore';
 
 export const EgaLiveFeed: React.FC = () => {
-  const competitions = MOCK_OLYMPIADS;
+  const { olympiads } = useOlympiadStore();
+  const competitions = olympiads;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans">
@@ -51,9 +52,9 @@ export const EgaLiveFeed: React.FC = () => {
                       <Badge subject={c.subject as any} size="sm" className="mt-1" />
                     </td>
                     <td className="p-3 font-semibold text-slate-700">Saralash</td>
-                    <td className="p-3 font-mono text-slate-500">{c.durationMinutes} daq</td>
+                    <td className="p-3 font-mono text-slate-500">{c.durationMinutes || 60} daq</td>
                     <td className="p-3 font-bold text-slate-900 font-mono">
-                      {c.participantsCount} ta
+                      {c.registeredCount || 0} ta
                     </td>
                     <td className="p-3 font-semibold text-emerald-600">
                       <div className="flex items-center gap-1">

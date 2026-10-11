@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../../services/api';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,14 +31,12 @@ export const HomePage: React.FC = () => {
   const { users } = useUserStore();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  // Real statistics
-  const rawStudentCount = users.length;
-  const rawOlympiadCount = allStoreOlympiads.length;
-  const rawSubmittedCount = allStoreOlympiads.reduce((acc, curr) => acc + (curr.submittedCount || 0), 0);
-  const regionSet = new Set<string>();
-  users.forEach((u) => u.region && regionSet.add(u.region));
-  const rawRegionCount = regionSet.size > 0 ? regionSet.size : 14;
-
+  const { data: publicStats } = useQuery({ queryKey: ['public-stats'], queryFn: () =>
+    apiClient.get<{ students: number; exams: number; submissions: number; regions: number }>('/public/stats') });
+  const rawStudentCount = publicStats?.students ?? 0;
+  const rawOlympiadCount = publicStats?.exams ?? 0;
+  const rawSubmittedCount = publicStats?.submissions ?? 0;
+  const rawRegionCount = publicStats?.regions ?? 0;
   // Animated Count-up values
   const animatedStudents = useCountUp(rawStudentCount);
   const animatedOlympiads = useCountUp(rawOlympiadCount);
@@ -53,7 +53,7 @@ export const HomePage: React.FC = () => {
   const steps = [
     { step: '01', title: "Ro'yxatdan O'ting", desc: "Ismingiz, maktabingiz va hududingizni kiritib bepul akkaunt oching." },
     { step: '02', title: "Musobaqani Tanlang", desc: "Matematika, Biologiya yoki Dasturlash yo'nalishidagi olimpiadaga a'zo bo'ling." },
-    { step: '03', title: "AI Proktorlik Tizimi", desc: "Kamera, audio va brauzer xavfsizligi orqali 100% halol va shaffof sinovdan o'ting." },
+    { step: '03', title: "Proktorlik Nazorati", desc: "Imtihonda yoqilgan kamera va brauzer nazorati qoidalariga amal qiling. Avtomatik aniqlash mutlaq kafolat bermaydi." },
     { step: '04', title: "Sertifikat va Natija", desc: "Sinov yakunlangach, rasmiy QR-kodli verifikatsiyalangan sertifikatni yuklab oling." },
   ];
 
@@ -151,7 +151,7 @@ export const HomePage: React.FC = () => {
                 <Users className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-3xl font-black text-white font-mono">
-                {animatedStudents.toLocaleString()}
+                {publicStats ? animatedStudents.toLocaleString() : '—'}
               </div>
               <div className="text-[11px] text-emerald-400/80 font-medium">Faol ro‘yxatdan o‘tgan</div>
             </div>
@@ -163,7 +163,7 @@ export const HomePage: React.FC = () => {
                 <Trophy className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-3xl font-black text-teal-300 font-mono">
-                {animatedOlympiads}
+                {publicStats ? animatedOlympiads : '—'}
               </div>
               <div className="text-[11px] text-teal-400/80 font-medium">Akademik fanlar bo‘yicha</div>
             </div>
@@ -175,7 +175,7 @@ export const HomePage: React.FC = () => {
                 <Award className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-3xl font-black text-cyan-300 font-mono">
-                {animatedSubmissions.toLocaleString()}
+                {publicStats ? animatedSubmissions.toLocaleString() : '—'}
               </div>
               <div className="text-[11px] text-cyan-400/80 font-medium">100% Ochiq va bepul</div>
             </div>
@@ -187,7 +187,7 @@ export const HomePage: React.FC = () => {
                 <Compass className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-3xl font-black text-indigo-300 font-mono">
-                {animatedRegions} Viloyat
+                {rawRegionCount > 0 ? `${animatedRegions} Viloyat` : "Ma'lumot mavjud emas"}
               </div>
               <div className="text-[11px] text-indigo-400/80 font-medium">Respublika miqyosida</div>
             </div>

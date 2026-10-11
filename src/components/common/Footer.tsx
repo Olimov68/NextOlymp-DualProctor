@@ -12,9 +12,9 @@ export const Footer: React.FC = () => {
           
           
           <div className="space-y-4">
-            <Link to="/" className="inline-block hover:opacity-95 transition-opacity">
+            <div className="inline-block hover:opacity-95 transition-opacity">
               <Logo size="md" lightText />
-            </Link>
+            </div>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
               Abu Ali ibn Sino nomidagi tibbiyot, biologiya, kimyo va aniq fanlar bo'yicha saralash, mock imtihon va nufuzli onlayn olimpiada platformasi.
             </p>
@@ -38,7 +38,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/verify/IS-2026-MED-8921" className="text-[#94A3B8] hover:text-[#F1F5F9] transition-colors">
+                <Link to="/verify-certificate" className="text-[#94A3B8] hover:text-[#F1F5F9] transition-colors">
                   Sertifikatni tekshirish
                 </Link>
               </li>

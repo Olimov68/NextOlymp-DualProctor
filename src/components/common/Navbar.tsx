@@ -70,13 +70,12 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Brand Logo */}
         <div className="shrink-0 flex items-center">
-          <Link
-            to="/"
+          <div
             className="flex items-center gap-2 hover:opacity-95 transition-opacity focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-xl p-1"
             aria-label="Ibn Sino School Bosh sahifa"
           >
             <Logo size="md" lightText />
-          </Link>
+          </div>
         </div>
 
         {/* Central Floating Navigation Pill */}

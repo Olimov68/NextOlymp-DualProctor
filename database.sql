@@ -54,8 +54,6 @@ CREATE TABLE `olympiads` (
     `totalQuestions` INT DEFAULT 25,
     `registeredCount` INT DEFAULT 0,
     `submittedCount` INT DEFAULT 0,
-    `paidCount` INT DEFAULT 0,
-    `totalRevenue` DECIMAL(10, 2) DEFAULT 0.00,
     `organizer` VARCHAR(150) DEFAULT 'NextOlymp Kengashi',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

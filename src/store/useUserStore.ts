@@ -136,8 +136,4 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
 }));
 
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    useUserStore.getState().fetchFromApi();
-  }, 100);
-}
+// Protected user data is loaded by admin screens after authentication, not on module import.

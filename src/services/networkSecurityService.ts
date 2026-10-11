@@ -1,7 +1,6 @@
 
 import { useSecurityStore } from '../store/useSecurityStore';
 import { useProctoringStore } from '../store/useProctoringStore';
-import { useNotificationStore } from '../store/useNotificationStore';
 
 export interface SignedRequestPayload<T = any> {
   data: T;
@@ -123,7 +122,6 @@ export class ClientRateLimiter {
       
       const procStore = useProctoringStore.getState();
       const secStore = useSecurityStore.getState();
-      const notifStore = useNotificationStore.getState();
 
       procStore.addLiveAlert({
         sessionId: 'proc-rate-limit',
@@ -152,11 +150,6 @@ export class ClientRateLimiter {
         level: 'warning',
       });
 
-      notifStore.addNotification({
-        title: 'Tezlik chegarasi (Rate Limit)',
-        desc: "Juda ko'p ketma-ket so'rovlar yuborildi. Iltimos, 2 soniya kuting.",
-        type: 'warning',
-      });
 
       return { allowed: false, waitTimeMs };
     }

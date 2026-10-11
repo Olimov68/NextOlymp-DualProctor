@@ -12,10 +12,10 @@ import { QuestionPalette } from '../../components/contest/QuestionPalette';
 import { AntiCheatBanner } from '../../components/contest/AntiCheatBanner';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { ExamSetupModal } from '../../components/contest/ExamSetupModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useOlympiadStore } from '../../store/useOlympiadStore';
 import { apiClient } from '../../services/api';
+import { olympiadService } from '../../services/olympiadService';
 import clsx from 'clsx';
 import {
   ShieldCheck,
@@ -44,7 +44,8 @@ import {
   UserCheck,
   UserPlus,
   RefreshCw,
-  CreditCard
+  CreditCard,
+  Mic
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { submissionService } from '../../services/submissionService';
@@ -58,7 +59,7 @@ export const ContestParticipatePage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
 
   const { data: olympiad } = useOlympiadDetail(id || '');
-  const { data: questions } = useOlympiadQuestions(id || '');
+  const [questions, setQuestions] = useState<import('../../types').Question[]>([]);
 
   
   const allowedLangs = useMemo(() => {
@@ -105,14 +106,34 @@ export const ContestParticipatePage: React.FC = () => {
 
   const isFree = true;
 
-  const [isRegistered, setIsRegistered] = useState(() => {
-    if (!id || !user?.id) return false;
-    return localStorage.getItem(`reg_olymp_${user.id}_${id}`) === 'true';
-  });
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'registration' | 'exam_briefing'>('registration');
+  const [isRegistered, setIsRegistered] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (id && user?.id) {
+      apiClient.get(`/exams/${encodeURIComponent(id)}/registration`)
+        .then(response => {
+          if (!active) return;
+          if (response.registered === true) {
+            setIsRegistered(true);
+          } else {
+            apiClient.post(`/exams/${encodeURIComponent(id)}/registration`)
+              .then(() => { if (active) setIsRegistered(true); })
+              .catch(() => { if (active) setIsRegistered(true); });
+          }
+        })
+        .catch(() => {
+          if (active) {
+            apiClient.post(`/exams/${encodeURIComponent(id)}/registration`)
+              .then(() => { if (active) setIsRegistered(true); })
+              .catch(() => { if (active) setIsRegistered(true); });
+          }
+        });
+    }
+    return () => { active = false; };
+  }, [id, user?.id]);
+  const [examSessionId, setExamSessionId] = useState<string>('');
+  const [serverAntiCheatPolicy, setServerAntiCheatPolicy] = useState<any>(null);
 
-  
   const now = Date.now();
   const startTime = useMemo(() => {
     return olympiad?.startDate ? new Date(olympiad.startDate.replace(' ', 'T')).getTime() : null;
@@ -128,35 +149,6 @@ export const ContestParticipatePage: React.FC = () => {
   const isDateFinished = !isAlwaysOpen && ((olympiad?.status === 'yopiq') || (endTime ? now > endTime : false));
   const isRegistrationExpired = !isAlwaysOpen && (regEndTime ? now > regEndTime : false);
   const isUpcoming = !isAlwaysOpen && (startTime ? now < startTime : false);
-
-  const handleRegisterOlympiad = () => {
-    if (isDateFinished) {
-      alert("⚠️ Ushbu musobaqa muddati yakunlangan!");
-      return;
-    }
-    if (isRegistrationExpired && !isRegistered) {
-      alert("⚠️ Ushbu musobaqaga ro'yxatdan o'tish muddati tugagan!");
-      return;
-    }
-    if (!isGradeEligible) {
-      alert(`⚠️ Ushbu olimpiada faqat ${targetGrades.join(', ')}-sinflar uchun mo'ljallangan! Sizning sinfingiz: ${studentGrade}-sinf.`);
-      return;
-    }
-
-    setIsRegistering(true);
-    setTimeout(() => {
-      if (user?.id && id) {
-        localStorage.setItem(`reg_olymp_${user.id}_${id}`, 'true');
-        useOlympiadStore.getState().updateOlympiad(id, {
-          registeredCount: (olympiad?.participantsCount || 0) + 1
-        });
-      }
-      setIsRegistered(true);
-      setIsRegistering(false);
-      confetti({ particleCount: 50, spread: 60 });
-      setCurrentStep('exam_briefing');
-    }, 400);
-  };
 
   const startContest = useContestStore((state) => state.startContest);
   const currentQuestionIndex = useContestStore((state) => state.currentQuestionIndex);
@@ -176,16 +168,23 @@ export const ContestParticipatePage: React.FC = () => {
 
   
   const [hasStarted, setHasStarted] = useState(false);
+  useEffect(() => {
+    if (!isSubmitted || !id || useContestStore.getState().isDisqualified) return;
+    void apiClient.get<{ data: { score: number; maxScore: number; analysis?: Array<{ isCorrect: boolean }> } }>(
+      '/exams/' + encodeURIComponent(id) + '/result').then(({ data }) => {
+      setSubmissionResult({ score: data.score, maxScore: data.maxScore,
+        totalQuestions: data.analysis?.length ?? 0,
+        correctAnswersCount: data.analysis?.filter(q => q.isCorrect).length ?? 0 });
+    }).catch(() => alert('Natijani yuklab bo‘lmadi. Natijalar bo‘limidan qayta tekshiring.'));
+  }, [isSubmitted, id]);
   const [rulesAccepted, setRulesAccepted] = useState(false);
   const [cameraChecked, setCameraChecked] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle');
-  const [isDualDeviceModalOpen, setIsDualDeviceModalOpen] = useState(false);
-  const [isDualDeviceCalibrated, setIsDualDeviceCalibrated] = useState(false);
+  const [micChecked, setMicChecked] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [timeLeftToStart, setTimeLeftToStart] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  
   useEffect(() => {
     if (!startTime) {
       setTimeLeftToStart(null);
@@ -204,77 +203,52 @@ export const ContestParticipatePage: React.FC = () => {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  
   const handleTestCamera = async () => {
     setCameraChecked('checking');
+    setMicChecked('checking');
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          setCameraChecked('ready');
+          setMicChecked('ready');
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setCameraChecked('ready');
+          try {
+            const aStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            aStream.getTracks().forEach((t) => t.stop());
+            setMicChecked('ready');
+          } catch {
+            setMicChecked('error');
+          }
+        }
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-        setCameraChecked('ready');
       } else {
-        setCameraChecked('ready');
+        setCameraChecked('error');
+        setMicChecked('error');
       }
     } catch {
-      setCameraChecked('ready');
+      setCameraChecked('error');
+      setMicChecked('error');
     }
   };
 
   
-  const captureSnapshot = (): string => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 320;
-      canvas.height = 240;
-      const ctx = canvas.getContext('2d');
-
-      if (ctx) {
-        if (videoRef.current && videoRef.current.readyState >= 2) {
-          ctx.drawImage(videoRef.current, 0, 0, 320, 240);
-        } else {
-          
-          ctx.fillStyle = '#09090b';
-          ctx.fillRect(0, 0, 320, 240);
-
-          ctx.fillStyle = '#18181b';
-          ctx.beginPath();
-          ctx.arc(160, 100, 45, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(160, 210, 70, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#f59e0b';
-          ctx.font = 'bold 12px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('ANTI-CHEAT SNAPSHOT', 160, 30);
-        }
-
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 205, 320, 35);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`F.I.Sh: ${user?.fullName || 'Ishtirokchi'}`, 8, 218);
-        ctx.fillText(`Vaqt: ${new Date().toLocaleString()}`, 8, 232);
-
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(305, 222, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        return canvas.toDataURL('image/jpeg', 0.85);
-      }
-    } catch (e) {
-      console.error('Error capturing webcam snapshot:', e);
-    }
-    return '';
-  };
+  const captureSnapshot = useCallback((): string => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2 || video.videoWidth === 0) return '';
+    const canvas = document.createElement('canvas');
+    canvas.width = 640; canvas.height = 480;
+    const context = canvas.getContext('2d');
+    if (!context) return '';
+    context.drawImage(video, 0, 0, 640, 480);
+    return canvas.toDataURL('image/jpeg', 0.8);
+  }, []);
 
   
   useEffect(() => {
@@ -379,55 +353,10 @@ export const ContestParticipatePage: React.FC = () => {
             }
           } else {
             
-            const canvas = document.createElement('canvas');
-            canvas.width = 160;
-            canvas.height = 120;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(videoRef.current, 0, 0, 160, 120);
-              const frameData = ctx.getImageData(0, 0, 160, 120).data;
-              let totalLuminance = 0;
-              let totalEdgeGradient = 0;
-
-              for (let y = 0; y < 120; y++) {
-                for (let x = 0; x < 160; x++) {
-                  const i = (y * 160 + x) * 4;
-                  const r = frameData[i];
-                  const g = frameData[i + 1];
-                  const b = frameData[i + 2];
-                  const lum = (r + g + b) / 3;
-                  totalLuminance += lum;
-
-                  if (x < 159) {
-                    const rNext = frameData[i + 4];
-                    const gNext = frameData[i + 5];
-                    const bNext = frameData[i + 6];
-                    const lumNext = (rNext + gNext + bNext) / 3;
-                    totalEdgeGradient += Math.abs(lum - lumNext);
-                  }
-                }
-              }
-
-              const avgLuminance = totalLuminance / (160 * 120);
-              const avgEdgeGradient = totalEdgeGradient / (160 * 120);
-
-              
-              if (avgLuminance < 14 || avgEdgeGradient < 2.2) {
-                missingFaceConsecutive++;
-                if (missingFaceConsecutive >= graceTicks) {
-                  const snap = captureSnapshot();
-                  useContestStore.getState().recordGuardViolation(
-                    'NO_FACE_DETECTED',
-                    'Kamera ob\'ektivi qo\'l yoki boshqa narsa bilan to\'sib qo\'yildi! Kamerani yopmang.',
-                    maxViolations,
-                    snap
-                  );
-                  missingFaceConsecutive = 0;
-                }
-              } else {
-                missingFaceConsecutive = 0;
-              }
-            }
+            // Model unavailable: do not invent face violations from image brightness.
+            missingFaceConsecutive = 0;
+            multipleFaceConsecutive = 0;
+            lookingAwayConsecutive = 0;
           }
         } catch (err) {
           console.warn('Face detection loop error:', err);
@@ -455,55 +384,54 @@ export const ContestParticipatePage: React.FC = () => {
 
   const proceedToStartExam = async () => {
     if (!olympiad || !id) return;
-
-    // Verify session start on backend
     try {
-      await apiClient.post(`/exams/${encodeURIComponent(id)}/start`);
-    } catch (err: any) {
-      if (err?.response?.data?.error) {
-        alert(`⚠️ ${err.response.data.error}`);
-        return;
+      const response = await apiClient.post(`/exams/${encodeURIComponent(id)}/start`);
+      if (!response.sessionId) throw new Error('Server sessiyasi olinmadi');
+      const loaded = await olympiadService.getQuestionsByOlympiadId(id);
+      if (!loaded.length) throw new Error('Bu imtihonga savollar kiritilmagan');
+      setQuestions(loaded);
+      setExamSessionId(response.sessionId);
+      setServerAntiCheatPolicy(response.antiCheatPolicy);
+      startContest(id, loaded, response);
+      setHasStarted(true);
+      if (response.antiCheatPolicy?.enabled && response.antiCheatPolicy?.requireFullscreen && !document.fullscreenElement) {
+        await document.documentElement.requestFullscreen().catch(() => {
+          alert('To‘liq ekranga o‘tish uchun brauzer ruxsatini tekshiring.');
+        });
       }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Imtihonni boshlash imkoni bo‘lmadi');
     }
-
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-
-    if (olympiad && questions && questions.length > 0) {
-      startContest(olympiad.id, questions, olympiad.durationMinutes || 60);
-    }
-    setHasStarted(true);
   };
 
-  const handleStartExam = () => {
-    if (!isRegistered) {
-      alert("Iltimos, avval ushbu olimpiadaga ro'yxatdan o'ting!");
-      return;
+  const handleStartExam = async () => {
+    if (!isRegistered && id) {
+      try {
+        await apiClient.post(`/exams/${encodeURIComponent(id)}/registration`);
+        setIsRegistered(true);
+      } catch {
+        // Proceed even if already registered or network was transient
+      }
     }
     if (!rulesAccepted) return;
     if (timeLeftToStart && timeLeftToStart > 0) return;
 
-    
-    if (!isDualDeviceCalibrated) {
-      setIsDualDeviceModalOpen(true);
-      return;
-    }
-
-    proceedToStartExam();
+    await proceedToStartExam();
   };
 
-  
-  const antiCheatPolicy = olympiad?.antiCheatConfig;
+  const antiCheatPolicy = serverAntiCheatPolicy || olympiad?.antiCheatConfig;
   const antiCheatActive = hasStarted && !isSubmitted && antiCheatPolicy?.enabled !== false;
   useAntiCheat(antiCheatActive, {
     olympiadId: olympiad?.id || id,
+    sessionId: examSessionId,
     olympiadTitle: olympiad?.title || 'Onlayn Olimpiada',
     maxViolations: antiCheatPolicy?.maxViolationsAllowed ?? 3,
     requireFullscreen: antiCheatPolicy?.requireFullscreen ?? true,
     blockTabSwitch: antiCheatPolicy?.blockTabSwitch ?? true,
     blockCopyPaste: antiCheatPolicy?.blockCopyPaste ?? true,
     blockDevTools: antiCheatPolicy?.blockDevTools ?? true,
+    heartbeatEnabled: antiCheatPolicy?.heartbeatEnabled ?? true,
+    heartbeatIntervalSec: antiCheatPolicy?.heartbeatIntervalSec ?? 10,
     onCaptureSnapshot: captureSnapshot,
   });
 
@@ -542,7 +470,7 @@ export const ContestParticipatePage: React.FC = () => {
     };
   }, [audioProctoringEnabled, startAudioMonitoring, stopAudioMonitoring]);
 
-  if (!olympiad || !questions || questions.length === 0) {
+  if (!olympiad || (hasStarted && questions.length === 0)) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-center p-6">
         <div className="space-y-4 max-w-md">
@@ -582,624 +510,415 @@ export const ContestParticipatePage: React.FC = () => {
             </Link>
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>DualProctor AI Himoyasi</span>
+              <span>AI Yuz & Ovoz Himoyasi (Veb-kamera + Mikrofon)</span>
             </div>
           </div>
 
-          
-          <div className="grid grid-cols-2 gap-3 p-1.5 bg-zinc-900/60 border border-white/10 rounded-2xl shadow-xl backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => setCurrentStep('registration')}
-              className={clsx(
-                "flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95",
-                currentStep === 'registration'
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
-              )}
-            >
-              <span className={clsx(
-                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0",
-                isRegistered ? "bg-emerald-400 text-zinc-950" : "bg-zinc-800 text-white"
-              )}>
-                {isRegistered ? "✓" : "1"}
-              </span>
-              <span>1-Qadam: Ro'yxatdan O'tish</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (isRegistered && canAttempt) setCurrentStep('exam_briefing');
-              }}
-              disabled={!isRegistered || !canAttempt}
-              className={clsx(
-                "flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95",
-                currentStep === 'exam_briefing'
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
-                  : !isRegistered || !canAttempt
-                  ? "text-zinc-600 opacity-50 cursor-not-allowed"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/60 cursor-pointer"
-              )}
-            >
-              <span className="w-6 h-6 rounded-full bg-zinc-800 text-white flex items-center justify-center text-xs font-black shrink-0">
-                2
-              </span>
-              <span>2-Qadam: Imtihon va Anti-Cheat</span>
-            </button>
-          </div>
-
-          
-          
-          
-          {currentStep === 'registration' && (
-            <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
-              
-              <div className="border-b border-white/10 pb-6 space-y-2">
+          <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
+            {/* Sarlavha, Til tanlash va Holat */}
+            <div className="border-b border-white/10 pb-6 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>1-Bosqich: Olimpiada Ma'lumotlari va Ro'yxatdan O'tish</span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-zinc-100 tracking-tight">
-                  {olympiad.title}
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal">
-                  {olympiad.description || "Ushbu musobaqada qatnashish uchun avval ro'yxatdan o'ting, so'ngra imtihon xonasiga o'tib testni boshlashingiz mumkin."}
-                </p>
-
-                
-                {isAlwaysOpen ? (
-                  <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-zinc-900/60 border border-emerald-500/40 text-emerald-200 flex items-start gap-3 mt-3 backdrop-blur-xs">
-                    <Sparkles className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-white text-sm flex items-center gap-2">
-                        <span>🟢 24/7 Doimiy Ochiq Test</span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold">
-                          Cheklovsiz kirish
-                        </span>
-                      </div>
-                      <p className="text-emerald-300/80">
-                        Ushbu musobaqa 24/7 doimiy ochiq. Siz istalgan vaqtda kirib, tayyorgarlik ko'rib test topshirishingiz mumkin.
-                      </p>
-                    </div>
-                  </div>
-                ) : isDateFinished ? (
-                  <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start gap-3 mt-3">
-                    <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-white text-sm">🛑 Musobaqa Yakunlangan</div>
-                      <p className="text-rose-300/80">
-                        Ushbu olimpiada muddati o'tgan ({olympiad.endDate || 'Muddati tugagan'}). Yangi ro'yxatdan o'tish yoki topshirish imkoni mavjud emas.
-                      </p>
-                    </div>
-                  </div>
-                ) : isRegistrationExpired && !isRegistered ? (
-                  <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 flex items-start gap-3 mt-3">
-                    <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-white text-sm">⏳ Ro'yxatdan O'tish Muddati Tugagan</div>
-                      <p className="text-amber-300/80">
-                        Ushbu musobaqaga ro'yxatdan o'tish yopilgan ({olympiad.registrationEndDate || 'Yopilgan'}).
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
-
-                
-                {!isGradeEligible ? (
-                  <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start gap-3 mt-3">
-                    <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-white text-sm">❌ Sinf Cheklovi: Siz ushbu olimpiadada qatnasha olmaysiz!</div>
-                      <p>
-                        Ushbu musobaqa faqat <strong>{targetGrades.join(', ')}-sinf</strong> o'quvchilari uchun mo'ljallangan.
-                        Sizning profilingizdagi sinf: <strong className="text-amber-300 font-mono">{studentGrade ? `${studentGrade}-sinf` : 'Noma\'lum'}</strong>.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mt-2">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Mos sinflar: {targetGrades.join(', ')}-sinflar {studentGrade ? `(Sizning sinfingiz: ${studentGrade}-sinf ✓)` : ''}</span>
-                  </div>
-                )}
-              </div>
-
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
-                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
-                    <Clock className="w-4 h-4 text-emerald-400" />
-                    <span>Ajratilgan vaqt</span>
-                  </div>
-                  <div className="text-lg font-black text-zinc-100">{olympiad.durationMinutes || (olympiad as any).duration_minutes || 60} daqiqa</div>
+                  <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Imtihon Xonasi & Tayyorgarlik</span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
-                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
-                    <HelpCircle className="w-4 h-4 text-teal-400" />
-                    <span>Savollar soni</span>
-                  </div>
-                  <div className="text-lg font-black text-zinc-100">{questions.length} ta savol</div>
-                </div>
+                {/* Til tanlash */}
+                <div className="flex items-center gap-1.5 bg-zinc-950/80 p-1 rounded-xl border border-white/10">
+                  <span className="text-[10px] font-bold text-zinc-400 px-2 uppercase">Til:</span>
+                  {allowedLangs.map((lang: string) => {
+                    const code = lang.includes("O'zbek") ? "UZ" : lang.includes("Rus") ? "RU" : lang.includes("Ingliz") ? "EN" : "UZ";
+                    const flag = code === "UZ" ? "🇺🇿" : code === "RU" ? "🇷🇺" : "🇬🇧";
+                    const isSelected = selectedExamLang === lang;
 
-                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
-                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
-                    <Trophy className="w-4 h-4 text-amber-400" />
-                    <span>Maksimal ball</span>
-                  </div>
-                  <div className="text-lg font-black text-zinc-100">{olympiad.maxScore || 100} ball</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
-                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
-                    <Award className="w-4 h-4 text-purple-400" />
-                    <span>Sertifikat</span>
-                  </div>
-                  <div className="text-xs font-bold text-purple-300 truncate">QR-kodli Diplom</div>
-                </div>
-              </div>
-
-              
-              <div className="p-5 rounded-2xl bg-zinc-950/80 border border-white/10 space-y-4 backdrop-blur-xs">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                      {isRegistered ? <UserCheck className="w-5 h-5 text-emerald-400" /> : <UserPlus className="w-5 h-5 text-teal-400" />}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-zinc-100">Ishtirokchi Shaxsiy Ma'lumotlari</h3>
-                      <p className="text-[11px] text-zinc-400">Musobaqada qatnashish maqomi va shaxsiy kabinet ma'lumotlari</p>
-                    </div>
-                  </div>
-
-                  {isRegistered ? (
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Ro'yxatdan o'tilgan
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      Ro'yxatdan o'tish kutilmoqda
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
-                    <div className="text-[10px] text-zinc-400 uppercase font-bold">F.I.Sh.</div>
-                    <div className="font-bold text-zinc-100 text-sm truncate">{user?.fullName || "Ishtirokchi"}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
-                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Sinfi & Hudud</div>
-                    <div className="font-bold text-zinc-200">{user?.grade ? `${user.grade}-sinf` : '9-sinf'} • {user?.region || 'Toshkent sh.'}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 space-y-1">
-                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Holati</div>
-                    <div className={clsx("font-bold text-xs", isRegistered ? "text-emerald-400" : "text-amber-400")}>
-                      {isRegistered ? 'Ishtirok Tasdiqlangan ✓' : 'Ro\'yxatdan o\'tish zarur'}
-                    </div>
-                  </div>
-                </div>
-
-                
-                {attemptsUsed > 0 && (
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs text-emerald-300">
-                    <div className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>
-                        Siz ushbu testda <strong>{attemptsUsed} marta</strong> qatnashgansiz.
-                        {retakeAllowed && attemptsUsed < maxAttempts ? ` Yana ${maxAttempts - attemptsUsed} ta urinish imkoniyati mavjud.` : ' Urinishlar to\'liq tugagan.'}
-                      </span>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">
-                      {attemptsUsed} / {maxAttempts} Urinish
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/10">
-                <Link to="/student/olympiads" className="w-full sm:w-auto">
-                  <Button variant="ghost" size="md" className="w-full sm:w-auto text-zinc-400 hover:text-white">
-                    Bekor qilish va ro'yxatga qaytish
-                  </Button>
-                </Link>
-
-                {!isRegistered ? (
-                  <Button
-                    onClick={handleRegisterOlympiad}
-                    isLoading={isRegistering}
-                    disabled={!isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered) || isRegistering}
-                    variant="primary"
-                    size="lg"
-                    className={clsx(
-                      "w-full sm:w-auto text-white font-bold px-8 shadow-xl active:scale-95",
-                      !isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered)
-                        ? "bg-zinc-800 opacity-60 cursor-not-allowed text-zinc-500"
-                        : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25"
-                    )}
-                    leftIcon={
-                      !isGradeEligible || isDateFinished || (isRegistrationExpired && !isRegistered) ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-400" />
-                      ) : (
-                        <UserPlus className="w-4 h-4" />
-                      )
-                    }
-                  >
-                    {!isGradeEligible
-                      ? "Sinfingizga mos emas"
-                      : isDateFinished
-                      ? "Musobaqa yakunlangan 🔒"
-                      : isRegistrationExpired && !isRegistered
-                      ? "Ro'yxatdan o'tish yopilgan ⏳"
-                      : "Olimpiadaga Ro'yxatdan O'tish 📝"}
-                  </Button>
-                ) : !canAttempt && attemptsUsed > 0 ? (
-                  <Link to="/results" className="w-full sm:w-auto">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600"
-                      rightIcon={<ArrowRight className="w-4 h-4" />}
-                    >
-                      Natijani Ko'rish 📊
-                    </Button>
-                  </Link>
-                ) : isDateFinished ? (
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    disabled
-                    className="w-full sm:w-auto font-black opacity-60 cursor-not-allowed bg-zinc-800 text-zinc-500 border border-white/5"
-                  >
-                    Musobaqa Yakunlangan 🔒
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => setCurrentStep('exam_briefing')}
-                    className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500"
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
-                  >
-                    Keyingi bosqich: Imtihon xonasiga o'tish (2-Qadam) ➡️
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          
-          
-          
-          {currentStep === 'exam_briefing' && (
-            <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
-              
-              <div className="border-b border-white/10 pb-6 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
-                    <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>2-Bosqich: Imtihon Xonasi & Tayyorgarlik</span>
-                  </div>
-
-                  
-                  <div className="flex items-center gap-1.5 bg-zinc-950/80 p-1 rounded-xl border border-white/10">
-                    <span className="text-[10px] font-bold text-zinc-400 px-2 uppercase">Til:</span>
-                    {allowedLangs.map((lang: string) => {
-                      const code = lang.includes("O'zbek") ? "UZ" : lang.includes("Rus") ? "RU" : lang.includes("Ingliz") ? "EN" : "UZ";
-                      const flag = code === "UZ" ? "🇺🇿" : code === "RU" ? "🇷🇺" : "🇬🇧";
-                      const isSelected = selectedExamLang === lang;
-
-                      return (
-                        <button
-                          key={lang}
-                          type="button"
-                          onClick={() => handleLanguageChange(lang)}
-                          className={clsx(
-                            "px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95",
-                            isSelected
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-xs"
-                              : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
-                          )}
-                        >
-                          <span>{flag}</span>
-                          <span>{code}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <h2 className="text-2xl sm:text-3xl font-black text-zinc-100 tracking-tight">
-                  {olympiad.title} — Imtihon Xonasi
-                </h2>
-                <p className="text-xs sm:text-sm text-zinc-400 font-normal leading-relaxed">
-                  Imtihonni boshlashdan oldin texnik tayyorgarlikni tekshiring hamda xavfsizlik qoidalariga rozilik berib testni boshlang.
-                </p>
-              </div>
-
-              
-              <div className="p-5 rounded-xl bg-zinc-950/70 border border-white/10 space-y-3 backdrop-blur-xs">
-                <div className="text-xs font-bold text-zinc-200 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-emerald-400" />
-                  <span>Imtihon qoidalari va eslatmalar:</span>
-                </div>
-
-                <ul className="space-y-2 text-xs text-zinc-300">
-                  <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">1</span>
-                    <span><strong>Sahifadan chiqish taqiqlanadi:</strong> Tab almashish yoki boshqa ilovani ochish anti-cheat tomonidan qayd etiladi.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">2</span>
-                    <span><strong>Avtomatik saqlanish:</strong> Javoblaringiz har bir belgilanganda darhol serverga saqlanadi.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">3</span>
-                    <span><strong>Veb-kamera nazorati:</strong> Kadrni tark etish yoki begona shaxslar paydo bo'lishi taqiqlanadi.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">4</span>
-                    <span><strong>To'liq ekran rejimi:</strong> Test faqat to'liq ekranda ishlaydi.</span>
-                  </li>
-                </ul>
-              </div>
-
-              
-              <div className="p-5 rounded-xl bg-zinc-950/70 border border-white/10 space-y-3 backdrop-blur-xs">
-                <div className="text-xs font-bold text-zinc-200 flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-                    Tizim va Qurilmalar Tayyorgarligi Tekshiruvi:
-                  </span>
-                  <button
-                    onClick={handleTestCamera}
-                    className="text-[11px] font-semibold text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Qayta tekshirish</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
-                    <span className="text-zinc-400 flex items-center gap-2">
-                      <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-                      Internet Aloqasi:
-                    </span>
-                    <span className="font-bold text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {isOnline ? 'Barqaror ✓' : 'Oflayn'}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
-                    <span className="text-zinc-400 flex items-center gap-2">
-                      <Camera className="w-3.5 h-3.5 text-teal-400" />
-                      Veb-Kamera:
-                    </span>
-                    {cameraChecked === 'ready' ? (
-                      <span className="font-bold text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Faol va Ulandi ✓
-                      </span>
-                    ) : (
+                    return (
                       <button
-                        onClick={handleTestCamera}
-                        className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
-                      >
-                        {cameraChecked === 'checking' ? 'Tekshirilmoqda...' : 'Kamerani yoqish'}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
-                    <span className="text-zinc-400 flex items-center gap-2">
-                      <Maximize className="w-3.5 h-3.5 text-amber-400" />
-                      To'liq Ekran:
-                    </span>
-                    <span className="font-bold text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Tayyor ✓
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
-                    <span className="text-zinc-400 flex items-center gap-2">
-                      <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
-                      Dual-Device (2-Telefon):
-                    </span>
-                    {isDualDeviceCalibrated ? (
-                      <span className="font-bold text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> AI Tasdiqlangan ✓
-                      </span>
-                    ) : (
-                      <button
+                        key={lang}
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setIsDualDeviceModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 hover:text-white cursor-pointer flex items-center gap-1 transition-all active:scale-95"
+                        onClick={() => handleLanguageChange(lang)}
+                        className={clsx(
+                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95",
+                          isSelected
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-xs"
+                            : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+                        )}
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                        <span>Sozlash va Kalibratsiya</span>
+                        <span>{flag}</span>
+                        <span>{code}</span>
                       </button>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              
-              {isDateFinished ? (
-                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
-                    <div>
-                      <div className="font-bold text-rose-200">Musobaqa muddati yakunlangan</div>
-                      <div className="text-[11px] text-rose-400">Ushbu olimpiadada qatnashish vaqti tugagan ({olympiad.endDate || 'Tugagan'}).</div>
+              <h1 className="text-2xl sm:text-3xl font-black text-zinc-100 tracking-tight">
+                {olympiad.title}
+              </h1>
+              <p className="text-xs sm:text-sm text-zinc-400 font-normal leading-relaxed">
+                {olympiad.description || "Imtihonni boshlashdan oldin quyidagi texnik tekshiruvdan o'ting hamda xavfsizlik qoidalariga rozilik berib testni boshlang."}
+              </p>
+
+              {isAlwaysOpen ? (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-zinc-900/60 border border-emerald-500/40 text-emerald-200 flex items-start gap-3 mt-3 backdrop-blur-xs">
+                  <Sparkles className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                      <span>🟢 24/7 Doimiy Ochiq Test</span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold">
+                        Cheklovsiz kirish
+                      </span>
                     </div>
-                  </div>
-                  {attemptsUsed > 0 && (
-                    <Link to="/results">
-                      <Button size="sm" variant="outline" className="bg-rose-500/20 text-rose-300 border-rose-500/40 text-xs">
-                        Natijani Ko'rish
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              ) : timeLeftToStart && timeLeftToStart > 0 ? (
-                <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center space-y-2">
-                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-center gap-2">
-                    <Clock className="w-4 h-4 animate-spin" />
-                    Olimpiada boshlanishiga qolgan vaqt:
-                  </div>
-                  <div className="text-3xl font-black text-amber-300 font-mono tracking-widest">
-                    {formatCountdown(timeLeftToStart)}
-                  </div>
-                  <p className="text-[11px] text-zinc-400">
-                    Boshlanish vaqti: <strong>{olympiad.startDate}</strong>. Vaqt yetganda boshlash tugmasi faollashadi.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <div className="text-xs">
-                    <span className="font-bold text-emerald-300">Olimpiada ochiq va topshirishga tayyor!</span>
-                    <p className="text-zinc-400 mt-0.5">
-                      Qoidalar bilan tanishib, rozilikni tasdiqlang va imtihonni boshlang.
+                    <p className="text-emerald-300/80">
+                      Ushbu musobaqa 24/7 doimiy ochiq. Siz istalgan vaqtda kirib, tayyorgarlik ko'rib test topshirishingiz mumkin.
                     </p>
                   </div>
                 </div>
-              )}
-
-              
-              {isRetake && (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
-                    <span>
-                      <strong>Qayta topshirish rejimi:</strong> Siz bu testni <strong>{attemptsUsed + 1}-marta</strong> topshiryapsiz (Jami: {maxAttempts} ta urinish ruxsat etilgan).
-                    </span>
+              ) : isDateFinished ? (
+                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start gap-3 mt-3">
+                  <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <div className="font-bold text-white text-sm">🛑 Musobaqa Yakunlangan</div>
+                    <p className="text-rose-300/80">
+                      Ushbu olimpiada muddati o'tgan ({olympiad.endDate || 'Muddati tugagan'}). Yangi topshirish imkoni mavjud emas.
+                    </p>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">
-                    {attemptsUsed + 1} / {maxAttempts} Urinish
-                  </span>
+                </div>
+              ) : null}
+
+              {!isGradeEligible ? (
+                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start gap-3 mt-3">
+                  <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <div className="font-bold text-white text-sm">❌ Sinf Cheklovi: Siz ushbu olimpiadada qatnasha olmaysiz!</div>
+                    <p>
+                      Ushbu musobaqa faqat <strong>{targetGrades.join(', ')}-sinf</strong> o'quvchilari uchun mo'ljallangan.
+                      Sizning profilingizdagi sinf: <strong className="text-amber-300 font-mono">{studentGrade ? `${studentGrade}-sinf` : 'Noma\'lum'}</strong>.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mt-2">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Mos sinflar: {targetGrades.join(', ')}-sinflar {studentGrade ? `(Sizning sinfingiz: ${studentGrade}-sinf ✓)` : ''}</span>
                 </div>
               )}
+            </div>
 
-              {!canAttempt && attemptsUsed > 0 && (
-                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span>
-                      <strong>Urinishlar tugagan:</strong> Siz ushbu imtihonni avval topshirgansiz ({attemptsUsed} ta urinish). Qayta topshirish uchun ruxsat berilmagan.
+            {/* Asosiy ko'rsatkichlar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                  <Clock className="w-4 h-4 text-emerald-400" />
+                  <span>Ajratilgan vaqt</span>
+                </div>
+                <div className="text-lg font-black text-zinc-100">{olympiad.durationMinutes || (olympiad as any).duration_minutes || 60} daqiqa</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                  <HelpCircle className="w-4 h-4 text-teal-400" />
+                  <span>Savollar soni</span>
+                </div>
+                <div className="text-lg font-black text-zinc-100">{olympiad.totalQuestions} ta savol</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <span>Maksimal ball</span>
+                </div>
+                <div className="text-lg font-black text-zinc-100">{olympiad.maxScore || 100} ball</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 space-y-1 backdrop-blur-xs">
+                <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                  <Award className="w-4 h-4 text-purple-400" />
+                  <span>Sertifikat</span>
+                </div>
+                <div className="text-xs font-bold text-purple-300 truncate">QR-kodli Diplom</div>
+              </div>
+            </div>
+
+            {/* Ishtirokchi ma'lumotlari */}
+            <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+                  {user?.fullName?.charAt(0) || 'O'}
+                </div>
+                <div>
+                  <div className="font-bold text-zinc-200 text-sm">{user?.fullName || "Ishtirokchi"}</div>
+                  <div className="text-zinc-400 text-[11px]">{studentGrade ? `${studentGrade}-sinf` : '9-sinf'} • {user?.region || 'Toshkent sh.'}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Ishtirok Tasdiqlangan ✓
+                </span>
+              </div>
+            </div>
+
+            {/* Tizim va Qurilmalar Tayyorgarligi Tekshiruvi: Veb-kamera + Mikrofon + Internet + To'liq Ekran */}
+            <div className="p-5 rounded-xl bg-zinc-950/70 border border-white/10 space-y-3 backdrop-blur-xs">
+              <div className="text-xs font-bold text-zinc-200 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  Tizim va Qurilmalar Tayyorgarligi (Yuz & Ovoz Nazorati):
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTestCamera}
+                  className="text-[11px] font-semibold text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Qurilmalarni tekshirish</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                  <span className="text-zinc-400 flex items-center gap-2">
+                    <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+                    Internet:
+                  </span>
+                  <span className="font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {isOnline ? 'Barqaror ✓' : 'Oflayn'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                  <span className="text-zinc-400 flex items-center gap-2">
+                    <Camera className="w-3.5 h-3.5 text-teal-400" />
+                    Veb-Kamera (Yuz):
+                  </span>
+                  {cameraChecked === 'ready' ? (
+                    <span className="font-bold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Faol ✓
                     </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleTestCamera}
+                      className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                    >
+                      {cameraChecked === 'checking' ? 'Tekshirilmoqda...' : 'Yoqish'}
+                    </button>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                  <span className="text-zinc-400 flex items-center gap-2">
+                    <Mic className="w-3.5 h-3.5 text-cyan-400" />
+                    Mikrofon (Ovoz):
+                  </span>
+                  {micChecked === 'ready' ? (
+                    <span className="font-bold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Faol ✓
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleTestCamera}
+                      className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                    >
+                      {micChecked === 'checking' ? 'Tekshirilmoqda...' : 'Yoqish'}
+                    </button>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-between">
+                  <span className="text-zinc-400 flex items-center gap-2">
+                    <Maximize className="w-3.5 h-3.5 text-amber-400" />
+                    To'liq Ekran:
+                  </span>
+                  <span className="font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Tayyor ✓
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Imtihon qoidalari */}
+            <div className="p-5 rounded-xl bg-zinc-950/70 border border-white/10 space-y-3 backdrop-blur-xs">
+              <div className="text-xs font-bold text-zinc-200 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span>Imtihon qoidalari va eslatmalar:</span>
+              </div>
+
+              <ul className="space-y-2 text-xs text-zinc-300">
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">1</span>
+                  <span><strong>Sahifadan chiqish taqiqlanadi:</strong> Tab almashish yoki boshqa oynaga o'tish anti-cheat tomonidan darhol qayd etiladi.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">2</span>
+                  <span><strong>Veb-kamera va yuz nazorati:</strong> Kadrni tark etish, chetga uzoq qarash yoki begona shaxslar paydo bo'lishi AI tomonidan kuzatiladi.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">3</span>
+                  <span><strong>Ovoz va mikrofon nazorati:</strong> Xonadagi begona suhbatlar va ko'rsatmalar AI audio moduli orqali tahlil qilinadi.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold shrink-0 text-[11px]">4</span>
+                  <span><strong>Avtomatik saqlanish:</strong> Javoblaringiz har bir variant tanlanganda darhol serverga biriktiriladi.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Holat bildirishnomalari */}
+            {isDateFinished ? (
+              <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-rose-200">Musobaqa muddati yakunlangan</div>
+                    <div className="text-[11px] text-rose-400">Ushbu olimpiadada qatnashish vaqti tugagan ({olympiad.endDate || 'Tugagan'}).</div>
                   </div>
+                </div>
+                {attemptsUsed > 0 && (
                   <Link to="/results">
                     <Button size="sm" variant="outline" className="bg-rose-500/20 text-rose-300 border-rose-500/40 text-xs">
                       Natijani Ko'rish
                     </Button>
                   </Link>
-                </div>
-              )}
-
-              
-              <div
-                onClick={() => isRegistered && canAttempt && !isDateFinished && setRulesAccepted(!rulesAccepted)}
-                className={clsx(
-                  "p-4 rounded-xl border flex items-start gap-3 transition-all select-none",
-                  isRegistered && canAttempt && !isDateFinished
-                    ? "bg-zinc-950/70 border-white/10 hover:border-emerald-500/50 cursor-pointer"
-                    : "bg-zinc-950/40 border-white/5 opacity-60 cursor-not-allowed"
                 )}
-              >
-                <button
-                  type="button"
-                  disabled={!isRegistered || !canAttempt || isDateFinished}
-                  className="mt-0.5 text-emerald-400 hover:text-emerald-300 shrink-0"
-                >
-                  {rulesAccepted ? (
-                    <CheckSquare className="w-5 h-5 text-emerald-400" />
-                  ) : (
-                    <Square className="w-5 h-5 text-zinc-500" />
-                  )}
-                </button>
-                <span className="text-xs text-zinc-300 font-medium leading-relaxed">
-                  Men barcha qoidalar, halollik kodeksi va texnik talablar bilan to'liq tanishdim. Imtihonda faqat o'z bilimimga tayangan holda, qoidalarni buzmasdan qatnashishga roziman.
+              </div>
+            ) : timeLeftToStart && timeLeftToStart > 0 ? (
+              <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center space-y-2">
+                <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-center gap-2">
+                  <Clock className="w-4 h-4 animate-spin" />
+                  Olimpiada boshlanishiga qolgan vaqt:
+                </div>
+                <div className="text-3xl font-black text-amber-300 font-mono tracking-widest">
+                  {formatCountdown(timeLeftToStart)}
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Boshlanish vaqti: <strong>{olympiad.startDate}</strong>. Vaqt yetganda boshlash tugmasi faollashadi.
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="text-xs">
+                  <span className="font-bold text-emerald-300">Olimpiada ochiq va topshirishga tayyor!</span>
+                  <p className="text-zinc-400 mt-0.5">
+                    Qoidalar bilan tanishib, rozilikni tasdiqlang va imtihonni boshlang.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isRetake && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
+                  <span>
+                    <strong>Qayta topshirish rejimi:</strong> Siz bu testni <strong>{attemptsUsed + 1}-marta</strong> topshiryapsiz (Jami: {maxAttempts} ta urinish ruxsat etilgan).
+                  </span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">
+                  {attemptsUsed + 1} / {maxAttempts} Urinish
                 </span>
               </div>
+            )}
 
-              
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+            {!canAttempt && attemptsUsed > 0 && (
+              <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>
+                    <strong>Urinishlar tugagan:</strong> Siz ushbu imtihonni avval topshirgansiz ({attemptsUsed} ta urinish). Qayta topshirish uchun ruxsat berilmagan.
+                  </span>
+                </div>
+                <Link to="/results">
+                  <Button size="sm" variant="outline" className="bg-rose-500/20 text-rose-300 border-rose-500/40 text-xs">
+                    Natijani Ko'rish
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Qoidalarga rozilik tasdig'i */}
+            <div
+              onClick={() => canAttempt && !isDateFinished && setRulesAccepted(!rulesAccepted)}
+              className={clsx(
+                "p-4 rounded-xl border flex items-start gap-3 transition-all select-none",
+                canAttempt && !isDateFinished
+                  ? "bg-zinc-950/70 border-white/10 hover:border-emerald-500/50 cursor-pointer"
+                  : "bg-zinc-950/40 border-white/5 opacity-60 cursor-not-allowed"
+              )}
+            >
+              <button
+                type="button"
+                disabled={!canAttempt || isDateFinished}
+                className="mt-0.5 text-emerald-400 hover:text-emerald-300 shrink-0"
+              >
+                {rulesAccepted ? (
+                  <CheckSquare className="w-5 h-5 text-emerald-400" />
+                ) : (
+                  <Square className="w-5 h-5 text-zinc-500" />
+                )}
+              </button>
+              <span className="text-xs text-zinc-300 font-medium leading-relaxed">
+                Men barcha qoidalar, halollik kodeksi va texnik talablar bilan to'liq tanishdim. Imtihonda faqat o'z bilimimga tayangan holda, qoidalarni buzmasdan qatnashishga roziman.
+              </span>
+            </div>
+
+            {/* Pastki amallar paneli */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <Link to="/student/olympiads" className="w-full sm:w-auto">
                 <Button
                   type="button"
                   variant="ghost"
                   size="md"
-                  onClick={() => setCurrentStep('registration')}
                   className="w-full sm:w-auto text-zinc-400 hover:text-white"
                   leftIcon={<ChevronLeft className="w-4 h-4" />}
                 >
-                  1-Qadam (Ma'lumotlar)ga qaytish
+                  Olimpiadalar ro'yxatiga qaytish
                 </Button>
+              </Link>
 
-                {!canAttempt && attemptsUsed > 0 ? (
-                  <Link to="/results" className="w-full sm:w-auto">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600"
-                      rightIcon={<ArrowRight className="w-4 h-4" />}
-                    >
-                      Natijani Ko'rish 📊
-                    </Button>
-                  </Link>
-                ) : (
+              {!canAttempt && attemptsUsed > 0 ? (
+                <Link to="/results" className="w-full sm:w-auto">
                   <Button
                     variant="primary"
                     size="lg"
-                    disabled={!isRegistered || !rulesAccepted || isDateFinished || (!!timeLeftToStart && timeLeftToStart > 0)}
-                    onClick={handleStartExam}
-                    className={clsx(
-                      "w-full sm:w-auto font-black shadow-xl px-8 transition-all active:scale-95",
-                      isDateFinished
-                        ? "bg-zinc-800 opacity-60 cursor-not-allowed text-zinc-500"
-                        : timeLeftToStart && timeLeftToStart > 0
-                        ? "bg-amber-600/80 opacity-80 cursor-not-allowed text-white"
-                        : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25 text-white"
-                    )}
+                    className="w-full sm:w-auto font-black shadow-lg shadow-emerald-500/25 px-8 bg-gradient-to-r from-emerald-500 to-teal-600"
                     rightIcon={<ArrowRight className="w-4 h-4" />}
                   >
-                    {isDateFinished
-                      ? "Musobaqa Yakunlangan 🔒"
-                      : timeLeftToStart && timeLeftToStart > 0
-                      ? `Boshlanishiga: ${formatCountdown(timeLeftToStart)} ⏳`
-                      : isRetake
-                      ? `Qayta Topshirish (${attemptsUsed + 1}/${maxAttempts}-urinish) 🚀`
-                      : "Olimpiadani Boshlash 🚀"}
+                    Natijani Ko'rish 📊
                   </Button>
-                )}
-              </div>
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  disabled={!rulesAccepted || isDateFinished || !canAttempt || (!!timeLeftToStart && timeLeftToStart > 0)}
+                  onClick={handleStartExam}
+                  className={clsx(
+                    "w-full sm:w-auto font-black shadow-xl px-8 transition-all active:scale-95",
+                    isDateFinished || !canAttempt
+                      ? "bg-zinc-800 opacity-60 cursor-not-allowed text-zinc-500"
+                      : timeLeftToStart && timeLeftToStart > 0
+                      ? "bg-amber-600/80 opacity-80 cursor-not-allowed text-white"
+                      : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25 text-white"
+                  )}
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                >
+                  {isDateFinished
+                    ? "Musobaqa Yakunlangan 🔒"
+                    : !canAttempt
+                    ? "Ishtirok Cheklangan"
+                    : timeLeftToStart && timeLeftToStart > 0
+                    ? `Boshlanishiga: ${formatCountdown(timeLeftToStart)} ⏳`
+                    : isRetake
+                    ? `Qayta Topshirish (${attemptsUsed + 1}/${maxAttempts}-urinish) 🚀`
+                    : "Olimpiadani Boshlash 🚀"}
+                </Button>
+              )}
             </div>
-          )}
-
-          
-          <ExamSetupModal
-            isOpen={isDualDeviceModalOpen}
-            onClose={() => setIsDualDeviceModalOpen(false)}
-            onStartExam={() => {
-              setIsDualDeviceCalibrated(true);
-              setIsDualDeviceModalOpen(false);
-              proceedToStartExam();
-            }}
-            examId={id || 'exam-demo'}
-            examTitle={olympiad?.title || 'Ibn Sino Imtihon'}
-            examStartTime={olympiad?.startDate}
-            examEndTime={olympiad?.endDate}
-            studentId={user?.id || 'student-demo'}
-            studentName={user?.fullName || "O'quvchi"}
-          />
+          </div>
         </div>
       </div>
     );
@@ -1211,7 +930,9 @@ export const ContestParticipatePage: React.FC = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   const handleConfirmSubmit = async () => {
-    const res = await submitFinal();
+    let res;
+    try { res = await submitFinal(); }
+    catch (error) { alert(error instanceof Error ? error.message : 'Natija saqlanmadi. Qayta urinib ko‘ring.'); return; }
     setShowConfirmModal(false);
     if (res) {
       setSubmissionResult(res);
@@ -1233,7 +954,7 @@ export const ContestParticipatePage: React.FC = () => {
           </div>
           <div className="flex flex-col">
             <h2 className="text-sm font-bold text-zinc-100 truncate max-w-xs sm:max-w-md">{olympiad.title}</h2>
-            <span className="text-[10px] text-emerald-400 font-mono">Ibn Sino Proctor Active • Server Verified</span>
+            <span className="text-[10px] text-emerald-400 font-mono">{antiCheatActive ? 'Nazorat qoidalari yoqilgan' : 'Nazorat qoidalari o‘chirilgan'}</span>
           </div>
         </div>
 
@@ -1439,22 +1160,6 @@ export const ContestParticipatePage: React.FC = () => {
           </div>
         </div>
       </Modal>
-
-      <ExamSetupModal
-        isOpen={isDualDeviceModalOpen}
-        onClose={() => setIsDualDeviceModalOpen(false)}
-        onStartExam={() => {
-          setIsDualDeviceCalibrated(true);
-          setIsDualDeviceModalOpen(false);
-          proceedToStartExam();
-        }}
-        examId={id || 'exam-demo'}
-        examTitle={olympiad?.title || 'Ibn Sino Imtihon'}
-        examStartTime={olympiad?.startDate}
-        examEndTime={olympiad?.endDate}
-        studentId={user?.id || 'student-demo'}
-        studentName={user?.fullName || "O'quvchi"}
-      />
     </div>
   );
 };

@@ -20,9 +20,9 @@ export const StudentDashboard: React.FC = () => {
     if (user?.id) {
       certificateService.getUserCertificates(user.id).then((certs) => {
         setCertificatesCount(certs.length);
-      });
-      const realSubs = submissionService.getUserSubmissions(user.id);
-      setSubmissions(realSubs);
+      }).catch(() => setCertificatesCount(0));
+      void submissionService.refresh().then(() => setSubmissions(submissionService.getUserSubmissions(user.id)))
+        .catch(() => setSubmissions([]));
     }
   }, [user]);
 

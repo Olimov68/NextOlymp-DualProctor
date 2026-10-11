@@ -66,12 +66,24 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
   const [currentStep, setCurrentStep] = useState<SetupStep>('pairing');
   const [sessionId, setSessionId] = useState<string>('');
   const [sessionToken, setSessionToken] = useState<string>('');
+  const [proctorSession, setProctorSession] = useState<Awaited<ReturnType<typeof createDualDeviceSession>> | null>(null);
+  const [setupError, setSetupError] = useState('');
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setProctorSession(null);
+    setSetupError('');
+    void createDualDeviceSession(examId, studentId).then(session => {
+      if (!cancelled) setProctorSession(session);
+    }).catch(() => { if (!cancelled) setSetupError('Server sessiyasi ochilmadi. Qayta urinib ko‘ring.'); });
+    return () => { cancelled = true; };
+  }, [isOpen, examId, studentId]);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [mobileStreamUrl, setMobileStreamUrl] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
 
   
-  const detectedLanIp = '192.168.0.102:3000';
+  const detectedLanIp = window.location.host;
   const [useLanIp, setUseLanIp] = useState(false);
 
   
@@ -93,7 +105,8 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
     if (!isOpen) return;
 
     
-    const session = createDualDeviceSession(examId, studentId);
+    const session = proctorSession;
+    if (!session) return;
     setSessionId(session.sessionId);
     setSessionToken(session.token);
 
@@ -101,7 +114,7 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
     const protocol = window.location.protocol;
     const currentHost = window.location.host;
     const targetHost = useLanIp ? detectedLanIp : currentHost;
-    const url = `${protocol}//${targetHost}/proctor/stream?sessionId=${encodeURIComponent(session.sessionId)}&token=${encodeURIComponent(session.token)}`;
+    const url = `${protocol}//${currentHost}/proctor/stream?sessionId=${encodeURIComponent(session.sessionId)}#pair=${encodeURIComponent(session.pairingCode)}`;
     setMobileStreamUrl(url);
 
     // SECURED: Generate QR code in-memory on the client, never leaking proctoring token to third-party services
@@ -189,25 +202,7 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
       }
     });
 
-    const unsubSnapshotReady = gateway.on(PROCTOR_SOCKET_EVENTS.SNAPSHOT_READY, async (data) => {
-      if (data?.imageBase64) {
-        setIsCalibratingAI(true);
-        try {
-          const evalResult = await validatePlacementSnapshot(data.imageBase64, {
-            examId,
-            studentId,
-          });
-          setAiEvaluation(evalResult);
-          gateway.emit(PROCTOR_SOCKET_EVENTS.AI_CALIBRATION_RESULT, evalResult);
-
-          if (evalResult.valid_placement) {
-            setCurrentStep('gatekeeper');
-          }
-        } finally {
-          setIsCalibratingAI(false);
-        }
-      }
-    });
+    const unsubSnapshotReady = () => undefined;
 
     const unsubAiResult = gateway.on(PROCTOR_SOCKET_EVENTS.AI_CALIBRATION_RESULT, (evalResult) => {
       setAiEvaluation(evalResult);
@@ -220,8 +215,22 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
     const unsubStartPermitted = gateway.on(PROCTOR_SOCKET_EVENTS.START_PERMITTED, () => {
       setIsStartPermitted(true);
     });
+    let checking = false;
+    const gatekeeper = setInterval(async () => {
+      if (checking) return;
+      checking = true;
+      try {
+        const response = await fetch('/api/proctor/check-gatekeeper/' + encodeURIComponent(session.sessionId),
+          { headers: { Authorization: 'Bearer ' + session.token }, credentials: 'include' });
+        if (!response.ok) { setIsStartPermitted(false); return; }
+        const state = await response.json();
+        setIsStartPermitted(state.isStartPermitted === true);
+      } catch { setIsStartPermitted(false); }
+      finally { checking = false; }
+    }, 3000);
 
     return () => {
+      clearInterval(gatekeeper);
       unsubConnected();
       unsubDisconnected();
       unsubBattery();
@@ -233,7 +242,7 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
       pc.close();
       gateway.disconnect();
     };
-  }, [isOpen, examId, studentId, useLanIp]);
+  }, [isOpen, examId, studentId, proctorSession]);
 
   
   const startTimestamp = useMemo(() => {
@@ -249,7 +258,6 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
       const remainingMs = startTimestamp - now;
       if (remainingMs <= 0) {
         setTimeRemainingSeconds(0);
-        setIsStartPermitted(true);
       } else {
         setTimeRemainingSeconds(Math.ceil(remainingMs / 1000));
         setIsStartPermitted(false);
@@ -273,20 +281,6 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
     }
 
     
-    setTimeout(async () => {
-      if (!aiEvaluation) {
-        const frameBase64 = liveFramePreview || 'data:image/jpeg;base64,sample';
-        const result = await validatePlacementSnapshot(frameBase64, {
-          examId,
-          studentId,
-        });
-        setAiEvaluation(result);
-        setIsCalibratingAI(false);
-        if (result.valid_placement) {
-          setCurrentStep('gatekeeper');
-        }
-      }
-    }, 1200);
   };
 
   const handleCopyLink = () => {
@@ -297,19 +291,9 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
 
   
   const handleInstantSimulatePairing = () => {
-    setIsDeviceConnected(true);
-    setConnectedDeviceBattery(96);
-    setCurrentStep('placement');
-    if (gatewayRef.current) {
-      gatewayRef.current.emit(PROCTOR_SOCKET_EVENTS.DEVICE_CONNECTED, {
-        sessionId,
-        role: 'secondary',
-        batteryLevel: 96,
-      });
-    }
+    setSetupError('Telefonni QR orqali ulang. Ulanishni server tasdiqlaydi.');
   };
 
-  
   const handleOpenPopupWindow = () => {
     const popup = window.open(
       mobileStreamUrl,
@@ -331,6 +315,7 @@ export const ExamSetupModal: React.FC<ExamSetupModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-zinc-950/85 backdrop-blur-md animate-in fade-in duration-200">
+      {setupError && <div role="alert" className="absolute top-4 z-50 bg-red-950 text-white p-3 rounded">{setupError}</div>}
       <div className="relative w-full max-w-4xl bg-zinc-900/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] backdrop-blur-xl">
         
         {/* Modal Header */}

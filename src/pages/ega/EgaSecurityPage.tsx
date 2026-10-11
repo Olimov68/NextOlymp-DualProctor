@@ -12,6 +12,7 @@ import {
   Gauge, ArrowDown, ArrowUp, RefreshCw, ChevronRight, Settings2, FileWarning, Fingerprint, Shield
 } from 'lucide-react';
 import { adminMonitoringService } from '../../services/adminMonitoringService';
+import { apiClient } from '../../services/api';
 
 const getFlagEmoji = (cc: string) => {
   if (!cc || cc.length !== 2) return '🌐';
@@ -171,8 +172,8 @@ export const EgaSecurityPage: React.FC = () => {
   });
 
   const [serverHostStats, setServerHostStats] = useState({
-    hostingAccountsCount: 1,
-    currentAccount: 'root (ibnsinoschool.uz)',
+    hostingAccountsCount: 0,
+    currentAccount: 'Aniqlanmagan',
     accountRamLimit: 'Yuklanmoqda...',
     accountDiskQuota: 'NVMe SSD',
     serverNode: 'Ibn Sino VPS Server'
@@ -180,48 +181,35 @@ export const EgaSecurityPage: React.FC = () => {
 
   const [diagnostics, setDiagnostics] = useState<any>({
     osName: 'Aniqlanmoqda...',
-    platformName: 'Linux',
+    platformName: 'Aniqlanmoqda...',
     kernel: 'Aniqlanmoqda...',
-    hostname: 'server.ibnsinoschool.uz',
-    arch: 'x64',
-    loadAvg: [0.00, 0.00, 0.00],
+    hostname: 'Aniqlanmoqda...',
+    arch: 'Aniqlanmoqda...',
+    loadAvg: [null, null, null],
     ports: [] as Array<{ port: number; name: string; protocol: string; status: string; color: string }>,
     runtime: 'Node.js Engine',
-    nodeVersion: 'v20.x',
-    v8Version: '12.0',
+    nodeVersion: 'Aniqlanmoqda...',
+    v8Version: 'Aniqlanmoqda...',
     memoryRss: '...',
     heapUsed: '...',
-    databaseName: 'JSON Store & Prisma DB',
-    dbStatus: 'Faol',
-    totalModulesCount: 48,
-    keyModules: ['Express.js', 'Socket.IO', 'TypeScript', 'Prisma', 'JWT Guard', 'RateLimiter', 'Bcrypt', 'SystemInfo'],
+    databaseName: 'Aniqlanmoqda...',
+    dbStatus: 'Tekshirilmagan',
+    totalModulesCount: 0,
+    keyModules: [],
   });
-
-  const getAuthToken = () => {
-    if (typeof window !== 'undefined') {
-      const adminRaw = localStorage.getItem('ibn_sino_admin_session_v2');
-      if (adminRaw) {
-        try {
-          const parsed = JSON.parse(adminRaw);
-          if (parsed?.token) return parsed.token;
-        } catch {}
-      }
-      return localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token') || '';
-    }
-    return '';
-  };
 
   useEffect(() => {
     let isMounted = true;
     const fetchRealLogs = async () => {
       try {
-        const token = getAuthToken();
-        const headers: Record<string, string> = { 'Accept': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const fetchOpts: RequestInit = {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' },
+        };
 
-        let res = await fetch('/api/admin/system-metrics', { headers });
+        let res = await fetch('/api/admin/system-metrics', fetchOpts);
         if (!res.ok) {
-          res = await fetch('/api/security/health', { headers });
+          res = await fetch('/api/security/health', fetchOpts);
         }
         if (res.ok) {
           const json = await res.json();
@@ -246,8 +234,8 @@ export const EgaSecurityPage: React.FC = () => {
                   requestsPerSec: json.metrics.requestsPerSec ?? 0,
                   responseTimeAvg: json.metrics.responseTimeAvg ?? 0,
                   threatLevel: json.metrics.threatLevel ?? 'low',
-                  sslValid: json.metrics.ssl?.valid ?? true,
-                  sslExpiry: json.metrics.ssl?.validTo ?? 'Aniqlanmoqda...',
+                  sslValid: json.metrics.ssl?.valid ?? null,
+                  sslExpiry: json.metrics.ssl?.expiryDate ?? 'Aniqlanmagan',
                   sslIssuer: json.metrics.ssl?.issuer,
                   sslDaysRemaining: json.metrics.ssl?.daysRemaining,
                   hardwareSpecs: json.diagnostics?.hardwareSpecs,
@@ -345,61 +333,33 @@ export const EgaSecurityPage: React.FC = () => {
     return Math.max(store.serverMetrics.requestsPerSec ? store.serverMetrics.requestsPerSec * 1800 : 0, fromSpark, store.accessLogs.length);
   }, [store.trafficData, store.serverMetrics.requestsPerSec, store.accessLogs.length]);
 
-  const handleBlockIP = async (ip: string, reason: string, permanent: boolean) => {
-    store.blockIP(ip, 'Qo\'lda qo\'shilgan', 'UZ', reason, permanent);
+  const handleBlockIP = async (ip: string, reason: string, permanent = false) => {
     try {
-      const token = getAuthToken();
-      await fetch('/api/admin/block-ip', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ip, reason, permanent })
-      });
-    } catch (e) {}
+      const result = await apiClient.post('/admin/block-ip', { ip, reason, permanent });
+      store.setBlockedIPs(result.blockedIPs);
+    } catch (error) { alert(error instanceof Error ? error.message : 'IP bloklanmadi'); }
   };
-
   const handleUnblockIP = async (ip: string) => {
-    store.unblockIP(ip);
     try {
-      const token = getAuthToken();
-      await fetch('/api/admin/unblock-ip', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ip })
-      });
-    } catch (e) {}
+      const result = await apiClient.post('/admin/unblock-ip', { ip });
+      store.setBlockedIPs(result.blockedIPs);
+    } catch (error) { alert(error instanceof Error ? error.message : 'Blok ochilmadi'); }
   };
-
   const handleClearLogs = async () => {
-    store.clearLogs();
-    try {
-      const token = getAuthToken();
-      await fetch('/api/admin/system-metrics', {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch (e) {}
+    try { await apiClient.delete('/admin/system-metrics'); store.clearLogs(); }
+    catch (error) { alert(error instanceof Error ? error.message : 'Loglar tozalanmadi'); }
   };
-
   const handleToggleDefense = async (key: keyof DefenseStatus) => {
-    const nextVal = !store.defenseStatus[key];
-    store.toggleDefense(key);
+    if (!['waf', 'rateLimit'].includes(key)) {
+      alert('Bu himoya ushbu ilovada boshqarilmaydi. DDoS/bot/IDS uchun alohida infrastruktura kerak.');
+      return;
+    }
     try {
-      const token = getAuthToken();
-      await fetch('/api/admin/toggle-setting', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key, value: nextVal })
-      });
-    } catch (e) {}
+      const result = await apiClient.post('/admin/toggle-setting', { key, value: !store.defenseStatus[key] });
+      useSecurityStore.setState(state => ({ defenseStatus: {
+        ...state.defenseStatus, waf: result.settings.wafEnabled, rateLimit: result.settings.rateLimitEnabled,
+      } }));
+    } catch (error) { alert(error instanceof Error ? error.message : 'Sozlama saqlanmadi'); }
   };
 
   const openBlockModal = (ip = '', reason = '') => {
@@ -463,7 +423,7 @@ export const EgaSecurityPage: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap">
             
             <button
-              onClick={() => store.setAutoDefend(!store.autoDefend)}
+              onClick={() => alert('Avtomatik DDoS himoya bu ilovada mavjud emas. Hosting himoyasini sozlang.')}
               className={clsx('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer', store.autoDefend ? 'bg-emerald-600/90 border-emerald-500 text-white shadow-lg shadow-emerald-900/30' : 'bg-rose-600/20 border-rose-500/40 text-rose-300')}
             >
               {store.autoDefend ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldX className="w-3.5 h-3.5" />}
@@ -537,7 +497,7 @@ export const EgaSecurityPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5 font-mono">
-                    {diagnostics.hardwareSpecs || `${diagnostics.cpuCores || 1} vCPU @ ${diagnostics.cpuSpeed || '2.40 GHz'} · ${m.ramTotalMb || 1024} MiB RAM · ${m.diskTotalGb || 50} GB Disk · ${diagnostics.osName || 'Linux'}`}
+                    {diagnostics.hardwareSpecs || 'Server qurilmasi haqida ma’lumot kelmadi'}
                   </p>
                 </div>
               </div>
@@ -789,7 +749,7 @@ export const EgaSecurityPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">SSL / TLS Holati:</span>
                     <span className={clsx("font-bold font-mono", m.sslValid ? "text-emerald-400" : "text-rose-400")}>
-                      {m.sslValid ? 'Yaroqli (TLS v1.3)' : 'Muddati o\'tgan'}
+                      {m.sslValid === null ? 'Tekshirilmagan' : m.sslValid ? 'Sertifikat sanasi yaroqli' : 'Sertifikat sanasi yaroqsiz'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">

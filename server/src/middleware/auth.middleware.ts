@@ -2,26 +2,45 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/constants';
 import { dbStore, UserRecord } from '../db/store';
+import { readCookie } from '../security/requestSecurity';
 
 export interface AuthenticatedRequest extends Request {
   user?: UserRecord;
 }
 
-export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export function extractToken(req: Request): string | null {
+  // 1. Check cookies (HttpOnly auth cookie)
+  const cookieToken = (req as any).cookies?.token;
+  if (cookieToken) {
+    return cookieToken;
+  }
+  const rawCookie = req.headers.cookie;
+  if (rawCookie) {
+    const match = rawCookie.match(/(?:^|;\s*)token=([^;]+)/);
+    if (match && match[1]) {
+      return readCookie(req, 'token');
+    }
+  }
+
+  // 2. Check Authorization Bearer header
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+
+  return null;
+}
+
+export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  const token = extractToken(req);
 
   if (!token) {
     return res.status(401).json({ error: 'Avtorizatsiyadan o\'tilmagan (Token talab qilinadi)' });
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string; email?: string; fullName?: string };
-    let user = dbStore.getUserById(decoded.id);
-
-    if (!user && decoded.email) {
-      user = dbStore.getUserByEmailOrPhone(decoded.email);
-    }
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as { id: string; role: string; email?: string; fullName?: string; authVersion?: number };
+    const user = dbStore.getUserById(decoded.id);
 
     if (!user) {
       return res.status(401).json({ error: 'Foydalanuvchi topilmadi yoki hisob o\'chirilgan (Unauthorized)' });
@@ -29,6 +48,9 @@ export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: 
 
     if (user.status !== 'active') {
       return res.status(403).json({ error: 'Ushbu hisob faol emas yoki bloklangan (Forbidden)' });
+    }
+    if ((decoded.authVersion ?? 0) !== (user.authVersion ?? 0)) {
+      return res.status(401).json({ error: 'Sessiya bekor qilingan. Qayta kiring.' });
     }
 
     req.user = user;
@@ -39,14 +61,13 @@ export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: 
 }
 
 export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const token = extractToken(req);
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string };
+      const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as { id: string; authVersion?: number };
       const user = dbStore.getUserById(decoded.id);
-      if (user) {
+      if (user?.status === 'active' && (decoded.authVersion ?? 0) === (user.authVersion ?? 0)) {
         req.user = user;
       }
     } catch {}

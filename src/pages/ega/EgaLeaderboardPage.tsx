@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { EgaLayout } from '../../components/ega/EgaLayout';
 import { useLeaderboardStore } from '../../store/useLeaderboardStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -40,7 +40,8 @@ const UZBEKISTAN_REGIONS = [
 ];
 
 export const EgaLeaderboardPage: React.FC = () => {
-  const { entries, applyCheatingPenalty, awardBonusPoints } = useLeaderboardStore();
+  const { entries } = useLeaderboardStore();
+  useEffect(() => { void useLeaderboardStore.getState().fetchFromApi().catch(() => undefined); }, []);
   const { theme } = useThemeStore();
   const { i18n } = useTranslation();
 
@@ -175,7 +176,7 @@ export const EgaLeaderboardPage: React.FC = () => {
   const handlePenaltySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!penaltyModalUser) return;
-    applyCheatingPenalty(penaltyModalUser.id, Number(penaltyXP), penaltyReason);
+    alert('Reyting ballari server natijasidan hisoblanadi; qo‘lda jarima qo‘llash o‘chirildi.');
     setPenaltyModalUser(null);
   };
 
@@ -183,7 +184,7 @@ export const EgaLeaderboardPage: React.FC = () => {
   const handleBonusSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bonusModalUser) return;
-    awardBonusPoints(bonusModalUser.id, Number(bonusXP), bonusReason);
+    alert('Reyting ballari server natijasidan hisoblanadi; qo‘lda bonus berish o‘chirildi.');
     setBonusModalUser(null);
   };
 
@@ -672,6 +673,7 @@ export const EgaLeaderboardPage: React.FC = () => {
                         <td className="py-3 px-3.5 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
+                              disabled
                               onClick={() => setBonusModalUser(e)}
                               className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
                               title="Bonus ball berish (+XP)"
@@ -681,6 +683,7 @@ export const EgaLeaderboardPage: React.FC = () => {
                             </button>
 
                             <button
+                              disabled
                               onClick={() => setPenaltyModalUser(e)}
                               className="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
                               title="Cheating jarimasi ayirish (-XP)"

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { OlympiadItem } from '../data/initialOlympiads';
 import { apiClient } from '../services/api';
+import { toAdminExam } from '../services/adminExamAdapter';
 import { submissionService } from '../services/submissionService';
 
 // CRITICAL ARCHITECTURE RULE:
@@ -17,8 +18,7 @@ interface OlympiadStore {
   loading: boolean;
   fetchFromApi: () => Promise<void>;
   fetchOlympiads: () => Promise<void>;
-  createOlympiad: (data: any) => Promise<OlympiadItem>;
-  addOlympiad: (item: Omit<OlympiadItem, 'id' | 'registeredCount' | 'submittedCount' | 'paidCount' | 'totalRevenue'>) => Promise<OlympiadItem>;
+  addOlympiad: (item: Omit<OlympiadItem, 'id' | 'registeredCount' | 'submittedCount'>) => Promise<OlympiadItem>;
   updateOlympiad: (id: string, updated: Partial<OlympiadItem>) => Promise<any>;
   deleteOlympiad: (id: string) => Promise<void>;
   togglePinOlympiad: (id: string) => Promise<void>;
@@ -33,9 +33,9 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
   fetchFromApi: async () => {
     set({ loading: true });
     try {
-      const json = await apiClient.get('/exams');
+      const json = await apiClient.get('/exams?kind=olympiad');
       const list = Array.isArray(json) ? json : (json?.data ?? []);
-      set({ olympiads: Array.isArray(list) ? list : [], loading: false });
+      set({ olympiads: Array.isArray(list) ? list.map(toAdminExam) : [], loading: false });
     } catch (err) {
       console.error('API fetch error for exams:', err);
       set({ loading: false });
@@ -45,9 +45,9 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
   fetchOlympiads: async () => {
     set({ loading: true });
     try {
-      const json = await apiClient.get('/exams');
+      const json = await apiClient.get('/exams?kind=olympiad');
       const list = Array.isArray(json) ? json : (json?.data ?? []);
-      set({ olympiads: Array.isArray(list) ? list : [], loading: false });
+      set({ olympiads: Array.isArray(list) ? list.map(toAdminExam) : [], loading: false });
     } catch (err) {
       console.error('API fetch error for exams:', err);
       set({ loading: false });
@@ -58,7 +58,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
     set({ loading: true });
     try {
       const response = await apiClient.post('/exams', data);
-      const saved: OlympiadItem = response?.data || response;
+      const saved = toAdminExam(response.data);
       set((state) => ({
         olympiads: [saved, ...state.olympiads.filter((o) => o.id !== saved.id)],
         loading: false,
@@ -83,12 +83,10 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
         questions: newItem.questions || [],
         registeredCount: 0,
         submittedCount: 0,
-        paidCount: 0,
-        totalRevenue: 0,
       };
 
       const response = await apiClient.post('/exams', payload);
-      const saved: OlympiadItem = response?.data || payload;
+      const saved = toAdminExam(response.data);
       set((state) => ({
         olympiads: [saved, ...state.olympiads.filter((o) => o.id !== saved.id)],
         loading: false,
@@ -104,7 +102,7 @@ export const useOlympiadStore = create<OlympiadStore>((set, get) => ({
     set({ loading: true });
     try {
       const response = await apiClient.put(`/exams/${encodeURIComponent(id)}`, updatedFields);
-      const saved = response?.data || { ...get().olympiads.find((o) => o.id === id), ...updatedFields, id };
+      const saved = toAdminExam(response.data);
       set((state) => ({
         olympiads: state.olympiads.map((item) => (item.id === id ? saved : item)),
         loading: false,

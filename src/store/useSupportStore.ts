@@ -1,158 +1,33 @@
 import { create } from 'zustand';
-import { SupportTicket, TicketMessage, INITIAL_TICKETS } from '../data/initialSupport';
-
-const STORAGE_KEY = 'next_olymp_tickets';
-
-const getStoredTickets = (): SupportTicket[] => {
-  if (typeof window === 'undefined') return INITIAL_TICKETS;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    console.warn('LocalStorage load error for tickets:', e);
-  }
-  return INITIAL_TICKETS;
-};
-
-const persistTickets = (items: SupportTicket[]) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch (e) {
-    console.warn('LocalStorage save error for tickets:', e);
-  }
-};
+import { SupportTicket } from '../data/initialSupport';
+import { apiClient } from '../services/api';
 
 interface SupportStore {
   tickets: SupportTicket[];
+  loading: boolean;
   selectedTicketId: string | null;
+  fetchTickets: () => Promise<void>;
   setSelectedTicketId: (id: string | null) => void;
-  createTicket: (ticketData: {
-    userId?: string;
-    userName: string;
-    userPhone: string;
-    userEmail: string;
-    userRole?: 'student' | 'teacher';
-    subject: string;
-    category: "To'lov" | "Texnik muammo" | "Sertifikat" | "Olimpiada" | "Boshqa";
-    priority?: "past" | "orta" | "yuqori";
-    messageText: string;
-  }) => string;
-  addMessageToTicket: (
-    ticketId: string,
-    text: string,
-    sender?: 'admin' | 'user',
-    attachments?: { name: string; size: string; type: string }[]
-  ) => void;
-  updateTicketStatus: (ticketId: string, status: SupportTicket['status']) => void;
-  closeTicket: (ticketId: string) => void;
-  deleteTicket: (ticketId: string) => void;
-  resetTickets: () => void;
+  createTicket: (ticketData: { userId?: string; userName: string; userPhone: string; userEmail: string; userRole?: 'student' | 'teacher'; subject: string; category: SupportTicket['category']; priority?: SupportTicket['priority']; messageText: string; }) => Promise<string>;
+  addMessageToTicket: (ticketId: string, text: string, sender?: 'admin' | 'user', attachments?: SupportTicket['messages'][number]['attachments']) => Promise<void>;
+  updateTicketStatus: (ticketId: string, status: SupportTicket['status']) => Promise<void>;
+  closeTicket: (ticketId: string) => Promise<void>;
+  deleteTicket: (ticketId: string) => Promise<void>;
 }
 
+const dataOf = (response: any): SupportTicket[] => Array.isArray(response?.data) ? response.data : [];
+
 export const useSupportStore = create<SupportStore>((set, get) => ({
-  tickets: getStoredTickets(),
-  selectedTicketId: null,
-
+  tickets: [], loading: false, selectedTicketId: null,
+  fetchTickets: async () => { set({ loading: true }); try { const response = await apiClient.get('/support/tickets'); set({ tickets: dataOf(response), loading: false }); } catch (error) { set({ loading: false }); throw error; } },
   setSelectedTicketId: (id) => set({ selectedTicketId: id }),
-
-  createTicket: (ticketData) => {
-    const currentTickets = get().tickets;
-    const now = new Date();
-    const timestampStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
-      now.getDate()
-    ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    const newId = `TK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newTicket: SupportTicket = {
-      id: newId,
-      userId: ticketData.userId || `USR-${Math.floor(100 + Math.random() * 900)}`,
-      userName: ticketData.userName,
-      userPhone: ticketData.userPhone,
-      userEmail: ticketData.userEmail,
-      userRole: ticketData.userRole || 'student',
-      subject: ticketData.subject,
-      category: ticketData.category,
-      priority: ticketData.priority || 'orta',
-      status: 'yangi',
-      createdAt: timestampStr,
-      updatedAt: timestampStr,
-      messages: [
-        {
-          id: `msg-${Date.now()}`,
-          sender: 'user',
-          senderName: ticketData.userName,
-          text: ticketData.messageText,
-          timestamp: timestampStr
-        }
-      ]
-    };
-
-    const updatedTickets = [newTicket, ...currentTickets];
-    persistTickets(updatedTickets);
-    set({ tickets: updatedTickets, selectedTicketId: newId });
-    return newId;
+  createTicket: async (ticketData) => {
+    const response = await apiClient.post<{ data: SupportTicket }>('/support/tickets', { subject: ticketData.subject, category: ticketData.category, priority: ticketData.priority || 'orta', messageText: ticketData.messageText });
+    const ticket = response?.data; if (!ticket?.id) throw new Error('Server murojaatni yaratmadi');
+    set(state => ({ tickets: [ticket, ...state.tickets], selectedTicketId: ticket.id })); return ticket.id;
   },
-
-  addMessageToTicket: (ticketId, text, sender = 'admin', attachments) => {
-    const currentTickets = get().tickets;
-    const now = new Date();
-    const timestampStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
-      now.getDate()
-    ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    const targetTicket = currentTickets.find(t => t.id === ticketId);
-    const senderName = sender === 'admin' ? 'EGA Support (Admin)' : (targetTicket?.userName || 'Ishtirokchi');
-
-    const newMessage: TicketMessage = {
-      id: `msg-${Date.now()}`,
-      sender,
-      senderName,
-      text,
-      timestamp: timestampStr,
-      attachments,
-    };
-
-    const updatedTickets = currentTickets.map((ticket) => {
-      if (ticket.id === ticketId) {
-        return {
-          ...ticket,
-          messages: [...ticket.messages, newMessage],
-          status: sender === 'admin' ? ('jarayonda' as const) : ('yangi' as const),
-          lastUpdated: timestampStr,
-        };
-      }
-      return ticket;
-    });
-
-    persistTickets(updatedTickets);
-    set({ tickets: updatedTickets });
-  },
-
-  updateTicketStatus: (ticketId, status) => {
-    const updatedTickets = get().tickets.map((t) => (t.id === ticketId ? { ...t, status } : t));
-    persistTickets(updatedTickets);
-    set({ tickets: updatedTickets });
-  },
-
-  closeTicket: (ticketId) => {
-    get().updateTicketStatus(ticketId, 'yopildi');
-  },
-
-  deleteTicket: (ticketId) => {
-    const updated = get().tickets.filter((t) => t.id !== ticketId);
-    persistTickets(updated);
-    set({
-      tickets: updated,
-      selectedTicketId: get().selectedTicketId === ticketId ? null : get().selectedTicketId,
-    });
-  },
-
-  resetTickets: () => {
-    persistTickets(INITIAL_TICKETS);
-    set({ tickets: INITIAL_TICKETS, selectedTicketId: null });
-  },
+  addMessageToTicket: async (ticketId, text, _sender = 'admin', attachments) => { const response = await apiClient.post<{ data: SupportTicket }>(`/support/tickets/${encodeURIComponent(ticketId)}/messages`, { text, attachments }); if (response?.data) set(state => ({ tickets: state.tickets.map(ticket => ticket.id === ticketId ? response.data : ticket) })); },
+  updateTicketStatus: async (ticketId, status) => { const response = await apiClient.put<{ data: SupportTicket }>(`/support/tickets/${encodeURIComponent(ticketId)}`, { status }); if (response?.data) set(state => ({ tickets: state.tickets.map(ticket => ticket.id === ticketId ? response.data : ticket) })); },
+  closeTicket: async (ticketId) => get().updateTicketStatus(ticketId, 'yopildi'),
+  deleteTicket: async (ticketId) => { await apiClient.delete(`/support/tickets/${encodeURIComponent(ticketId)}`); set(state => ({ tickets: state.tickets.filter(ticket => ticket.id !== ticketId), selectedTicketId: state.selectedTicketId === ticketId ? null : state.selectedTicketId })); },
 }));

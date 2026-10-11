@@ -1,18 +1,22 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
 import { validatePlacementSnapshot } from '../services/setupProctor.service';
 import { JWT_SECRET } from '../config/constants';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 import { dbStore, ProctorSessionRecord } from '../db/store';
 
-export const activeProctorSessions = new Map<string, ProctorSessionRecord>();
-
-// Preload persisted proctor sessions on server start (Item 9)
-for (const session of dbStore.getAllProctorSessions()) {
-  activeProctorSessions.set(session.sessionId, session);
-}
+// No independent in-memory copy: every process reads the current transaction's records.
+export const activeProctorSessions = {
+  get: (id: string) => dbStore.getProctorSession(id),
+  set: (_id: string, session: ProctorSessionRecord) => dbStore.saveProctorSession(session),
+  delete: (id: string) => dbStore.deleteProctorSession(id),
+  forEach: (callback: (session: ProctorSessionRecord, id: string) => void) => {
+    for (const session of dbStore.getAllProctorSessions()) callback(session, session.sessionId);
+  },
+};
 
 function sanitizeString(str: any): string {
   if (typeof str !== 'string') return '';
@@ -34,12 +38,16 @@ function verifySessionAuth(req: Request, sessionId: string): boolean {
   if (!token || !sessionId) return false;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as jwt.JwtPayload;
     if (!decoded || !decoded.sessionId || decoded.sessionId !== sessionId) {
       return false;
     }
     const session = activeProctorSessions.get(sessionId);
     if (!session) return false;
+    if (decoded.deviceRole !== 'primary' && decoded.deviceRole !== 'secondary') return false;
+    if (!decoded.jti || decoded.jti !== (decoded.deviceRole === 'primary' ? session.primaryJti : session.secondaryJti)) return false;
+    const user = dbStore.getUserById(session.studentId);
+    if (user?.status !== 'active' || (user.authVersion ?? 0) !== (session.authVersion ?? 0)) return false;
 
     // Strict binding: token sessionId, examId, and studentId must all strictly match active session!
     if (!decoded.studentId || decoded.studentId !== session.studentId) {
@@ -49,7 +57,7 @@ function verifySessionAuth(req: Request, sessionId: string): boolean {
       return false;
     }
     // Check if session has expired
-    if (Date.now() > session.examEndTime + 60000) {
+    if (Date.now() >= session.examEndTime) {
       return false;
     }
 
@@ -78,19 +86,34 @@ export class ProctorController {
       }
 
       const sessionId = uuidv4();
+      const exam = dbStore.getExamById(examId);
+      if (!exam) return res.status(404).json({ error: 'Imtihon topilmadi' });
+      const student = dbStore.getUserById(studentId);
+      if (student?.status !== 'active') return res.status(403).json({ error: 'Faol o‘quvchi topilmadi' });
+      if (dbStore.getAllProctorSessions().filter(s => s.studentId === studentId && s.examEndTime > Date.now()).length >= 10)
+        return res.status(429).json({ error: 'Faol ulanish seanslari juda ko‘p' });
+      const primaryJti = uuidv4();
+      const secondaryJti = uuidv4();
+      const pairingCode = crypto.randomBytes(32).toString('base64url');
       const token = jwt.sign(
-        { sessionId, examId, studentId, studentName: studentName || "O'quvchi" },
+        { sessionId, examId, studentId, deviceRole: 'primary', jti: primaryJti },
         JWT_SECRET,
-        { expiresIn: '4h' }
+        { expiresIn: '2h' }
       );
 
       const now = Date.now();
-      const examStartTime = req.body.examStartTime ? new Date(req.body.examStartTime).getTime() : now;
-      const examEndTime = req.body.examEndTime ? new Date(req.body.examEndTime).getTime() : now + (120 * 60 * 1000);
+      const examStartTime = exam.isAlwaysOpen ? now : new Date(exam.startTime).getTime();
+      const examEndTime = Math.min(exam.isAlwaysOpen ? Infinity : new Date(exam.endTime).getTime(), now + 2 * 3600_000);
+      if (!Number.isFinite(examStartTime) || !Number.isFinite(examEndTime) || examEndTime <= now)
+        return res.status(400).json({ error: 'Imtihon vaqti yaroqsiz yoki tugagan' });
 
       const sessionRecord: ProctorSessionRecord = {
+        authVersion: student.authVersion ?? 0,
         sessionId,
-        token,
+        primaryJti, secondaryJti,
+        pairingHash: crypto.createHash('sha256').update(pairingCode).digest('hex'),
+        pairingExpiresAt: now + 5 * 60_000,
+        token: '',
         examId,
         studentId,
         status: 'WAITING_DEVICE',
@@ -112,6 +135,7 @@ export class ProctorController {
         success: true,
         sessionId,
         token,
+        pairingCode,
         streamUrl,
         exam: {
           id: examId,
@@ -160,6 +184,26 @@ export class ProctorController {
     } catch (error: any) {
       return res.status(500).json({ error: "Tahlil jarayonida xatolik yuz berdi" });
     }
+  }
+
+  public static async pair(req: Request, res: Response) {
+    const { sessionId, pairingCode } = req.body ?? {};
+    if (typeof sessionId !== 'string' || typeof pairingCode !== 'string' || pairingCode.length > 100)
+      return res.status(400).json({ error: 'Ulash kodi talab qilinadi' });
+    const session = dbStore.getProctorSession(sessionId);
+    const student = session && dbStore.getUserById(session.studentId);
+    if (!student || student.status !== 'active' || (student.authVersion ?? 0) !== (session?.authVersion ?? 0))
+      return res.status(403).json({ error: 'Ulash seansi bekor qilingan' });
+    const digest = crypto.createHash('sha256').update(pairingCode).digest('hex');
+    if (!session?.pairingHash || session.pairingHash.length !== digest.length || (session.pairingExpiresAt ?? 0) <= Date.now() ||
+        session.examEndTime <= Date.now() || !crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(session.pairingHash)))
+      return res.status(403).json({ error: 'Ulash kodi yaroqsiz, ishlatilgan yoki eskirgan' });
+    delete session.pairingHash;
+    delete session.pairingExpiresAt;
+    dbStore.saveProctorSession(session);
+    const token = jwt.sign({ sessionId, examId: session.examId, studentId: session.studentId,
+      deviceRole: 'secondary', jti: session.secondaryJti }, JWT_SECRET, { expiresIn: '2h' });
+    return res.json({ token });
   }
 
   public static async checkGatekeeper(req: Request, res: Response) {

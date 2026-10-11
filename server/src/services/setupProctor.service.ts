@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export interface AIPlacementEvaluation {
   valid_placement: boolean;
-  missing_elements: ('hands' | 'student' | 'desk' | 'screen')[];
+  missing_elements: ('hands' | 'student' | 'desk' | 'screen' | 'ai_verification_pending')[];
   guidance_message: string;
   confidence?: number;
   details?: {
@@ -57,125 +57,43 @@ Qoidalar:
 `.trim();
 
 export async function validatePlacementSnapshot(
-  imageBase64: string,
-  options: CalibrationOptions = {}
+  imageBase64: string, options: CalibrationOptions = {}
 ): Promise<AIPlacementEvaluation> {
-  
-  const cleanBase64 = imageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+  const unavailable = (): AIPlacementEvaluation => ({
+    valid_placement: false, missing_elements: ['ai_verification_pending'],
+    guidance_message: 'Tasdiqlangan kamera modeli sozlanmagan yoki tekshiruv bajarilmadi. Admin bilan bog‘laning.',
+  });
   const apiKey = options.geminiApiKey || process.env.GEMINI_API_KEY;
-
-  
-  if (apiKey) {
-    try {
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: VISION_SYSTEM_PROMPT },
-                {
-                  inline_data: {
-                    mime_type: 'image/jpeg',
-                    data: cleanBase64,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            response_mime_type: 'application/json',
-          },
-        },
-        { timeout: 8000 }
-      );
-
-      const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (rawText) {
-        const parsed = JSON.parse(rawText.trim());
-        return {
-          valid_placement: Boolean(parsed.valid_placement),
-          missing_elements: Array.isArray(parsed.missing_elements) ? parsed.missing_elements : [],
-          guidance_message: parsed.guidance_message || (parsed.valid_placement ? "Kamera joylashuvi a'lo darajada!" : "Kamerani to'g'rilang."),
-          confidence: 0.95,
-          details: parsed.details || {
-            student_detected: !parsed.missing_elements?.includes('student'),
-            hands_detected: !parsed.missing_elements?.includes('hands'),
-            desk_detected: !parsed.missing_elements?.includes('desk'),
-            screen_detected: !parsed.missing_elements?.includes('screen'),
-            distance_rating: 'optimal',
-          },
-        };
-      }
-    } catch (err: any) {
-      console.error('[setupProctor.service] Gemini Vision API chaqiruvida xatolik:', err?.response?.data || err.message);
-    }
+  const model = process.env.GEMINI_VISION_MODEL;
+  if (!apiKey || !model || !/^[a-zA-Z0-9._-]+$/.test(model)) return unavailable();
+  try {
+    const { decodeSnapshot } = await import('../security/snapshotImage');
+    const image = await decodeSnapshot(imageBase64);
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      { contents: [{ role: 'user', parts: [{ text: VISION_SYSTEM_PROMPT },
+        { inline_data: { mime_type: 'image/jpeg', data: image.toString('base64') } }] }],
+        generationConfig: { temperature: 0.1, response_mime_type: 'application/json' } },
+      { timeout: 8000, maxContentLength: 65536, headers: { 'x-goog-api-key': apiKey } },
+    );
+    const raw = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof raw !== 'string') return unavailable();
+    const parsed = JSON.parse(raw);
+    const details = parsed.details;
+    if (typeof parsed.valid_placement !== 'boolean' || !details ||
+        !['student_detected', 'hands_detected', 'desk_detected', 'screen_detected'].every(key => typeof details[key] === 'boolean') ||
+        !['too_close', 'optimal', 'too_far'].includes(details.distance_rating)) return unavailable();
+    const elements = ['hands', 'student', 'desk', 'screen'] as const;
+    const missing = elements.filter(element => details[element + '_detected'] !== true);
+    return {
+      valid_placement: parsed.valid_placement === true && missing.length === 0 && details.distance_rating === 'optimal',
+      missing_elements: missing,
+      guidance_message: typeof parsed.guidance_message === 'string' ? parsed.guidance_message.slice(0, 500) : 'Kamerani tekshiring.',
+      details,
+    };
+  } catch {
+    // Never log request headers, provider bodies, tokens, or biometric images.
+    console.error('[proctor] Vision verification unavailable');
+    return unavailable();
   }
-
-  
-  const deepseekKey = options.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
-  if (deepseekKey) {
-    try {
-      const response = await axios.post(
-        'https://api.deepseek.com/v1/chat/completions',
-        {
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: VISION_SYSTEM_PROMPT },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: "Ushbu kadrni imtihon qoidalariga ko'ra tahlil qiling." },
-                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${cleanBase64}` } }
-              ]
-            }
-          ],
-          response_format: { type: 'json_object' }
-        },
-        {
-          headers: { Authorization: `Bearer ${deepseekKey}` },
-          timeout: 8000
-        }
-      );
-
-      const rawText = response.data?.choices?.[0]?.message?.content;
-      if (rawText) {
-        const parsed = JSON.parse(rawText.trim());
-        return {
-          valid_placement: Boolean(parsed.valid_placement),
-          missing_elements: parsed.missing_elements || [],
-          guidance_message: parsed.guidance_message || "Joylashuv tekshirildi",
-          confidence: 0.92,
-          details: parsed.details
-        };
-      }
-    } catch (err: any) {
-      console.error('[setupProctor.service] DeepSeek Vision API xatosi:', err?.message);
-    }
-  }
-
-  
-  return fallbackEvaluation(cleanBase64);
-}
-
-function fallbackEvaluation(cleanBase64: string): AIPlacementEvaluation {
-  // CRITICAL SECURITY FIX (Item 12): Fail-closed on AI unavailable. Never auto-pass with mock checksums!
-  console.warn('[setupProctor.service] AI Vision service unavailable or API keys unconfigured. Failing closed.');
-  
-  return {
-    valid_placement: false,
-    missing_elements: ['ai_verification_pending'],
-    guidance_message: "AI vizual tahlil xizmati vaqtincha javob bermadi yoki API kalit sozlanmagan. Iltimos, kamerani to'g'ri burchakka o'rnating va qayta urinib ko'ring.",
-    confidence: 0,
-    details: {
-      student_detected: false,
-      hands_detected: false,
-      desk_detected: false,
-      screen_detected: false,
-      distance_rating: 'too_close',
-      angle_rating: 'too_flat',
-    },
-  };
 }

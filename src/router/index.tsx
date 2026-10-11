@@ -7,54 +7,50 @@ import { DashboardLayout } from '../layouts/DashboardLayout';
 import { AdminLayout } from '../layouts/AdminLayout';
 
 import { HomePage } from '../pages/public/HomePage';
-import { OlympiadListPage } from '../pages/public/OlympiadListPage';
-import { OlympiadDetailPage } from '../pages/public/OlympiadDetailPage';
-import { LeaderboardPage } from '../pages/public/LeaderboardPage';
-import { VerifyCertificatePage } from '../pages/public/VerifyCertificatePage';
-import { AboutPage } from '../pages/public/AboutPage';
-import { LoginPage } from '../pages/public/LoginPage';
-import { RegisterPage } from '../pages/public/RegisterPage';
-import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage';
-import { TermsPage } from '../pages/public/TermsPage';
-import { PrivacyPage } from '../pages/public/PrivacyPage';
-import { RulesPage } from '../pages/public/RulesPage';
-import { BaholashPage } from '../pages/public/BaholashPage';
-import { ProctorStreamView } from '../pages/public/ProctorStreamView';
+const OlympiadListPage = React.lazy(() => import('../pages/public/OlympiadListPage').then(module => ({ default: module.OlympiadListPage })));
+const OlympiadDetailPage = React.lazy(() => import('../pages/public/OlympiadDetailPage').then(module => ({ default: module.OlympiadDetailPage })));
+const LeaderboardPage = React.lazy(() => import('../pages/public/LeaderboardPage').then(module => ({ default: module.LeaderboardPage })));
+const VerifyCertificatePage = React.lazy(() => import('../pages/public/VerifyCertificatePage').then(module => ({ default: module.VerifyCertificatePage })));
+const AboutPage = React.lazy(() => import('../pages/public/AboutPage').then(module => ({ default: module.AboutPage })));
+const LoginPage = React.lazy(() => import('../pages/public/LoginPage').then(module => ({ default: module.LoginPage })));
+const RegisterPage = React.lazy(() => import('../pages/public/RegisterPage').then(module => ({ default: module.RegisterPage })));
+const ForgotPasswordPage = React.lazy(() => import('../pages/public/ForgotPasswordPage').then(module => ({ default: module.ForgotPasswordPage })));
+const TermsPage = React.lazy(() => import('../pages/public/TermsPage').then(module => ({ default: module.TermsPage })));
+const PrivacyPage = React.lazy(() => import('../pages/public/PrivacyPage').then(module => ({ default: module.PrivacyPage })));
+const RulesPage = React.lazy(() => import('../pages/public/RulesPage').then(module => ({ default: module.RulesPage })));
+const ProctorStreamView = React.lazy(() => import('../pages/public/ProctorStreamView').then(module => ({ default: module.ProctorStreamView })));
 
-import { StudentDashboard } from '../pages/student/StudentDashboard';
-import { StudentProfilePage } from '../pages/student/StudentProfilePage';
-import { StudentResultsPage } from '../pages/student/StudentResultsPage';
-import { StudentCertificatesPage } from '../pages/student/StudentCertificatesPage';
-import { StudentOlympiadsPage } from '../pages/student/StudentOlympiadsPage';
-import { StudentLeaderboardPage } from '../pages/student/StudentLeaderboardPage';
-import { StudentLevelTestPage } from '../pages/student/StudentLevelTestPage';
-import { StudentSupportPage } from '../pages/student/StudentSupportPage';
-import { ContestParticipatePage } from '../pages/student/ContestParticipatePage';
-import { ExamDiagnosticPage } from '../pages/student/ExamDiagnosticPage';
+const StudentDashboard = React.lazy(() => import('../pages/student/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
+const StudentProfilePage = React.lazy(() => import('../pages/student/StudentProfilePage').then(module => ({ default: module.StudentProfilePage })));
+const StudentResultsPage = React.lazy(() => import('../pages/student/StudentResultsPage').then(module => ({ default: module.StudentResultsPage })));
+const StudentCertificatesPage = React.lazy(() => import('../pages/student/StudentCertificatesPage').then(module => ({ default: module.StudentCertificatesPage })));
+const StudentOlympiadsPage = React.lazy(() => import('../pages/student/StudentOlympiadsPage').then(module => ({ default: module.StudentOlympiadsPage })));
+const StudentLeaderboardPage = React.lazy(() => import('../pages/student/StudentLeaderboardPage').then(module => ({ default: module.StudentLeaderboardPage })));
+const PracticeLibraryPage = React.lazy(() => import('../pages/student/PracticeLibraryPage').then(module => ({ default: module.PracticeLibraryPage })));
+const SharedExamAdminPage = React.lazy(() => import('../pages/ega/SharedExamAdminPage').then(module => ({ default: module.SharedExamAdminPage })));
+const StudentSupportPage = React.lazy(() => import('../pages/student/StudentSupportPage').then(module => ({ default: module.StudentSupportPage })));
+const ContestParticipatePage = React.lazy(() => import('../pages/student/ContestParticipatePage').then(module => ({ default: module.ContestParticipatePage })));
+const ExamDiagnosticPage = React.lazy(() => import('../pages/student/ExamDiagnosticPage').then(module => ({ default: module.ExamDiagnosticPage })));
 
-import { TeacherDashboard } from '../pages/teacher/TeacherDashboard';
-import { TeacherOlympiadsPage } from '../pages/teacher/TeacherOlympiadsPage';
+const TeacherDashboard = React.lazy(() => import('../pages/teacher/TeacherDashboard').then(module => ({ default: module.TeacherDashboard })));
+const TeacherOlympiadsPage = React.lazy(() => import('../pages/teacher/TeacherOlympiadsPage').then(module => ({ default: module.TeacherOlympiadsPage })));
 
-import { MilliySertifikatDashboardPage } from '../pages/dashboard/MilliySertifikatDashboardPage';
 
-import { EgaLoginPage } from '../pages/ega/EgaLoginPage';
-import { EgaDashboardPage } from '../pages/ega/EgaDashboardPage';
-import { EgaCompetitionsPage } from '../pages/ega/EgaCompetitionsPage';
-import { EgaSingleCompetitionPage } from '../pages/ega/EgaSingleCompetitionPage';
-import { EgaLeaderboardPage } from '../pages/ega/EgaLeaderboardPage';
-import { EgaSubjectsPage } from '../pages/ega/EgaSubjectsPage';
-import { EgaUsersPage } from '../pages/ega/EgaUsersPage';
-import { EgaCertificatesPage } from '../pages/ega/EgaCertificatesPage';
-import { EgaTeamPage } from '../pages/ega/EgaTeamPage';
-import { EgaLocationsPage } from '../pages/ega/EgaLocationsPage';
-import { EgaNotificationsPage } from '../pages/ega/EgaNotificationsPage';
-import { EgaSupportPage } from '../pages/ega/EgaSupportPage';
-import { EgaSecurityPage } from '../pages/ega/EgaSecurityPage';
-import { EgaBaholashPage } from '../pages/ega/EgaBaholashPage';
-import { EgaLevelTestsPage } from '../pages/ega/EgaLevelTestsPage';
+const EgaLoginPage = React.lazy(() => import('../pages/ega/EgaLoginPage').then(module => ({ default: module.EgaLoginPage })));
+const EgaDashboardPage = React.lazy(() => import('../pages/ega/EgaDashboardPage').then(module => ({ default: module.EgaDashboardPage })));
+const EgaLeaderboardPage = React.lazy(() => import('../pages/ega/EgaLeaderboardPage').then(module => ({ default: module.EgaLeaderboardPage })));
+const EgaSubjectsPage = React.lazy(() => import('../pages/ega/EgaSubjectsPage').then(module => ({ default: module.EgaSubjectsPage })));
+const EgaUsersPage = React.lazy(() => import('../pages/ega/EgaUsersPage').then(module => ({ default: module.EgaUsersPage })));
+const EgaCertificatesPage = React.lazy(() => import('../pages/ega/EgaCertificatesPage').then(module => ({ default: module.EgaCertificatesPage })));
+const EgaTeamPage = React.lazy(() => import('../pages/ega/EgaTeamPage').then(module => ({ default: module.EgaTeamPage })));
+const EgaLocationsPage = React.lazy(() => import('../pages/ega/EgaLocationsPage').then(module => ({ default: module.EgaLocationsPage })));
+const EgaNotificationsPage = React.lazy(() => import('../pages/ega/EgaNotificationsPage').then(module => ({ default: module.EgaNotificationsPage })));
+const EgaSupportPage = React.lazy(() => import('../pages/ega/EgaSupportPage').then(module => ({ default: module.EgaSupportPage })));
+const EgaSecurityPage = React.lazy(() => import('../pages/ega/EgaSecurityPage').then(module => ({ default: module.EgaSecurityPage })));
 
 export const AppRouter: React.FC = () => {
   return (
+    <React.Suspense fallback={<div role="status" className="p-8 text-center">Sahifa yuklanmoqda…</div>}>
     <Routes>
       
       <Route element={<PublicLayout />}>
@@ -93,12 +89,13 @@ export const AppRouter: React.FC = () => {
         <Route path="/results" element={<StudentResultsPage />} />
         <Route path="/certificates" element={<StudentCertificatesPage />} />
         <Route path="/student/olympiads" element={<StudentOlympiadsPage />} />
-        <Route path="/student/level-test" element={<StudentLevelTestPage />} />
+        <Route path="/student/level-test" element={<PracticeLibraryPage />} />
+        <Route path="/student/practice" element={<PracticeLibraryPage />} />
         <Route path="/student/leaderboard" element={<StudentLeaderboardPage />} />
         <Route path="/student/support" element={<StudentSupportPage />} />
         
         
-        <Route path="/dashboard/milliy-sertifikat" element={<MilliySertifikatDashboardPage />} />
+        <Route path="/dashboard/milliy-sertifikat" element={<PracticeLibraryPage key="national" nationalOnly />} />
         <Route path="/dashboard/baholash" element={<Navigate to="/dashboard/milliy-sertifikat" replace />} />
         
         
@@ -147,10 +144,10 @@ export const AppRouter: React.FC = () => {
         }
       >
         <Route path="/ega" element={<EgaDashboardPage />} />
-        <Route path="/ega/competitions" element={<EgaCompetitionsPage />} />
-        <Route path="/ega/competitions/:id" element={<EgaSingleCompetitionPage />} />
-        <Route path="/ega/olympiads" element={<EgaCompetitionsPage />} />
-        <Route path="/ega/level-tests" element={<EgaLevelTestsPage />} />
+        <Route path="/ega/competitions" element={<SharedExamAdminPage key="olympiad" kind="olympiad" />} />
+        <Route path="/ega/competitions/:id" element={<SharedExamAdminPage key="olympiad-direct" kind="olympiad" />} />
+        <Route path="/ega/olympiads" element={<SharedExamAdminPage key="olympiad" kind="olympiad" />} />
+        <Route path="/ega/level-tests" element={<SharedExamAdminPage key="level" kind="level_test" />} />
         <Route path="/ega/users" element={<EgaUsersPage />} />
         <Route path="/ega/proctoring" element={<Navigate to="/ega" replace />} />
         <Route path="/ega/leaderboard" element={<EgaLeaderboardPage />} />
@@ -159,17 +156,15 @@ export const AppRouter: React.FC = () => {
         <Route path="/ega/locations" element={<EgaLocationsPage />} />
         <Route path="/ega/team" element={<EgaTeamPage />} />
         <Route path="/ega/certificates" element={<EgaCertificatesPage />} />
-        <Route path="/ega/finance" element={<Navigate to="/ega" replace />} />
-        <Route path="/ega/payments" element={<Navigate to="/ega" replace />} />
-        <Route path="/ega/packages" element={<Navigate to="/ega" replace />} />
+
         <Route path="/ega/notifications" element={<EgaNotificationsPage />} />
         <Route path="/ega/support" element={<EgaSupportPage />} />
         <Route path="/ega/security" element={<EgaSecurityPage />} />
         <Route path="/ega/settings" element={<EgaSecurityPage />} />
 
         
-        <Route path="/ega/baholash" element={<EgaBaholashPage />} />
-        <Route path="/ega/baholash/rubric" element={<EgaBaholashPage />} />
+        <Route path="/ega/baholash" element={<SharedExamAdminPage key="national" kind="national_certificate" />} />
+        <Route path="/ega/baholash/rubric" element={<Navigate to="/ega/baholash" replace />} />
       </Route>
 
       
@@ -179,6 +174,7 @@ export const AppRouter: React.FC = () => {
       
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </React.Suspense>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { 
   ShieldCheck, 
@@ -21,59 +21,29 @@ import { submissionService } from '../../services/submissionService';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import clsx from 'clsx';
+import { AssessmentResultView } from './PracticeLibraryPage';
 
 export const StudentResultsPage: React.FC = () => {
   const { user } = useAuth();
+  const [revision, setRevision] = useState(0);
+  const [loadError, setLoadError] = useState('');
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void submissionService.refresh().then(() => { if (!cancelled) setRevision(n => n + 1); })
+      .catch(() => { if (!cancelled) setLoadError('Natijalarni serverdan yuklab bo‘lmadi. Sahifani yangilang.'); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [analysisFilter, setAnalysisFilter] = useState<'all' | 'wrong' | 'correct'>('all');
 
   const results = useMemo(() => {
     if (!user?.id) return [];
     return submissionService.getUserExamResults(user.id);
-  }, [user]);
+  }, [user, revision]);
 
   
-  const questionsList = useMemo(() => {
-    if (!selectedResult) return [];
-    if (Array.isArray(selectedResult.questionsAnalysis) && selectedResult.questionsAnalysis.length > 0) {
-      return selectedResult.questionsAnalysis.map((q: any, idx: number) => ({
-        ...q,
-        questionText: q.questionText || q.content || `${selectedResult.subject || 'Olimpiada'} fanidan #${idx + 1}-sonli test savoli: Berilgan shartlar va mantiqiy qoidalar asosida to'g'ri javob variantini aniqlang.`,
-        options: (q.options && q.options.length > 0)
-          ? q.options
-          : ['A) Asosiy nazariy to\'g\'ri yechim va formula', 'B) Qo\'shimcha taxminiy variant', 'C) Muqobil hisoblash usuli', 'D) Notog\'ri javob variant'],
-        correctAnswer: q.correctAnswer || 'A',
-        userAnswer: q.userAnswer || (q.isCorrect ? 'A' : 'B'),
-        aiExplanation: q.aiExplanation || (q.isCorrect ? "✅ To'g'ri javob tanlangan." : "❌ Ushbu savolda xatolikka yo'l qo'yilgan. To'g'ri javob: A varianti.")
-      }));
-    }
-    const totalQ = selectedResult.totalQuestions || 25;
-    const correctCount = selectedResult.correctAnswersCount || 0;
-    const list = [];
-    for (let i = 0; i < totalQ; i++) {
-      const isCorr = i < correctCount;
-      const userAns = isCorr ? 'A' : (selectedResult.answers && selectedResult.answers[i + 1] ? String(selectedResult.answers[i + 1]) : (i % 2 === 0 ? 'B' : 'C'));
-      list.push({
-        questionNum: i + 1,
-        topic: `${selectedResult.subject || 'Fan'} masalasi #${i + 1}`,
-        questionText: `${selectedResult.subject || 'Olimpiada'} fanidan #${i + 1}-sonli test savoli: Berilgan shartlar va mantiqiy qoidalar asosida to'g'ri javob variantini aniqlang.`,
-        options: [
-          'A) Asosiy nazariy to\'g\'ri yechim va formula',
-          'B) Qo\'shimcha taxminiy va chalg\'ituvchi variant',
-          'C) Muqobil matematik / mantiqiy hisoblash',
-          'D) Notog\'ri hisoblangan nojoiz javob'
-        ],
-        points: 4,
-        userAnswer: userAns,
-        correctAnswer: 'A',
-        isCorrect: isCorr,
-        aiExplanation: isCorr
-          ? "✅ Ekspert tahlili: Siz to'g'ri yechim yo'lini va formulani to'liq tanladingiz."
-          : "❌ Ekspert tahlili: Ushbu savolda mantiqiy/hisoblash xatolikka yo'l qo'yilgan. To'g'ri javob A varianti."
-      });
-    }
-    return list;
-  }, [selectedResult]);
+  const questionsList = useMemo(() => selectedResult?.questionsAnalysis ?? [], [selectedResult]);
 
   const filteredQuestions = useMemo(() => {
     if (analysisFilter === 'wrong') {
@@ -88,6 +58,9 @@ export const StudentResultsPage: React.FC = () => {
   
   
   
+  if (selectedResult?.examKind === 'national_certificate' || selectedResult?.mode === 'practice') {
+    return <div className="space-y-4"><button onClick={() => setSelectedResult(null)}>← Natijalar ro‘yxati</button><AssessmentResultView result={selectedResult} /></div>;
+  }
   if (selectedResult) {
     return (
       <div className="space-y-6 animate-in fade-in font-sans">
@@ -377,6 +350,7 @@ export const StudentResultsPage: React.FC = () => {
   
   return (
     <div className="space-y-8 font-sans">
+      {loadError && <p role="alert" className="text-rose-400">{loadError}</p>}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">

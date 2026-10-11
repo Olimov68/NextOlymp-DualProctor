@@ -68,18 +68,21 @@ export const StudentProfilePage: React.FC = () => {
     setAvatarUrl(emoji);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({
+    try {
+    await updateProfile({
       fullName,
-      avatarUrl,
       school,
       grade,
       region,
     });
 
-    setSuccessMessage("Profil sozlamalari va avatar muvaffaqiyatli saqlandi!");
+    setSuccessMessage("Profil sozlamalari serverda saqlandi. Avatarni saqlash hozircha mavjud emas.");
     setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Profil saqlanmadi');
+    }
   };
 
   return (

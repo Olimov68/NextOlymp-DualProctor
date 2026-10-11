@@ -19,6 +19,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
   
   const [secondsOnQuestion, setSecondsOnQuestion] = useState(0);
   const [speedWarning, setSpeedWarning] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const save = (answer: string) => {
+    setSaveError(null);
+    void saveDraft(question.id, answer).catch(error => setSaveError(error instanceof Error ? error.message : 'Javob saqlanmadi'));
+  };
   const questionStartTimeRef = useRef(Date.now());
   const rapidCountRef = useRef(0);
 
@@ -42,33 +47,28 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
       rapidCountRef.current += 1;
       setSpeedWarning(`O'ta tez javob (${elapsedSeconds.toFixed(1)}s). Iltimos, savolni to'liq o'qib ishlang.`);
       
-      if (rapidCountRef.current >= 4) {
-        useContestStore.getState().recordGuardViolation(
-          'RAPID_ANSWER_SUSPECT',
-          'Savollarga inson o\'qish imkoniyatidan tez javob belgilandi (4 marta ketma-ket 0.8 soniyadan kam). Iltimos, e\'tiborli bo\'ling.'
-        );
-        rapidCountRef.current = 0;
-      }
+      // Answering quickly is not proof of cheating; show an advisory only.
     } else {
       setSpeedWarning(null);
     }
 
-    saveDraft(question.id, opt);
+    save(opt);
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    saveDraft(question.id, e.target.value);
+    save(e.target.value);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      saveDraft(question.id, `Yuklandi: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+      setSaveError('Fayl yuklash va uni baholash hali qo‘llab-quvvatlanmaydi.');
     }
   };
 
   return (
     <div className="rounded-2xl bg-zinc-900/70 backdrop-blur-md border border-white/10 p-6 sm:p-8 shadow-xl shadow-black/30 space-y-6 text-zinc-100">
+      {saveError && <p role="alert" className="text-rose-400 text-sm">{saveError} — qayta tanlab yuboring.</p>}
       
       <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-3">
@@ -113,13 +113,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNu
         {question.type === 'multiple_choice' && question.options && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {question.options.map((option, idx) => {
-              const selected = currentAnswer === option;
+              const optionId = question.optionIds?.[idx] ?? option;
+              const selected = currentAnswer === optionId;
               const optionLetter = String.fromCharCode(65 + idx); 
 
               return (
                 <button
                   key={idx}
-                  onClick={() => handleSelectOption(option)}
+                  onClick={() => handleSelectOption(optionId)}
                   className={clsx(
                     "flex items-center justify-between p-4 rounded-xl border text-left font-medium text-sm transition-all duration-200 cursor-pointer active:scale-95",
                     selected

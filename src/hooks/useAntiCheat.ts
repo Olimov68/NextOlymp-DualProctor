@@ -4,12 +4,15 @@ import { ExamGuard } from '../services/examGuardService';
 
 export interface UseAntiCheatOptions {
   olympiadId?: string;
+  sessionId?: string;
   olympiadTitle?: string;
   maxViolations?: number;
   requireFullscreen?: boolean;
   blockTabSwitch?: boolean;
   blockCopyPaste?: boolean;
   blockDevTools?: boolean;
+  heartbeatEnabled?: boolean;
+  heartbeatIntervalSec?: number;
   onCaptureSnapshot?: () => string | undefined;
 }
 
@@ -30,14 +33,19 @@ export function useAntiCheat(isActive: boolean, options: UseAntiCheatOptions = {
     const guard = new ExamGuard({
       maxViolations: options.maxViolations || 3,
       olympiadId: options.olympiadId,
+      sessionId: options.sessionId,
       olympiadTitle: options.olympiadTitle,
       requireFullscreen: options.requireFullscreen ?? true,
       blockTabSwitch: options.blockTabSwitch ?? true,
       blockCopyPaste: options.blockCopyPaste ?? true,
       blockDevTools: options.blockDevTools ?? true,
+      heartbeatEnabled: options.heartbeatEnabled ?? true,
+      heartbeatIntervalSec: options.heartbeatIntervalSec ?? 10,
       onViolation: (type, data) => {
         const snap = options.onCaptureSnapshot ? options.onCaptureSnapshot() : undefined;
-        recordGuardViolation(type, data.message, data.max, snap);
+        // ExamGuard already persisted this event; never send/count it a second time.
+        useContestStore.setState({ violationCount: data.count, maxViolations: data.max,
+          latestViolationType: type, latestViolationMessage: data.message, showAntiCheatModal: true });
       },
       onDisqualify: (reason) => {
         disqualifyContest(reason);
@@ -53,6 +61,9 @@ export function useAntiCheat(isActive: boolean, options: UseAntiCheatOptions = {
   }, [
     isActive,
     options.olympiadId,
+    options.sessionId,
+    options.heartbeatEnabled,
+    options.heartbeatIntervalSec,
     options.olympiadTitle,
     options.maxViolations,
     options.requireFullscreen,

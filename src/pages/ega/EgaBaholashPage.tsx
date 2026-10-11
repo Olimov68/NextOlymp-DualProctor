@@ -22,7 +22,6 @@ import {
   Award,
   CheckCircle2,
   XCircle,
-  DollarSign,
   Users,
   Plus,
   Search,
@@ -86,7 +85,6 @@ export const EgaBaholashPage: React.FC = () => {
   const openCount = useMemo(() => exams.filter((e) => e.status === 'ochiq').length, [exams]);
   const closedCount = useMemo(() => exams.filter((e) => e.status === 'yopiq').length, [exams]);
   const pendingAppealsCount = useMemo(() => appeals.filter((a) => a.status === 'pending').length, [appeals]);
-  const totalRevenueSum = useMemo(() => exams.reduce((sum, e) => sum + e.totalRevenue, 0), [exams]);
 
   
   const filteredExams = useMemo(() => {
@@ -237,7 +235,7 @@ export const EgaBaholashPage: React.FC = () => {
         </div>
 
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           
           <div
             className={clsx(
@@ -299,22 +297,6 @@ export const EgaBaholashPage: React.FC = () => {
             <div>
               <div className="text-[10px] uppercase font-bold text-slate-400">Apellyatsiyalar</div>
               <div className="text-base font-black text-amber-300 mt-0.5 font-mono">{pendingAppealsCount} ta</div>
-            </div>
-          </div>
-
-          
-          <div
-            className={clsx(
-              "p-3 rounded-xl border shadow-xs transition-all flex items-center gap-2.5 col-span-2 sm:col-span-1",
-              isDark ? "bg-[#0D1832] border-[#182A4D]" : "bg-white border-slate-200"
-            )}
-          >
-            <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
-              <DollarSign className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400">Jami Tushum</div>
-              <div className="text-base font-black text-purple-300 mt-0.5 font-mono">{totalRevenueSum.toLocaleString()} UZS</div>
             </div>
           </div>
         </div>

@@ -377,32 +377,6 @@ export const RegisterPage: React.FC = () => {
       newErrors.district = "Tumanni tanlang";
     }
 
-    
-    try {
-      const rawUsers = localStorage.getItem('next_olymp_users');
-      const existingUsers = rawUsers ? JSON.parse(rawUsers) : [];
-      if (Array.isArray(existingUsers)) {
-        const cleanEmail = email.trim().toLowerCase();
-        const cleanPhoneDigits = phone.replace(/\D/g, '');
-
-        const emailExists = existingUsers.some(
-          (u: any) => u.email && u.email.trim().toLowerCase() === cleanEmail
-        );
-        const phoneExists = existingUsers.some(
-          (u: any) => u.phone && u.phone.replace(/\D/g, '') === cleanPhoneDigits
-        );
-
-        if (emailExists) {
-          newErrors.email = "Ushbu elektron pochta allaqachon ro'yxatdan o'tgan!";
-        }
-        if (phoneExists) {
-          newErrors.phone = "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan!";
-        }
-      }
-    } catch (e) {
-      console.warn('Unique user check error:', e);
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

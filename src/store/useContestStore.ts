@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { Question } from '../types';
 import { useProctoringStore } from './useProctoringStore';
-import { useNotificationStore } from './useNotificationStore';
 import { useAuthStore } from './useAuthStore';
-import { ServerExamEngine, ServerSyncResponse } from '../services/serverExamEngine';
 import { submissionService } from '../services/submissionService';
 import { apiClient } from '../services/api';
 
@@ -39,7 +37,7 @@ interface ContestState {
   isSubmitted: boolean;
   capturedIncidents: IncidentLog[];
 
-  startContest: (olympiadId: string, questions: Question[], durationMinutes: number) => void;
+  startContest: (olympiadId: string, questions: Question[], session: { sessionId: string; expiresAt: number; serverTime: number; timeRemainingSeconds: number; answers?: Record<string, string> }) => void;
   setAnswer: (questionId: string, answer: string | string[]) => void;
   nextQuestion: () => void;
   prevQuestion: () => void;
@@ -74,32 +72,14 @@ export const useContestStore = create<ContestState>((set, get) => ({
   isSubmitted: false,
   capturedIncidents: [],
 
-  startContest: (olympiadId, questions, durationMinutes) => {
-    const user = useAuthStore.getState().user;
-    const userId = user?.id || 'usr-student';
-    
-    
-    const syncRes: ServerSyncResponse = ServerExamEngine.startSession(userId, olympiadId, durationMinutes);
-    const clientNow = Date.now();
-    const serverOffset = clientNow - syncRes.server_time;
-
+  startContest: (olympiadId, questions, session) => {
     set({
-      olympiadId,
-      sessionId: syncRes.session_id,
-      questions,
-      currentQuestionIndex: 0,
-      answers: {},
-      tabSwitchCount: 0,
-      violationCount: 0,
-      showAntiCheatModal: false,
-      isDisqualified: false,
-      disqualifyReason: '',
-      timeRemainingSeconds: syncRes.time_remaining_sec,
-      serverExpiresAt: syncRes.expires_at,
-      serverOffsetMs: serverOffset,
-      isTimerRunning: true,
-      isSubmitted: false,
-      capturedIncidents: [],
+      olympiadId, questions, sessionId: session.sessionId, currentQuestionIndex: 0,
+      answers: session.answers ?? {}, tabSwitchCount: 0, violationCount: 0,
+      showAntiCheatModal: false, isDisqualified: false, disqualifyReason: '',
+      timeRemainingSeconds: session.timeRemainingSeconds, serverExpiresAt: session.expiresAt,
+      serverOffsetMs: Date.now() - session.serverTime, isTimerRunning: true,
+      isSubmitted: false, capturedIncidents: [],
     });
   },
 
@@ -125,135 +105,35 @@ export const useContestStore = create<ContestState>((set, get) => ({
     set({ currentQuestionIndex: index });
   },
 
-  incrementTabSwitch: (snapshotUrl?: string) => {
-    const nextCount = get().tabSwitchCount + 1;
-    const newIncident: IncidentLog = {
-      id: `INC-TAB-${Date.now()}`,
-      type: 'TAB_SWITCH',
-      detail: `Brauzer oynasi almashtirildi (${nextCount}-marta)`,
-      timestamp: new Date().toLocaleTimeString(),
-      snapshotUrl,
-      count: nextCount,
-      severity: nextCount >= 3 ? 'Kritik' : nextCount === 2 ? 'Yuqori' : 'O\'rta',
-      status: nextCount >= 3 ? 'penalized' : 'warned',
-    };
-
-    set((state) => ({
-      tabSwitchCount: nextCount,
-      violationCount: state.violationCount + 1,
-      latestViolationMessage: `Brauzer oynasi almashtirildi (${nextCount}-marta)`,
-      latestViolationType: 'TAB_SWITCH',
-      showAntiCheatModal: true,
-      capturedIncidents: [newIncident, ...state.capturedIncidents],
-    }));
-
-    const currentUser = useAuthStore.getState().user;
-    const olympiadId = get().olympiadId || 'olymp-math-2026';
-
-    useProctoringStore.getState().addFlag({
-      user: currentUser?.fullName || 'Ishtirokchi',
-      userEmail: currentUser?.email || '',
-      olympiad: olympiadId === 'olymp-math-2026' ? 'Respublika Matematika II Bosqich' : 'Musobaqa',
-      category: 'Oyna & Brauzer',
-      type: 'Tab switching',
-      detail: `Brauzer oynasi almashtirildi (${nextCount}-marta)`,
-      severity: nextCount >= 3 ? 'Kritik' : nextCount === 2 ? 'Yuqori' : 'O\'rta',
-    });
-
-    useNotificationStore.getState().addNotification({
-      title: `${currentUser?.fullName || 'Ishtirokchi'}: Tab switching`,
-      desc: `Musobaqada ${nextCount}-marta oyna almashtirildi`,
-      type: 'warning',
-    });
-  },
-
+  incrementTabSwitch: () => get().recordGuardViolation('TAB_SWITCH', 'Brauzer oynasi almashtirildi'),
   recordGuardViolation: (type, message, max = 3, snapshotUrl?: string) => {
-    const isTabOrFocus = type === 'TAB_SWITCH' || type === 'WINDOW_BLUR' || type === 'EXIT_FULLSCREEN';
-    const nextTabCount = isTabOrFocus ? get().tabSwitchCount + 1 : Math.max(1, get().tabSwitchCount);
-    const nextCount = get().violationCount + 1;
-
-    const newIncident: IncidentLog = {
-      id: `INC-${type}-${Date.now()}`,
-      type,
-      detail: message,
-      timestamp: new Date().toLocaleTimeString(),
-      snapshotUrl,
-      count: nextCount,
-      severity: nextCount >= max ? 'Kritik' : nextCount === 2 ? 'Yuqori' : 'O\'rta',
-      status: nextCount >= max ? 'penalized' : 'pending',
+    const { sessionId, olympiadId } = get();
+    if (!sessionId || !olympiadId) return;
+    const eventType = ({ NO_FACE_DETECTED: 'NO_FACE', MULTIPLE_FACES_DETECTED: 'MULTIPLE_FACES',
+      LOOKING_AWAY: 'GAZE_AWAY', MULTIPLE_SPEAKERS_DETECTED: 'MULTIPLE_SPEAKERS' } as Record<string, string>)[type] ?? type;
+    const eventId = crypto.randomUUID();
+    const sendEvidence = async () => {
+      if (!snapshotUrl || !['NO_FACE', 'MULTIPLE_FACES'].includes(eventType)) return;
+      try {
+        await apiClient.post('/exams/' + encodeURIComponent(olympiadId) + '/snapshot', {
+          sessionId, eventType, imageBase64: snapshotUrl,
+        });
+      } catch { console.warn('Snapshot serverda saqlanmadi; hodisa alohida yuboriladi.'); }
     };
-
-    set((state) => ({
-      tabSwitchCount: nextTabCount,
-      violationCount: nextCount,
-      maxViolations: max,
-      latestViolationType: type,
-      latestViolationMessage: message,
-      showAntiCheatModal: true,
-      capturedIncidents: [newIncident, ...state.capturedIncidents],
-    }));
-
-    const currentUser = useAuthStore.getState().user;
-    const olympiadId = get().olympiadId || 'olymp-current';
-
-    
-    try {
-      const typeLabel =
-        type === 'TAB_SWITCH' ? 'Brauzer oynasi almashtirildi (Tab Switch)' :
-        type === 'WINDOW_BLUR' ? 'Oyna faolligi yo\'qoldi (Window Blur)' :
-        type === 'EXIT_FULLSCREEN' ? 'To\'liq ekrandan chiqildi (Fullscreen Exit)' :
-        type === 'NO_FACE_DETECTED' ? 'Kamera oldida yuz ko\'rinmadi (No Face)' :
-        type === 'MULTIPLE_FACES_DETECTED' ? 'Kadrda begona shaxs aniqlandi' :
-        type === 'LOOKING_AWAY' ? 'Monitordan chetga qarash holati' :
-        type === 'CLIPBOARD_ACTION' ? 'Nusxa olish taqiqlandi' :
-        type.includes('DEVTOOLS') ? 'Dasturchi paneli (DevTools) ochildi' : type;
-
-      const formattedLog = {
-        id: newIncident.id,
-        studentId: currentUser?.id || 'usr-student',
-        name: currentUser?.fullName || 'Ishtirokchi',
-        phone: currentUser?.phone || '+998 90 123 45 67',
-        ipAddress: '195.158.12.45',
-        region: currentUser?.region || 'Toshkent sh.',
-        school: currentUser?.school || 'Maktab',
-        type: typeLabel,
-        detail: message,
-        count: nextCount,
-        severity: newIncident.severity,
-        timestamp: new Date().toLocaleString(),
-        isOnline: true,
-        snapshotUrl: snapshotUrl,
-        status: 'pending'
-      };
-
-      
-      submissionService.saveLiveCheatLog(olympiadId, formattedLog);
-
-      
-      apiClient.post(`/exams/${encodeURIComponent(olympiadId)}/proctor-event`, {
-        eventType: typeLabel?.toLowerCase().includes('tab') ? 'TAB_SWITCH' : 'SECURITY_WARNING',
-        details: message,
-        severity: newIncident.severity === 'Kritik' ? 'critical' : newIncident.severity === 'Yuqori' ? 'high' : 'medium'
-      }).catch((e) => console.warn('Anti-cheat API sync warning:', e));
-    } catch (e) {
-      console.error('Error saving live anticheat log:', e);
-    }
-
-    
-    useProctoringStore.getState().addFlag({
-      user: currentUser?.fullName || 'Ishtirokchi',
-      userEmail: currentUser?.email || '',
-      olympiad: olympiadId,
-      category: isTabOrFocus ? 'Oyna & Brauzer' : 'Xavfsizlik & Anti-Cheat',
-      type: type,
-      detail: message,
-      severity: nextCount >= max ? 'Kritik' : nextCount === 2 ? 'Yuqori' : 'O\'rta',
-    });
-
-    useNotificationStore.getState().addNotification({
-      title: `${currentUser?.fullName || 'Ishtirokchi'}: ${type}`,
-      desc: `${message} (${nextCount}/${max})`,
-      type: 'warning',
+    void sendEvidence().then(() => apiClient.post('/exams/' + encodeURIComponent(olympiadId) + '/proctor-events', {
+      eventId, sessionId, eventType, details: message,
+    })).then(response => {
+      if (get().sessionId !== sessionId) return;
+      set(state => ({
+        violationCount: response.violationCount, maxViolations: response.maxViolationsAllowed ?? max,
+        latestViolationMessage: message, latestViolationType: type, showAntiCheatModal: response.ruleEnabled,
+        capturedIncidents: [{ id: eventId, type, detail: message, timestamp: new Date().toISOString(),
+          count: response.violationCount, severity: "O'rta" as const, status: 'pending' as const },
+          ...state.capturedIncidents].slice(0, 100),
+      }));
+      if (response.isDisqualified) get().disqualifyContest(response.message);
+    }).catch(error => {
+      set({ latestViolationMessage: 'Hodisa serverga yetib bormadi. Internetni tekshiring.', showAntiCheatModal: true });
     });
   },
 
@@ -280,7 +160,10 @@ export const useContestStore = create<ContestState>((set, get) => ({
 
       if (remainingSec <= 0) {
         set({ timeRemainingSeconds: 0, isTimerRunning: false });
-        get().submitContest();
+        const { sessionId, olympiadId } = get();
+        if (sessionId && olympiadId) void apiClient.post('/exams/' + encodeURIComponent(olympiadId) + '/finish', { sessionId })
+          .then(() => { if (get().sessionId === sessionId) get().submitContest(); })
+          .catch(() => set({ latestViolationMessage: 'Vaqt tugadi. Natijani serverdan olish uchun Yakunlash tugmasini qayta bosing.', showAntiCheatModal: true }));
       } else {
         set({ timeRemainingSeconds: remainingSec });
       }
@@ -302,6 +185,10 @@ export const useContestStore = create<ContestState>((set, get) => ({
   resetContest: () => {
     set({
       olympiadId: null,
+      sessionId: null,
+      serverExpiresAt: 0,
+      serverOffsetMs: 0,
+      capturedIncidents: [],
       questions: [],
       currentQuestionIndex: 0,
       answers: {},

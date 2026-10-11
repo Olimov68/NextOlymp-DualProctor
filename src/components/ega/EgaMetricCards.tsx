@@ -1,14 +1,18 @@
 import React from 'react';
-import { Users, Radio, Trophy, ShieldAlert, Award, TrendingUp } from 'lucide-react';
+import { Users, Radio, Trophy, ShieldAlert, Award } from 'lucide-react';
 import { Card } from '../common/Card';
-import { MOCK_OLYMPIADS, MOCK_LEADERBOARD, MOCK_CERTIFICATES } from '../../services/mockData';
+import { useOlympiadStore } from '../../store/useOlympiadStore';
+import { useUserStore } from '../../store/useUserStore';
 
 export const EgaMetricCards: React.FC = () => {
-  const totalCompetitions = MOCK_OLYMPIADS.length;
-  const activeCompetitions = MOCK_OLYMPIADS.filter((o) => o.status === 'active').length;
-  const finishedCompetitions = MOCK_OLYMPIADS.filter((o) => o.status === 'finished').length;
-  const totalParticipants = MOCK_OLYMPIADS.reduce((acc, curr) => acc + (curr.participantsCount || 0), 0);
-  const activeParticipants = MOCK_LEADERBOARD.length;
+  const { olympiads } = useOlympiadStore();
+  const { users } = useUserStore();
+
+  const totalCompetitions = olympiads.length;
+  const activeCompetitions = olympiads.filter((o) => (o.status || 'ochiq') === 'ochiq').length;
+  const finishedCompetitions = olympiads.filter((o) => o.status === 'yopiq').length;
+  const totalRegisteredCount = olympiads.reduce((acc, curr) => acc + (Number(curr.registeredCount) || 0), 0);
+  const totalUsersCount = users.filter((u) => u.role === 'student').length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 font-sans">
@@ -24,10 +28,10 @@ export const EgaMetricCards: React.FC = () => {
         </div>
         <div className="space-y-1">
           <div className="text-2xl font-black text-slate-900 font-mono">
-            {totalParticipants > 0 ? totalParticipants.toLocaleString() : 0}
+            {totalUsersCount.toLocaleString()}
           </div>
           <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
-            <span>Tizim noldan shakllanmoqda</span>
+            <span>Ro'yxatdan o'tgan o'quvchilar</span>
           </div>
         </div>
       </Card>
@@ -44,8 +48,8 @@ export const EgaMetricCards: React.FC = () => {
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-black text-slate-900 font-mono">{activeParticipants}</span>
-            {activeParticipants > 0 && (
+            <span className="text-2xl font-black text-slate-900 font-mono">{totalRegisteredCount}</span>
+            {totalRegisteredCount > 0 && (
               <span className="flex h-2.5 w-2.5 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -53,7 +57,7 @@ export const EgaMetricCards: React.FC = () => {
             )}
           </div>
           <div className="text-[11px] font-bold text-emerald-600">
-            {activeParticipants > 0 ? "Hozir test yechmoqda" : "Hozir faol test yo'q"}
+            {totalRegisteredCount > 0 ? "Testga yozilganlar" : "Hozir faol test yo'q"}
           </div>
         </div>
       </Card>

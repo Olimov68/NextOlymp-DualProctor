@@ -37,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
   const studentLinks = [
     { label: 'Boshqaruv', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Olimpiadalar', path: '/student/olympiads', icon: Trophy },
-    { label: 'Darajani Sinash', path: '/student/level-test', icon: Brain },
+    { label: 'Mashq va daraja testlari', path: '/student/level-test', icon: Brain },
     { label: 'Milliy Sertifikat', path: '/dashboard/milliy-sertifikat', icon: Award },
     { label: 'Reyting', path: '/student/leaderboard', icon: BarChart3 },
     { label: 'Natijalar tarixi', path: '/results', icon: History },
@@ -71,8 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
             isCollapsed ? "flex-col gap-2 justify-center text-center" : "justify-between"
           )}
         >
-          <Link
-            to="/"
+          <div
             className={clsx(
               "flex items-center overflow-hidden hover:opacity-90 transition-opacity",
               isCollapsed ? "justify-center" : "gap-2"
@@ -80,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
             title="Ibn Sino Platformasi Asosiy Sahifa"
           >
             <Logo showText={!isCollapsed} lightText size={isCollapsed ? "sm" : "md"} />
-          </Link>
+          </div>
 
           {/* Collapse/Expand Toggle Button */}
           <button

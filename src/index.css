@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* Preserve v3 border/ring defaults while upgrading the compiler. */
+@layer base {
+  *, ::before, ::after { border-color: var(--color-gray-200, currentColor); }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+}
 
 @layer base {
   :root {

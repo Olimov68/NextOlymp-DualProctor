@@ -46,29 +46,14 @@ export interface SecurityLogEntry {
 }
 
 export const adminMonitoringService = {
-  
   async getSystemStats(): Promise<SystemStatsResponse | null> {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-    let token = '';
-    if (typeof window !== 'undefined') {
-      const adminRaw = localStorage.getItem('ibn_sino_admin_session_v2');
-      if (adminRaw) {
-        try {
-          const parsed = JSON.parse(adminRaw);
-          if (parsed?.token) token = parsed.token;
-        } catch {}
-      }
-      if (!token) {
-        token = localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token') || '';
-      }
-    }
-
     try {
       const res = await fetch(`${apiBase}/admin/system-metrics`, {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
+          'Accept': 'application/json',
+        },
       });
       if (res.ok) {
         const json = await res.json();
@@ -85,26 +70,12 @@ export const adminMonitoringService = {
 
   async getSecurityLogs(): Promise<SecurityLogEntry[]> {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-    let token = '';
-    if (typeof window !== 'undefined') {
-      const adminRaw = localStorage.getItem('ibn_sino_admin_session_v2');
-      if (adminRaw) {
-        try {
-          const parsed = JSON.parse(adminRaw);
-          if (parsed?.token) token = parsed.token;
-        } catch {}
-      }
-      if (!token) {
-        token = localStorage.getItem('next_olymp_jwt') || localStorage.getItem('ibn_sino_token') || '';
-      }
-    }
-
     try {
       const res = await fetch(`${apiBase}/admin/security-logs`, {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
+          'Accept': 'application/json',
+        },
       });
       if (res.ok) {
         return await res.json();

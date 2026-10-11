@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+
 import {
   AccessLog,
   ActionLog,
@@ -32,7 +32,7 @@ export interface ServerMetrics {
   activeConnections: number;
   requestsPerSec: number;
   responseTimeAvg: number;
-  sslValid: boolean;
+  sslValid: boolean | null;
   sslExpiry: string;
   sslIssuer?: string;
   sslDaysRemaining?: number;
@@ -81,9 +81,6 @@ interface SecurityState {
   toggleDefense: (key: keyof DefenseStatus) => void;
   setAutoDefend: (v: boolean) => void;
   updateServerMetrics: (partial: Partial<ServerMetrics>) => void;
-  recordFailedLogin: (ip: string, email: string, reason: string) => void;
-  recordSuccessfulLogin: (ip: string, email: string, role: string) => void;
-  recordRateLimitHit: (ip: string, path: string) => void;
 }
 
 const STORAGE_KEY = 'ega_security_v7_real';
@@ -112,7 +109,7 @@ const DEFAULT_METRICS: ServerMetrics = {
   activeConnections: 0,
   requestsPerSec: 0,
   responseTimeAvg: 0,
-  sslValid: true,
+  sslValid: null,
   sslExpiry: 'Aniqlanmoqda...',
   openPorts: [],
   processes: 0,
@@ -122,23 +119,22 @@ const DEFAULT_METRICS: ServerMetrics = {
 };
 
 const DEFAULT_DEFENSE: DefenseStatus = {
-  ddosProtection: true,
-  rateLimit: true,
+  ddosProtection: false,
+  rateLimit: false,
   rateLimitValue: 120,
-  waf: true,
-  sslTls: true,
+  waf: false,
+  sslTls: false,
   geoBlocking: false,
-  botDetection: true,
+  botDetection: false,
   bruteForceProtection: true,
   twoFactor: false,
   ipWhitelist: false,
-  captcha: true,
-  intrusionDetection: true,
+  captcha: false,
+  intrusionDetection: false,
 };
 
 export const useSecurityStore = create<SecurityState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       accessLogs: [],
       actionLogs: [],
       trafficData: [],
@@ -147,7 +143,7 @@ export const useSecurityStore = create<SecurityState>()(
       liveMode: true,
       serverMetrics: DEFAULT_METRICS,
       defenseStatus: DEFAULT_DEFENSE,
-      autoDefend: true,
+      autoDefend: false,
 
       blockIP: (ip, country, countryCode, reason, permanent = false) => {
         const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
@@ -259,97 +255,5 @@ export const useSecurityStore = create<SecurityState>()(
         set({ serverMetrics: { ...get().serverMetrics, ...partial } });
       },
 
-      recordFailedLogin: (ip, email, reason) => {
-        const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-        const newLog: AccessLog = {
-          id: `acc-fail-${Date.now()}`,
-          timestamp: now,
-          ip,
-          method: 'POST',
-          path: '/api/v1/auth/login',
-          statusCode: 401,
-          responseTimeMs: Math.floor(Math.random() * 80) + 40,
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          country: 'Uzbekistan',
-          countryCode: 'UZ',
-          level: 'error',
-          userName: email,
-          bytesSent: 340,
-        };
-
-        const currentMetrics = get().serverMetrics;
-        set({
-          accessLogs: [newLog, ...get().accessLogs.slice(0, 499)],
-          serverMetrics: {
-            ...currentMetrics,
-            failedLoginAttemptsCount: (currentMetrics.failedLoginAttemptsCount || 0) + 1,
-          },
-        });
-
-        
-        const recentFails = get().accessLogs.filter(
-          (l) => l.ip === ip && l.statusCode === 401 && l.path.includes('login')
-        ).length;
-
-        if (recentFails >= 3 && get().autoDefend) {
-          get().blockIP(ip, 'Uzbekistan', 'UZ', `Ketma-ket ${recentFails} ta muvaffaqiyatsiz kirish urinishi: ${reason}`);
-        }
-      },
-
-      recordSuccessfulLogin: (ip, email, role) => {
-        const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-        const newLog: AccessLog = {
-          id: `acc-ok-${Date.now()}`,
-          timestamp: now,
-          ip,
-          method: 'POST',
-          path: '/api/v1/auth/login',
-          statusCode: 200,
-          responseTimeMs: Math.floor(Math.random() * 60) + 30,
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          country: 'Uzbekistan',
-          countryCode: 'UZ',
-          level: 'info',
-          userName: `${email} (${role})`,
-          bytesSent: 512,
-        };
-        set({ accessLogs: [newLog, ...get().accessLogs.slice(0, 499)] });
-      },
-
-      recordRateLimitHit: (ip, path) => {
-        const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-        const newLog: AccessLog = {
-          id: `acc-rl-${Date.now()}`,
-          timestamp: now,
-          ip,
-          method: 'GET',
-          path,
-          statusCode: 429,
-          responseTimeMs: 12,
-          userAgent: 'Automated-Bot/1.0',
-          country: 'Unknown',
-          countryCode: 'XX',
-          level: 'warning',
-          bytesSent: 128,
-        };
-
-        const currentMetrics = get().serverMetrics;
-        set({
-          accessLogs: [newLog, ...get().accessLogs.slice(0, 499)],
-          serverMetrics: {
-            ...currentMetrics,
-            rateLimitHits: (currentMetrics.rateLimitHits || 0) + 1,
-          },
-        });
-      },
-    }),
-    {
-      name: STORAGE_KEY,
-      partialize: (state) => ({
-        blockedIPs: state.blockedIPs,
-        defenseStatus: state.defenseStatus,
-        autoDefend: state.autoDefend,
-      }),
-    }
-  )
+    })
 );

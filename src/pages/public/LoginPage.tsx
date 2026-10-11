@@ -5,11 +5,12 @@ import { Mail, Lock, LogIn, AlertCircle, ShieldCheck, Sparkles, Award } from 'lu
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export const LoginPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +21,9 @@ export const LoginPage: React.FC = () => {
     setError('');
     try {
       await login({ email, password });
-      const user = JSON.parse(localStorage.getItem('next_olymp_user') || '{}');
-      if (user.role === 'admin') navigate('/ega');
-      else if (user.role === 'teacher') navigate('/teacher/dashboard');
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.role === 'admin') navigate('/ega');
+      else if (currentUser?.role === 'teacher') navigate('/teacher/dashboard');
       else navigate('/dashboard');
     } catch (err: any) {
       setError(err?.message || "Login yoki parol xato! Iltimos, ma'lumotlarni qayta tekshiring.");

@@ -20,9 +20,11 @@ import { clsx } from 'clsx';
 
 interface EgaSidebarProps {
   isCollapsed: boolean;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
+export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed, isMobileOpen = false, onCloseMobile }) => {
   const location = useLocation();
   const { logout } = useAuth();
   const { i18n } = useTranslation();
@@ -47,12 +49,24 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
   ];
 
   return (
-    <aside
-      className={clsx(
-        "h-screen sticky top-0 shrink-0 flex flex-col justify-between z-30 shadow-2xl overflow-x-hidden overflow-y-auto custom-scrollbar font-sans select-none bg-zinc-950 border-r border-white/10 text-zinc-100",
-        isCollapsed ? "w-20 p-3" : "w-[260px] p-4"
+    <>
+      {/* Mobile backdrop */}
+      {isMobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-black/70 backdrop-blur-xs z-40 lg:hidden"
+        />
       )}
-    >
+
+      <aside
+        className={clsx(
+          "h-screen flex flex-col justify-between shadow-2xl overflow-x-hidden overflow-y-auto custom-scrollbar font-sans select-none bg-zinc-950 border-r border-white/10 text-zinc-100 transition-transform lg:transition-all duration-300",
+          // Mobile styling: fixed drawer
+          "fixed top-0 bottom-0 left-0 z-50 lg:static lg:z-30 lg:shrink-0",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          isCollapsed ? "lg:w-20 p-3" : "w-[260px] p-4"
+        )}
+      >
       <div className="space-y-6">
         <div
           className={clsx(
@@ -93,6 +107,7 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={onCloseMobile}
                     title={isCollapsed ? item.label : undefined}
                     className={clsx(
                       "flex items-center gap-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150",
@@ -126,5 +141,6 @@ export const EgaSidebar: React.FC<EgaSidebarProps> = ({ isCollapsed }) => {
         </button>
       </div>
     </aside>
+    </>
   );
 };

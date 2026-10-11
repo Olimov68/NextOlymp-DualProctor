@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import os from 'os';
+import { isIP } from 'node:net';
+import { validateEnvironment } from './config/validateEnvironment';
 import cors from 'cors';
 import { Server } from 'socket.io';
 import { PORT, ALLOWED_ORIGINS, isOriginAllowed, IS_PRODUCTION } from './config/constants';
@@ -15,12 +17,23 @@ import { authenticateJWT, optionalAuth, requireRole } from './middleware/auth.mi
 import { dbStore } from './db/store';
 import { systemHealthService } from './services/systemHealth.service';
 import { requestLoggerService } from './services/requestLogger.service';
+import { heartbeatWorker } from './services/heartbeatWorker';
+import { csrfProtection, clientIp } from './security/requestSecurity';
+import { databaseMiddleware } from './middleware/database.middleware';
+import { checkDatabase, databasePool } from './db/transactionStore';
+import { SupportController } from './controllers/support.controller';
+import { NotificationController } from './controllers/notification.controller';
 
 const app = express();
 const server = http.createServer(app);
 
+// Start server-authoritative heartbeat monitoring worker
+
 // CRITICAL SECURITY FIX (Item 16): Explicitly trust loopback proxy (Nginx on 127.0.0.1)
 app.set('trust proxy', 'loopback');
+app.disable('x-powered-by');
+app.use('/api', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+app.use(databaseMiddleware);
 
 // CRITICAL SECURITY FIX (Item 9): Strict CORS policy
 app.use(cors({
@@ -28,7 +41,7 @@ app.use(cors({
     if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS xavfsizlik cheklovi: Ruxsatsiz domen rad etildi'));
+      callback(Object.assign(new Error('CORS xavfsizlik cheklovi: Ruxsatsiz domen rad etildi'), { status: 403 }));
     }
   },
   credentials: true,
@@ -39,7 +52,7 @@ app.use(cors({
 // Reverse-proxy aware IP resolver (Item 16)
 export function getClientIp(req: Request): string {
   const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
-  return ip.replace(/^.*:/, '').trim() || '127.0.0.1';
+  return clientIp(req);
 }
 
 // CRITICAL SECURITY FIX: Reject requests from blocked IPs immediately (support Reverse Proxy X-Forwarded-For)
@@ -57,10 +70,30 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Cookie parser middleware (Zero-dependency RFC-compliant cookie parsing)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const cookieHeader = req.headers.cookie;
+  (req as any).cookies = {};
+  if (cookieHeader) {
+    const pairs = cookieHeader.split(';');
+    for (const pair of pairs) {
+      const idx = pair.indexOf('=');
+      if (idx > 0) {
+        const key = pair.slice(0, idx).trim();
+        let val: string;
+        try { val = decodeURIComponent(pair.slice(idx + 1).trim()); }
+        catch { return res.status(400).json({ error: 'Cookie formati yaroqsiz' }); }
+        (req as any).cookies[key] = val;
+      }
+    }
+  }
+  next();
+});
+
 // Real-time request logging middleware for security audit and live traffic
 app.use(requestLoggerService.middleware());
 
-// CRITICAL SECURITY FIX (Item 13 & 26): Hardened CSP without unsafe-eval, restricted connect-src
+// CRITICAL SECURITY FIX (Item 13 & 26): Hardened CSP without unsafe-eval and without unsafe-inline in script-src
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -70,7 +103,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+    "script-src 'self' https://cdn.jsdelivr.net; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com data:; " +
     "img-src 'self' data: blob: https:; " +
@@ -92,12 +125,18 @@ const authRateLimitMap = new Map<string, { count: number; resetTime: number }>()
 function createRateLimiter(map: Map<string, { count: number; resetTime: number }>, windowMs: number, maxRequests: number, label: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const settings = dbStore.getSecuritySettings();
-    if (!settings.rateLimitEnabled) {
+    if (label === 'Umumiy' && !settings.rateLimitEnabled) {
       return next();
     }
 
     const clientIp = getClientIp(req);
     const now = Date.now();
+    if (map.size >= 10_000) {
+      for (const [key, value] of map) if (value.resetTime <= now) map.delete(key);
+      if (map.size >= 10_000 && !map.has(clientIp)) {
+        return res.status(429).json({ error: 'So‘rovlar ko‘paydi. Keyinroq urinib ko‘ring.' });
+      }
+    }
     const record = map.get(clientIp);
 
     if (!record || now > record.resetTime) {
@@ -106,6 +145,7 @@ function createRateLimiter(map: Map<string, { count: number; resetTime: number }
     }
 
     if (record.count >= maxRequests) {
+      res.setHeader('Retry-After', Math.ceil((record.resetTime - now) / 1000));
       return res.status(429).json({
         error: `${label} bo'yicha so'rovlar chegarasi oshdi (Rate limit exceeded). Iltimos, kuting.`,
         retryAfterSeconds: Math.ceil((record.resetTime - now) / 1000)
@@ -119,10 +159,19 @@ function createRateLimiter(map: Map<string, { count: number; resetTime: number }
 
 const generalRateLimiter = createRateLimiter(generalRateLimitMap, 60 * 1000, 150, 'Umumiy');
 const authRateLimiter = createRateLimiter(authRateLimitMap, 15 * 60 * 1000, 20, 'Autentifikatsiya');
+const loginRateLimiter = createRateLimiter(new Map(), 15 * 60 * 1000, 10, 'Kirish');
+const registerRateLimiter = createRateLimiter(new Map(), 15 * 60 * 1000, 10, 'Ro\'yxatdan o\'tish');
+const forgotPasswordRateLimiter = createRateLimiter(new Map(), 15 * 60 * 1000, 5, 'Kodni yuborish');
+const resetPasswordRateLimiter = createRateLimiter(new Map(), 15 * 60 * 1000, 5, 'Parolni tiklash');
 
 app.use(generalRateLimiter);
 
+// CRITICAL SECURITY FIX (Item 5 & 12): Strict CSRF Protection for state-changing requests
+app.use('/api', csrfProtection);
+
 // CRITICAL SECURITY FIX (Item 15): Safe request body limits (1MB default instead of 20MB)
+app.use('/api/exams/:id/snapshots', express.json({ limit: '1500kb' }));
+app.use('/api/exams/:id/snapshot', express.json({ limit: '1500kb' }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
@@ -192,16 +241,24 @@ const io = new Server(server, {
 
 // --- API Endpoints ---
 
-// 1. Auth routes (with dedicated rate limit)
-app.post('/api/auth/login', authRateLimiter, AuthController.login);
-app.post('/api/auth/register', authRateLimiter, AuthController.register);
-app.post('/api/auth/forgot-password', authRateLimiter, AuthController.forgotPassword);
-app.post('/api/auth/reset-password', authRateLimiter, AuthController.resetPassword);
+// 1. Auth routes (with granular rate limits)
+app.post('/api/auth/login', loginRateLimiter, AuthController.login);
+app.post('/api/auth/register', registerRateLimiter, AuthController.register);
+app.post('/api/auth/logout', optionalAuth, AuthController.logout);
+app.post('/api/auth/forgot-password', forgotPasswordRateLimiter, AuthController.forgotPassword);
+app.post('/api/auth/reset-password', resetPasswordRateLimiter, AuthController.resetPassword);
 app.get('/api/auth/me', authenticateJWT, AuthController.me);
+app.get('/api/public/stats', (_req, res) => {
+  const students = dbStore.getUsers().filter(u => u.role === 'student' && u.status === 'active');
+  res.json({ students: students.length, exams: dbStore.getExams().length,
+    submissions: dbStore.getSubmissions().filter(s => s.status === 'completed').length,
+    regions: new Set(students.map(u => u.region).filter(Boolean)).size });
+});
 
-// 2. Exam routes (CRITICAL FIX: Item 5: Required authentication, no guest IDOR bypass)
+// 2. Exam routes
 app.get('/api/exams/active', ExamController.getActiveExams);
 app.get('/api/exams', ExamController.getActiveExams);
+app.get('/api/admin/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.getAdminExam);
 app.post('/api/exams', authenticateJWT, requireRole(['admin']), ExamController.createExam);
 app.get('/api/exams/:id', ExamController.getExamById);
 app.put('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamController.updateExam);
@@ -209,26 +266,48 @@ app.delete('/api/exams/:id', authenticateJWT, requireRole(['admin']), ExamContro
 app.delete('/api/exams', authenticateJWT, requireRole(['admin']), ExamController.deleteExam);
 app.get('/api/exams/:id/questions', authenticateJWT, ExamController.getExamQuestions); // SECURED: Authentication & Session required!
 app.post('/api/exams/:id/start', authenticateJWT, ExamController.startExam);
+app.get('/api/exams/:id/registration', authenticateJWT, ExamController.registration);
+app.post('/api/exams/:id/registration', authenticateJWT, ExamController.registration);
 app.post('/api/exams/:id/answer', authenticateJWT, ExamController.submitAnswer);
 app.post('/api/exams/:id/finish', authenticateJWT, ExamController.finishExam);
 app.get('/api/exams/:id/result', authenticateJWT, ExamController.getExamResult);
-app.post('/api/exams/:id/proctor-event', authenticateJWT, ExamController.recordProctorEvent);
 
-// PAYMENT SYSTEM DISABLED: All olympiads are fully accessible without payment barriers.
-app.get('/api/payments/status/:examId', (req: Request, res: Response) => {
-  return res.json({ success: true, hasPaid: true, isFree: true });
-});
+// Anti-Cheat & Proctoring Server-Authoritative Endpoints
+app.get('/api/admin/exams/:examId/anti-cheat', authenticateJWT, requireRole(['admin']), ExamController.getAntiCheatConfig);
+app.put('/api/admin/exams/:examId/anti-cheat', authenticateJWT, requireRole(['admin']), ExamController.updateAntiCheatConfig);
+app.get('/api/admin/exams/:examId/proctor-events', authenticateJWT, requireRole(['admin']), ExamController.getProctorEvents);
+app.post('/api/admin/exams/:examId/proctor-disqualify', authenticateJWT, requireRole(['admin']), ExamController.adminDisqualifySession);
+app.post('/api/exams/:id/proctor-events', authenticateJWT, ExamController.recordProctorEvent);
+app.post('/api/exams/:id/proctor-event', authenticateJWT, ExamController.recordProctorEvent);
+app.post('/api/exams/:id/heartbeat', authenticateJWT, ExamController.recordHeartbeat);
+
+// Snapshots Endpoints
+app.post('/api/exams/:id/snapshots', authenticateJWT, ExamController.uploadSnapshot);
+app.post('/api/exams/:id/snapshot', authenticateJWT, ExamController.uploadSnapshot);
+app.get('/api/admin/exams/:id/snapshots', authenticateJWT, requireRole(['admin']), ExamController.getExamSnapshots);
+app.get('/api/admin/snapshots/:snapshotId', authenticateJWT, requireRole(['admin']), ExamController.getSnapshotFile);
+app.delete('/api/admin/snapshots/:snapshotId', authenticateJWT, requireRole(['admin']), ExamController.deleteSnapshot);
 
 // Legacy aliases for backward compatibility (authenticated)
 app.get('/api/olympiads', ExamController.getActiveExams);
 app.get('/api/olympiads/:id', ExamController.getExamById);
-app.get('/api/national-exams', ExamController.getActiveExams);
+app.get('/api/national-exams', (req, res) => { req.query.kind = 'national_certificate'; return ExamController.getActiveExams(req, res); });
 app.post('/api/anticheat', authenticateJWT, (req, res) => ExamController.recordProctorEvent(req, res));
 
 // 3. Submissions & Leaderboard (CRITICAL FIX: Item 6: Enforce ownership & require auth)
 app.get('/api/submissions', authenticateJWT, SubmissionController.getSubmissions);
 app.get('/api/submissions/:id', authenticateJWT, SubmissionController.getSubmissionById);
 app.get('/api/leaderboard', SubmissionController.getLeaderboard);
+
+// Support and notification data are server-authoritative and persisted in the database.
+app.get('/api/support/tickets', authenticateJWT, SupportController.list);
+app.post('/api/support/tickets', authenticateJWT, SupportController.create);
+app.post('/api/support/tickets/:id/messages', authenticateJWT, SupportController.addMessage);
+app.put('/api/support/tickets/:id', authenticateJWT, requireRole(['admin']), SupportController.update);
+app.delete('/api/support/tickets/:id', authenticateJWT, SupportController.remove);
+app.get('/api/admin/notifications', authenticateJWT, requireRole(['admin']), NotificationController.list);
+app.post('/api/admin/notifications', authenticateJWT, requireRole(['admin']), NotificationController.send);
+app.delete('/api/admin/notifications/:id', authenticateJWT, requireRole(['admin']), NotificationController.remove);
 
 // 4. Users (CRITICAL FIX: Item 7: Protected with auth & role check)
 app.get('/api/users', authenticateJWT, requireRole(['admin']), UserController.getUsers);
@@ -238,11 +317,13 @@ app.put('/api/users/:id', authenticateJWT, UserController.updateUser);
 app.delete('/api/users/:id', authenticateJWT, requireRole(['admin']), UserController.deleteUser);
 
 // 5. Certificate Verification
+app.get('/api/certificates', authenticateJWT, CertificateController.list);
 app.get('/api/certificates/:code', CertificateController.verifyCertificate);
 app.get('/api/verify/:code', CertificateController.verifyCertificate);
 
 // 6. Dual-Device Proctoring (CRITICAL FIX: Item 4: Proctor createSession authenticated)
 app.post('/api/proctor/session/create', authenticateJWT, ProctorController.createSession);
+app.post('/api/proctor/session/pair', authRateLimiter, ProctorController.pair);
 app.post('/api/proctor/calibrate', proctorCalibrateBodyParser, ProctorController.calibrate);
 app.post('/api/proctor/verify-snapshot', proctorCalibrateBodyParser, ProctorController.calibrate);
 app.get('/api/proctor/check-gatekeeper/:sessionId', ProctorController.checkGatekeeper);
@@ -270,24 +351,7 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
 
     const rawIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1').toString().replace(/^.*:/, '');
 
-    const initialLogList = logs.length > 0 ? logs : [
-      {
-        id: `log-init-01`,
-        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
-        ip: rawIp === '' ? '127.0.0.1' : rawIp,
-        country: "O'zbekiston",
-        countryCode: 'UZ',
-        method: req.method as any,
-        path: req.originalUrl || req.url,
-        statusCode: 200,
-        responseTimeMs: 5,
-        userAgent: String(req.headers['user-agent'] || 'Admin Console').slice(0, 80),
-        userName: (req as any).user?.fullName || 'Ibn Sino Admin',
-        bytesSent: 1240,
-        level: 'info' as const,
-        category: 'access' as const,
-      }
-    ];
+    const initialLogList = logs;
 
     res.json({
       status: 'success',
@@ -308,8 +372,8 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
         requestsPerSec: traffic.requestsPerSec,
         responseTimeAvg: traffic.responseTimeAvg,
         threatLevel: alerts.some(a => a.severity === 'critical') ? 'high' : alerts.length > 2 ? 'medium' : 'low',
-        rateLimitHits: traffic.totalErrors,
-        rateLimitHitsCount: traffic.totalErrors,
+        rateLimitHits: traffic.rateLimitHits,
+        rateLimitHitsCount: traffic.rateLimitHits,
         recentSuspiciousIpCount: alerts.length,
         timestamp: health.timestamp,
         traffic: traffic.trafficPoints,
@@ -349,8 +413,8 @@ const handleSystemMetrics = async (req: Request, res: Response) => {
         totalSubmissions: submissions.length,
       },
       serverHostStats: {
-        hostingAccountsCount: 1,
-        currentAccount: 'root (ibnsinoschool.uz)',
+        hostingAccountsCount: null,
+        currentAccount: 'Hosting provayderidan ma’lumot olinmagan',
         accountRamLimit: `${health.ram.totalMb} MiB`,
         accountDiskQuota: `${health.disk.totalGb} GB (${health.disk.fsType})`,
         serverNode: `Ibn Sino VPS Server · ${health.os.hostname}`,
@@ -388,7 +452,7 @@ export const getSystemHealth = async (req: Request, res: Response) => {
         cpu: {
           cores: health.cpu.cores,
           model: health.cpu.model,
-          loadAvg: health.cpu.loadAvg.map(l => l.toFixed(2)),
+          loadAvg: health.cpu.loadAvg.map(l => l === null ? null : l.toFixed(2)),
           usagePercent: health.cpu.usagePercent,
         },
         os: {
@@ -426,6 +490,9 @@ app.delete('/api/admin/system-metrics', authenticateJWT, requireRole(['admin']),
 // Toggle WAF defense setting endpoint
 app.post('/api/admin/toggle-setting', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
   const { key, value } = req.body;
+  if (!['waf', 'ipFilter', 'ipBlocking', 'rateLimit'].includes(key) || typeof value !== 'boolean') {
+    return res.status(400).json({ error: 'Bu sozlama mavjud emas yoki qiymati boolean emas' });
+  }
   if (key) {
     const updateMap: Record<string, any> = {};
     if (key === 'waf') updateMap.wafEnabled = Boolean(value);
@@ -446,33 +513,19 @@ app.get('/api/admin/security-logs', authenticateJWT, requireRole(['admin']), (re
 // Admin IP Blocking Endpoints
 app.post('/api/admin/block-ip', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
   const { ip, reason } = req.body;
-  if (!ip) return res.status(400).json({ error: 'IP talab qilinadi' });
+  if (typeof ip !== 'string' || !isIP(ip)) return res.status(400).json({ error: 'Haqiqiy IP talab qilinadi' });
   dbStore.blockIP(String(ip), reason ? String(reason) : 'Admin tomonidan bloklandi');
   return res.json({ success: true, message: `${ip} bloklandi`, blockedIPs: dbStore.getBlockedIPs() });
 });
 
 app.post('/api/admin/unblock-ip', authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
   const { ip } = req.body;
-  if (!ip) return res.status(400).json({ error: 'IP talab qilinadi' });
+  if (typeof ip !== 'string' || !isIP(ip)) return res.status(400).json({ error: 'Haqiqiy IP talab qilinadi' });
   dbStore.unblockIP(String(ip));
   return res.json({ success: true, message: `${ip} blokdan chiqarildi`, blockedIPs: dbStore.getBlockedIPs() });
 });
 
-// Legacy backward compatibility for logs.php with action query
-app.all(['/api/logs.php', '/logs.php'], authenticateJWT, requireRole(['admin']), (req: Request, res: Response) => {
-  const action = req.query.action || req.body?.action;
-  if (action === 'block_ip') {
-    const { ip, reason } = req.body;
-    if (ip) dbStore.blockIP(String(ip), reason);
-    return res.json({ success: true, blockedIPs: dbStore.getBlockedIPs() });
-  }
-  if (action === 'unblock_ip') {
-    const { ip } = req.body;
-    if (ip) dbStore.unblockIP(String(ip));
-    return res.json({ success: true, blockedIPs: dbStore.getBlockedIPs() });
-  }
-  return handleSystemMetrics(req, res);
-});
+// Legacy GET routes that mutated security state have been removed.
 
 // Setup sockets
 setupProctorSockets(io);
@@ -486,9 +539,26 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda (0.0.0.0) muvaffaqiyatli ishga tushdi`);
-  console.log(`🔗 REST API: http://127.0.0.1:${PORT}/api/health`);
+const isTestExecution = process.env.NODE_ENV === 'test';
+
+if (!isTestExecution) {
+  validateEnvironment();
+  void checkDatabase().then(() => {
+    heartbeatWorker.start();
+    server.listen(PORT, process.env.HOST || (IS_PRODUCTION ? '127.0.0.1' : '0.0.0.0'), () => {
+    console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda (0.0.0.0) muvaffaqiyatli ishga tushdi`);
+    console.log(`🔗 REST API: http://127.0.0.1:${PORT}/api/health`);
+    });
+  }).catch(() => {
+    console.error('[startup] Database configuration/migration check failed');
+    void databasePool?.end(); process.exitCode = 1;
+  });
+}
+
+for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => {
+  heartbeatWorker.stop();
+  io.close();
+  server.close(() => { void databasePool?.end(); });
 });
 
 export { app, server, io };

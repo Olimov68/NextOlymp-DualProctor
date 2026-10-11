@@ -44,6 +44,8 @@ scratch/
 
 # Database runtime stores
 server/data/store.json
+server/data/snapshots/
+coverage/
 !server/data/store.example.json
 
 # Tool artifacts
