@@ -7,6 +7,9 @@ export interface UseAntiCheatOptions {
   olympiadTitle?: string;
   maxViolations?: number;
   requireFullscreen?: boolean;
+  blockTabSwitch?: boolean;
+  blockCopyPaste?: boolean;
+  blockDevTools?: boolean;
   onCaptureSnapshot?: () => string | undefined;
 }
 
@@ -29,6 +32,9 @@ export function useAntiCheat(isActive: boolean, options: UseAntiCheatOptions = {
       olympiadId: options.olympiadId,
       olympiadTitle: options.olympiadTitle,
       requireFullscreen: options.requireFullscreen ?? true,
+      blockTabSwitch: options.blockTabSwitch ?? true,
+      blockCopyPaste: options.blockCopyPaste ?? true,
+      blockDevTools: options.blockDevTools ?? true,
       onViolation: (type, data) => {
         const snap = options.onCaptureSnapshot ? options.onCaptureSnapshot() : undefined;
         recordGuardViolation(type, data.message, data.max, snap);
@@ -44,6 +50,18 @@ export function useAntiCheat(isActive: boolean, options: UseAntiCheatOptions = {
       guard.destroy();
       guardRef.current = null;
     };
-  }, [isActive, options.olympiadId, options.olympiadTitle, options.maxViolations, options.requireFullscreen, options.onCaptureSnapshot, recordGuardViolation, disqualifyContest]);
+  }, [
+    isActive,
+    options.olympiadId,
+    options.olympiadTitle,
+    options.maxViolations,
+    options.requireFullscreen,
+    options.blockTabSwitch,
+    options.blockCopyPaste,
+    options.blockDevTools,
+    options.onCaptureSnapshot,
+    recordGuardViolation,
+    disqualifyContest
+  ]);
 }
 

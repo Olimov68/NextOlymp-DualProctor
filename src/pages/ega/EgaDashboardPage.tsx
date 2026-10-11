@@ -205,7 +205,7 @@ export const EgaDashboardPage: React.FC = () => {
                 </span>
               </div>
               <p className={clsx("text-[11px] mt-0.5", isDark ? "text-slate-400" : "text-slate-500")}>
-                {t("Barcha bo'limlardan eng muhim ko'rsatkichlar, moliya, olimpiadalar va anti-cheat nazorati bir joyda")}
+                {t("Barcha bo'limlardan eng muhim ko'rsatkichlar, olimpiadalar va anti-cheat nazorati bir joyda")}
               </p>
             </div>
           </div>

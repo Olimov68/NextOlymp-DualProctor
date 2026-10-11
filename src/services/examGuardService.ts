@@ -22,6 +22,9 @@ export interface ExamGuardOptions {
   olympiadId?: string;
   olympiadTitle?: string;
   requireFullscreen?: boolean;
+  blockTabSwitch?: boolean;
+  blockCopyPaste?: boolean;
+  blockDevTools?: boolean;
   heartbeatIntervalMs?: number;
   onViolation?: (type: ExamViolationType, data: { count: number; max: number; message: string }) => void;
   onDisqualify?: (reason: string) => void;
@@ -33,6 +36,9 @@ export class ExamGuard {
   private olympiadId: string;
   private olympiadTitle: string;
   private requireFullscreen: boolean;
+  private blockTabSwitch: boolean;
+  private blockCopyPaste: boolean;
+  private blockDevTools: boolean;
   private heartbeatIntervalMs: number;
   private onViolation: (type: ExamViolationType, data: { count: number; max: number; message: string }) => void;
   private onDisqualify: (reason: string) => void;
@@ -48,6 +54,9 @@ export class ExamGuard {
     this.olympiadId = options.olympiadId || 'olymp-current';
     this.olympiadTitle = options.olympiadTitle || 'Onlayn Olimpiada';
     this.requireFullscreen = options.requireFullscreen ?? true;
+    this.blockTabSwitch = options.blockTabSwitch ?? true;
+    this.blockCopyPaste = options.blockCopyPaste ?? true;
+    this.blockDevTools = options.blockDevTools ?? true;
     this.heartbeatIntervalMs = options.heartbeatIntervalMs || 6000;
     this.onViolation = options.onViolation || (() => {});
     this.onDisqualify = options.onDisqualify || (() => {});
@@ -56,11 +65,17 @@ export class ExamGuard {
   }
 
   private init() {
-    this.preventCopyPaste();
-    this.preventContextMenu();
-    this.preventKeyboardShortcuts();
-    this.trackTabAndFocus();
-    this.detectDevTools();
+    if (this.blockCopyPaste) {
+      this.preventCopyPaste();
+      this.preventContextMenu();
+    }
+    if (this.blockDevTools) {
+      this.preventKeyboardShortcuts();
+      this.detectDevTools();
+    }
+    if (this.blockTabSwitch) {
+      this.trackTabAndFocus();
+    }
     if (this.requireFullscreen) {
       this.enforceFullScreen();
     }

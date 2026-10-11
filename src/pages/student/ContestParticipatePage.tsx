@@ -15,7 +15,6 @@ import { Modal } from '../../components/common/Modal';
 import { ExamSetupModal } from '../../components/contest/ExamSetupModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useOlympiadStore } from '../../store/useOlympiadStore';
-import { usePaymentStore } from '../../store/usePaymentStore';
 import { apiClient } from '../../services/api';
 import clsx from 'clsx';
 import {
@@ -310,12 +309,15 @@ export const ContestParticipatePage: React.FC = () => {
     };
 
     if (hasStarted && !isSubmitted) {
-      startCamera();
-
       const config = olympiad?.antiCheatConfig;
+      const webcamRequired = config?.enabled !== false && config?.proctoringMode !== 'DISABLED' && config?.requireWebcam !== false;
+      if (webcamRequired) {
+        startCamera();
+      }
+
       const gracePeriodSec = config?.maxAbsenceGracePeriod ?? (config?.proctoringMode === 'STRICT' ? 1.5 : config?.proctoringMode === 'STANDARD' ? 3.0 : 4.0);
       const graceTicks = Math.max(1, Math.round(gracePeriodSec / 0.5));
-      const maxViolations = config?.maxViolationsAllowed || 3;
+      const maxViolations = config?.maxViolationsAllowed ?? 3;
 
       
       interval = setInterval(async () => {
@@ -492,17 +494,21 @@ export const ContestParticipatePage: React.FC = () => {
   };
 
   
-  useAntiCheat(hasStarted && !isSubmitted, {
+  const antiCheatPolicy = olympiad?.antiCheatConfig;
+  const antiCheatActive = hasStarted && !isSubmitted && antiCheatPolicy?.enabled !== false;
+  useAntiCheat(antiCheatActive, {
     olympiadId: olympiad?.id || id,
     olympiadTitle: olympiad?.title || 'Onlayn Olimpiada',
-    maxViolations: 3,
-    requireFullscreen: true,
+    maxViolations: antiCheatPolicy?.maxViolationsAllowed ?? 3,
+    requireFullscreen: antiCheatPolicy?.requireFullscreen ?? true,
+    blockTabSwitch: antiCheatPolicy?.blockTabSwitch ?? true,
+    blockCopyPaste: antiCheatPolicy?.blockCopyPaste ?? true,
+    blockDevTools: antiCheatPolicy?.blockDevTools ?? true,
     onCaptureSnapshot: captureSnapshot,
   });
 
-  
   const audioConfig = olympiad?.antiCheatConfig;
-  const audioProctoringEnabled = hasStarted && !isSubmitted && audioConfig?.proctoringMode !== 'DISABLED' && audioConfig?.requireVoiceBiometrics !== false;
+  const audioProctoringEnabled = hasStarted && !isSubmitted && audioConfig?.enabled !== false && audioConfig?.proctoringMode !== 'DISABLED' && audioConfig?.requireVoiceBiometrics !== false;
 
   const handleAudioViolation = useCallback((v: { type: string; detail: string; confidence: number }) => {
     const snap = captureSnapshot();
