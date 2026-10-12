@@ -100,7 +100,7 @@ export interface Submission {
   status: 'pending' | 'correct' | 'incorrect' | 'partial';
 }
 
-export type CertificateType = 'participation' | 'participant' | 'achievement' | 'winner' | 'round_passed' | 'round_failed';
+export type CertificateType = 'participation' | 'participant' | 'achievement' | 'winner' | 'round_passed' | 'round_failed' | 'national_certificate';
 
 export interface CertificateConfig {
   enabled?: boolean; 
@@ -173,6 +173,7 @@ export interface Certificate {
   rank: number;
   totalParticipants: number;
   grade?: number;
+  levelGrade?: string;
   school?: string;
   region?: string;
   fontFamily?: string;

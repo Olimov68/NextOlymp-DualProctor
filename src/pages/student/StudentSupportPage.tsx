@@ -320,6 +320,40 @@ export const StudentSupportPage: React.FC = () => {
         </div>
       )}
 
+      {/* To'g'ridan-to'g'ri bog'lanish va Call-center */}
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-emerald-950/30 border border-white/10 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h4 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Tezkor Call-Markaz va Bog'lanish</span>
+          </h4>
+          <p className="text-xs text-zinc-400">
+            Shoshilinch savollar bo'yicha biz bilan to'g'ridan-to'g'ri telefon yoki elektron pochta orqali bog'lanishingiz mumkin.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <a
+            href="mailto:support@ibnsinoschool.uz"
+            className="px-3.5 py-2 rounded-xl bg-zinc-950/80 border border-white/10 text-emerald-300 hover:text-emerald-200 hover:border-emerald-500/30 transition-all font-medium flex items-center gap-1.5"
+          >
+            <span>✉️ support@ibnsinoschool.uz</span>
+          </a>
+          <a
+            href="tel:+998991749933"
+            className="px-3.5 py-2 rounded-xl bg-zinc-950/80 border border-white/10 text-zinc-200 hover:text-emerald-400 hover:border-emerald-500/30 transition-all font-mono font-bold flex items-center gap-1.5"
+          >
+            <span>📞 +998 99 174-99-33</span>
+          </a>
+          <a
+            href="tel:+998901787848"
+            className="px-3.5 py-2 rounded-xl bg-zinc-950/80 border border-white/10 text-zinc-200 hover:text-emerald-400 hover:border-emerald-500/30 transition-all font-mono font-bold flex items-center gap-1.5"
+          >
+            <span>📞 +998 90 178-78-48</span>
+          </a>
+        </div>
+      </div>
+
       
       {isNewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">

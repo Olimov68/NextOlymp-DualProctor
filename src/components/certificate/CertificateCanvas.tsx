@@ -37,7 +37,24 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
     }
   };
 
+  const isNational = certificate.type === 'national_certificate' || certificate.verificationCode?.startsWith('NS-') || certificate.maxScore === 75;
+
+  const getDerivedGrade = (): string | null => {
+    if (certificate.levelGrade) return certificate.levelGrade;
+    if (isNational) {
+      const s = certificate.score;
+      if (s >= 70.0) return 'A+';
+      if (s >= 65.0) return 'A';
+      if (s >= 60.0) return 'B+';
+      if (s >= 55.0) return 'B';
+      if (s >= 50.0) return 'C+';
+      if (s >= 46.0) return 'C';
+    }
+    return null;
+  };
+
   const getCertificateTitle = () => {
+    if (isNational) return "MILLIY BAHOLASH SERTIFIKATI";
     if (certificate.type === 'winner') return "G'OLIBLIK DIPLOMI";
     if (certificate.type === 'round_passed') return "1-BOSQICH G'OLIBI DIPLOMI";
     if (certificate.type === 'round_failed') return "ISHTIROKCHI SERTIFIKATI";
@@ -168,11 +185,17 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
         </p>
 
         
-        <div className="flex items-center justify-center gap-2 pt-0.5">
-          <div className="px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] sm:text-[10px] text-slate-300 font-medium">
-            To'plangan ball: <strong className="text-amber-400 font-bold font-mono">{certificate.score}</strong> / {certificate.maxScore || 100}
+        <div className="flex items-center justify-center gap-2 pt-0.5 flex-wrap">
+          <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] sm:text-[11px] text-slate-300 font-medium">
+            To'plangan ball: <strong className="text-amber-400 font-bold font-mono text-xs sm:text-sm">{certificate.score}</strong> / {certificate.maxScore || (isNational ? 75 : 100)}
           </div>
-          {certificate.rank && certificate.rank > 0 ? (
+          {getDerivedGrade() && (
+            <div className="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-[10px] sm:text-xs text-emerald-300 font-extrabold flex items-center gap-1 shadow-sm">
+              <Award className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Daraja: <strong className="text-amber-300 font-black text-xs sm:text-sm">{getDerivedGrade()}</strong></span>
+            </div>
+          )}
+          {certificate.rank && certificate.rank > 0 && !isNational ? (
             <div className="px-2.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-[9px] sm:text-[10px] text-amber-300 font-medium">
               O'rni: <strong className="text-amber-300 font-black font-mono">{certificate.rank}-o'rin</strong>
             </div>

@@ -1208,15 +1208,32 @@ class Store {
     const kind = exam ? examKind(exam) : 'olympiad';
     const mode = session.mode ?? 'competitive';
     const rasch = kind === 'national_certificate' ? estimateRasch(analysis, exam?.raschConfig) : undefined;
-    const certificateEligible = kind === 'olympiad' && mode === 'competitive';
+
+    let certType = '';
+    let verificationCode = '';
+    const subToken = crypto.randomBytes(16).toString('hex').toUpperCase();
+
+    if (kind === 'national_certificate' && mode === 'competitive') {
+      // BMBA / Rasch 75 ballik standart shkalasi va daraja
+      const thetaVal = rasch?.theta;
+      const stdScore = typeof thetaVal === 'number'
+        ? Math.min(75, Math.max(0, Math.round((50 + 10 * thetaVal) * 10) / 10))
+        : Math.min(75, Math.max(0, Math.round((percentage * 0.75) * 10) / 10));
+
+      const grade = stdScore >= 70.0 ? 'A+' : stdScore >= 65.0 ? 'A' : stdScore >= 60.0 ? 'B+' : stdScore >= 55.0 ? 'B' : stdScore >= 50.0 ? 'C+' : stdScore >= 46.0 ? 'C' : 'Fail';
+      if (grade !== 'Fail' && stdScore >= 46.0) {
+        certType = `Milliy Sertifikat: ${grade} daraja (${stdScore} ball)`;
+        verificationCode = `NS-${new Date().getUTCFullYear()}-${subToken}`;
+      }
+    } else if (kind === 'olympiad' && mode === 'competitive') {
+      certType = percentage >= 85 ? 'I darajali Diplom' : percentage >= 70 ? 'II darajali Diplom' : percentage >= 50 ? 'III darajali Diplom' : 'Ishtirokchi Sertifikati';
+      verificationCode = `IS-${new Date().getUTCFullYear()}-${subToken}`;
+    }
+
+    const certificateEligible = Boolean(verificationCode);
 
     const elapsedMs = Math.min(Date.now() - session.startedAt, (exam?.durationMinutes || 60) * 60000);
     const timeSpentMinutes = Math.max(1, Math.round(elapsedMs / 60000));
-
-    const certType = percentage >= 85 ? 'I darajali Diplom' : percentage >= 70 ? 'II darajali Diplom' : percentage >= 50 ? 'III darajali Diplom' : 'Ishtirokchi Sertifikati';
-    // Item 24: High-entropy verification code to prevent enumeration
-    const subToken = crypto.randomBytes(16).toString('hex').toUpperCase();
-    const verificationCode = `IS-${new Date().getUTCFullYear()}-${subToken}`;
 
     const submission: SubmissionRecord = {
       id: `sub_${session.sessionId}`,
@@ -1237,8 +1254,8 @@ class Store {
       status: 'completed',
       timeSpentMinutes,
       submittedAt: session.submittedAt,
-      certificateType: certificateEligible ? certType : '',
-      verificationCode: certificateEligible ? verificationCode : '',
+      certificateType: certType,
+      verificationCode,
       analysis,
     };
 

@@ -28,19 +28,23 @@ export const Logo: React.FC<LogoProps> = ({
 
   return (
     <Link to="/" className={`inline-flex items-center gap-2.5 group cursor-pointer ${className}`}>
-      <div className={`${iconSizes[size]} relative shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-700 p-1.5 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300`}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full text-white">
-          <path d="M12 2v20" />
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          <circle cx="12" cy="3" r="1" fill="currentColor" />
-        </svg>
+      <div className={`${iconSizes[size]} relative shrink-0 flex items-center justify-center rounded-xl overflow-hidden bg-white/10 p-0.5 border border-white/15 shadow-md shadow-emerald-500/10 group-hover:scale-105 transition-transform duration-300`}>
+        <img
+          src="/favicon.png"
+          alt="Ibn Sino Logo"
+          className="w-full h-full object-contain rounded-lg"
+        />
       </div>
 
       {showText && (
-        <span className={`${textSizes[size]} font-black tracking-tight ${lightText ? 'text-white' : 'text-slate-100'}`}>
-          Ibn <span className="text-emerald-400 font-extrabold">Sino</span>
-          <span className="ml-1 text-[10px] font-semibold tracking-wider text-emerald-400/80 uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">Olympiad</span>
-        </span>
+        <div className="flex flex-col leading-none">
+          <span className={`${textSizes[size]} font-black tracking-wider uppercase ${lightText ? 'text-white' : 'text-slate-100'}`}>
+            IBN <span className="text-emerald-400 font-extrabold">SINO</span>
+          </span>
+          <span className="text-[9px] font-bold tracking-widest uppercase text-emerald-400/90 mt-0.5">
+            O'quv Markazi
+          </span>
+        </div>
       )}
     </Link>
   );

@@ -65,15 +65,24 @@ export const Footer: React.FC = () => {
             <ul className="space-y-3 text-xs text-[#94A3B8]">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-[#F1F5F9]">support@ibnsino.uz</span>
+                <a href="mailto:support@ibnsinoschool.uz" className="text-[#F1F5F9] hover:text-emerald-400 transition-colors">
+                  support@ibnsinoschool.uz
+                </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-[#F1F5F9]">+998 71 200-00-26</span>
+                <div className="flex flex-col gap-0.5">
+                  <a href="tel:+998991749933" className="text-[#F1F5F9] hover:text-emerald-400 transition-colors font-mono font-medium">
+                    +998 99 174-99-33
+                  </a>
+                  <a href="tel:+998901787848" className="text-[#F1F5F9] hover:text-emerald-400 transition-colors font-mono font-medium">
+                    +998 90 178-78-48
+                  </a>
+                </div>
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-[#F1F5F9]">Toshkent sh., Ibn Sino Ilmiy Akademiyasi</span>
+                <span className="text-[#F1F5F9]">Toshkent sh., Ibn Sino O'quv Markazi</span>
               </li>
             </ul>
           </div>

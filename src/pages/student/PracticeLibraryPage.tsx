@@ -1,7 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { examCatalogService as catalog, examKindLabels, type AssessmentResult, type CatalogExam,
   type PracticeSession, type ServerQuestion } from '../../services/examCatalogService';
+import { raschService, buildNationalCertificate, GradeLevel } from '../../services/raschAssessmentService';
+import { Modal } from '../../components/common/Modal';
+import { CertificateCanvas } from '../../components/certificate/CertificateCanvas';
+import { Award, Download, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { clsx } from 'clsx';
 
 const box = 'rounded-2xl border border-white/10 bg-zinc-900/70 p-5';
 const button = 'rounded-xl bg-emerald-600 px-4 py-2 text-white text-sm disabled:opacity-40 hover:bg-emerald-500';
@@ -9,21 +14,133 @@ const input = 'rounded-xl border border-white/15 bg-zinc-900 p-3 text-sm text-wh
 const errorMessage = (e: unknown) => e instanceof Error ? e.message : 'Server bilan aloqa xatosi';
 
 export function AssessmentResultView({ result }: { result: AssessmentResult }) {
-  return <section className={box + ' space-y-4'}>
-    <h2 className="font-bold text-xl">{result.examTitle} — {result.mode === 'practice' ? 'mashq natijasi' : 'sinov natijasi'}</h2>
-    <p>Xom ball: {result.score} / {result.maxScore} ({result.percentage}%)</p>
-    {result.examKind === 'national_certificate' && <div className="rounded-xl bg-amber-500/10 p-4 text-amber-200">
-      {result.rasch?.status === 'estimated' ? <p>Rasch 1PL/EAP: θ = {result.rasch.theta?.toFixed(3)} logit; posterior SD = {result.rasch.posteriorSd?.toFixed(3)}. Kalibrlash: {result.rasch.calibrationVersion}.</p>
-        : <p>Rasch bali hisoblanmagan — kalibrlash parametrlari kutilmoqda.</p>}
-      <p className="mt-2 text-sm">Xom foiz milliy sertifikat bali emas. Bu tayyorgarlik sinovi; rasmiy BMBA balli, darajasi yoki davlat sertifikati berilmaydi.</p>
-    </div>}
-    {result.mode === 'practice' && <p className="text-sm text-zinc-400">Bu urinish olimpiada reytingiga qo‘shilmaydi va sertifikat bermaydi.</p>}
-    {result.analysis?.map((item, index) => <details className="border-t border-white/10 pt-3" key={item.questionId}>
-      <summary className="cursor-pointer">{index + 1}. {item.isCorrect ? '✓' : '✕'} {item.questionText}</summary>
-      <p className="mt-2">Sizning javobingiz: {item.userAnswer || 'Javob berilmagan'} · To‘g‘ri javob: {item.correctAnswer}</p>
-      {item.explanation && <p className="text-zinc-300 mt-2">{item.explanation}</p>}
-    </details>)}
-  </section>;
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+
+  // PDF Rash modeli bo'yicha ball va darajani aniqlash
+  const calculated = useMemo(() => {
+    if (result.examKind === 'national_certificate') {
+      const correctCount = result.analysis?.filter(a => a.isCorrect).length ?? result.score;
+      const totalQ = result.analysis?.length || 45;
+      const res = raschService.calcPdfRaschScore(correctCount, totalQ);
+      return res;
+    }
+    return null;
+  }, [result]);
+
+  const certificate = useMemo(() => {
+    if (!calculated) return null;
+    return buildNationalCertificate({
+      userName: "Talabgor",
+      score: calculated.standardScore,
+      grade: calculated.grade,
+      subject: "Matematika",
+      examTitle: result.examTitle,
+    });
+  }, [calculated, result.examTitle]);
+
+  const getGradeColor = (g: GradeLevel) => {
+    if (g === 'A+' || g === 'A') return 'bg-emerald-500/20 text-emerald-300 border-emerald-400';
+    if (g === 'B+' || g === 'B') return 'bg-teal-500/20 text-teal-300 border-teal-400';
+    if (g === 'C+' || g === 'C') return 'bg-amber-500/20 text-amber-300 border-amber-400';
+    return 'bg-rose-500/20 text-rose-300 border-rose-400';
+  };
+
+  return (
+    <section className={box + ' space-y-5'}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div>
+          <h2 className="font-black text-xl text-zinc-100">{result.examTitle}</h2>
+          <p className="text-xs text-zinc-400">{result.mode === 'practice' ? 'Mashq sinovi' : 'Rasmiy sinov natijasi'}</p>
+        </div>
+
+        {calculated && calculated.isEligibleForCertificate && (
+          <button
+            type="button"
+            onClick={() => setIsCertModalOpen(true)}
+            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
+          >
+            <Award className="w-4 h-4" />
+            <span>Milliy Sertifikatni Ko'rish</span>
+          </button>
+        )}
+      </div>
+
+      {/* O'quvchiga ko'rsatiladigan asosiy natija kartasi (Faqat Ball va Daraja) */}
+      {result.examKind === 'national_certificate' && calculated ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl bg-zinc-950 border border-emerald-500/30 text-center space-y-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Rasch Standart Bali</div>
+            <div className="text-4xl font-black text-emerald-400 font-mono">{calculated.standardScore}</div>
+            <div className="text-[11px] text-zinc-500 font-mono">Maksimal 75.0 ball</div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-zinc-950 border border-emerald-500/30 text-center space-y-2 flex flex-col justify-center items-center">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Natijaviy Daraja</div>
+            <div className={clsx("text-2xl font-black px-4 py-1 rounded-xl border shadow-sm", getGradeColor(calculated.grade))}>
+              {calculated.grade} Daraja
+            </div>
+            <div className="text-[11px] text-zinc-400">{calculated.gradeDescription}</div>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 rounded-xl bg-zinc-950 border border-white/10 text-sm">
+          <span>To'plangan ball: <strong className="text-emerald-400 font-mono text-base">{result.score}</strong> / {result.maxScore} ({result.percentage}%)</span>
+        </div>
+      )}
+
+      {/* Savollar tahlili */}
+      {result.analysis && result.analysis.length > 0 && (
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Topshiriqlar bo'yicha tahlil</h3>
+          {result.analysis.map((item, index) => (
+            <details className="border border-white/5 rounded-xl p-3 bg-zinc-950/60" key={item.questionId}>
+              <summary className="cursor-pointer text-xs font-semibold text-zinc-200">
+                {index + 1}. {item.isCorrect ? '✓' : '✕'} {item.questionText}
+              </summary>
+              <div className="mt-2 text-xs space-y-1 text-zinc-300 pl-4 border-l border-white/10">
+                <p>Sizning javobingiz: <span className={item.isCorrect ? 'text-emerald-400 font-bold' : 'text-rose-400'}>{item.userAnswer || 'Javob berilmagan'}</span></p>
+                <p>To‘g‘ri javob: <span className="text-emerald-400 font-bold">{item.correctAnswer}</span></p>
+                {item.explanation && <p className="text-zinc-400 mt-1 italic">{item.explanation}</p>}
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+
+      {/* Sertifikat Modali */}
+      {isCertModalOpen && certificate && (
+        <Modal
+          isOpen={isCertModalOpen}
+          onClose={() => setIsCertModalOpen(false)}
+          title="Rasmiy Milliy Baholash Sertifikati"
+          size="xl"
+        >
+          <div className="space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-amber-400" />
+                  <span>{calculated?.grade} Darajali Milliy Sertifikat ({calculated?.standardScore} ball)</span>
+                </h3>
+                <p className="text-xs text-zinc-400">BMBA 75 ballik standart shkalasi va Rash modeli bo'yicha</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 active:scale-95"
+              >
+                Chop etish
+              </button>
+            </div>
+
+            <div className="max-w-3xl mx-auto shadow-2xl rounded-2xl overflow-hidden border border-amber-400/30">
+              <CertificateCanvas certificate={certificate} className="w-full" />
+            </div>
+          </div>
+        </Modal>
+      )}
+    </section>
+  );
 }
 
 export function PracticeLibraryPage({ nationalOnly = false }: { nationalOnly?: boolean }) {

@@ -62,7 +62,10 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
-    const typeText = certificate.type === 'winner' ? "G'OLIBLIK DIPLOMI" : certificate.type === 'round_passed' ? "BOSQICH G'OLIBI SERTIFIKATI" : "MUVAFFAQIYAT SERTIFIKATI";
+    const isNational = certificate.type === 'national_certificate' || certificate.verificationCode?.startsWith('NS-') || certificate.maxScore === 75;
+    const typeText = isNational
+      ? "MILLIY BAHOLASH SERTIFIKATI"
+      : certificate.type === 'winner' ? "G'OLIBLIK DIPLOMI" : certificate.type === 'round_passed' ? "BOSQICH G'OLIBI SERTIFIKATI" : "MUVAFFAQIYAT SERTIFIKATI";
     ctx.fillText(typeText, 600, 167);
 
     
@@ -73,8 +76,18 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
     
     ctx.fillStyle = '#e2e8f0';
     ctx.font = '18px sans-serif';
-    ctx.fillText(`"${certificate.olympiadTitle}" fan olimpiadasida faol qatnashib,`, 600, 330);
-    ctx.fillText(`${certificate.score} ball to'pladi ${certificate.rank > 0 ? `va faxrli ${certificate.rank}-o'rinni egalladi.` : 'va muvaffaqiyat bilan yakunladi.'}`, 600, 365);
+    if (isNational) {
+      let grade = certificate.levelGrade;
+      if (!grade) {
+        const s = certificate.score;
+        grade = s >= 70 ? 'A+' : s >= 65 ? 'A' : s >= 60 ? 'B+' : s >= 55 ? 'B' : s >= 50 ? 'C+' : s >= 46 ? 'C' : '';
+      }
+      ctx.fillText(`"${certificate.olympiadTitle || 'Milliy Baholash Testi'}" sinovida Rash modeli asosida,`, 600, 330);
+      ctx.fillText(`75 ballik standart shkalada ${certificate.score} ball to'plab, "${grade}" darajali sertifikatga sazovor bo'ldi.`, 600, 365);
+    } else {
+      ctx.fillText(`"${certificate.olympiadTitle}" fan olimpiadasida faol qatnashib,`, 600, 330);
+      ctx.fillText(`${certificate.score} ball to'pladi ${certificate.rank > 0 ? `va faxrli ${certificate.rank}-o'rinni egalladi.` : 'va muvaffaqiyat bilan yakunladi.'}`, 600, 365);
+    }
 
     
     ctx.textAlign = 'left';
