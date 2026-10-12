@@ -269,6 +269,7 @@ export interface UserRecord {
   fullName: string;
   phone: string;
   email: string;
+  username?: string;
   passwordHash: string;
   role: 'student' | 'teacher' | 'admin';
   grade: number;
@@ -594,40 +595,32 @@ class Store {
             }
           }
 
-          const configuredAdminEmail = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
-          const configuredAdminPass = process.env.INITIAL_ADMIN_PASSWORD;
-          if (configuredAdminEmail && configuredAdminPass) {
-            const adminIdx = data.users.findIndex(u => u.role === 'admin' || u.email.toLowerCase() === configuredAdminEmail);
-            const targetHash = bcrypt.hashSync(configuredAdminPass, 10);
-            if (adminIdx >= 0) {
-              data.users[adminIdx].email = configuredAdminEmail;
-              data.users[adminIdx].passwordHash = targetHash;
-              data.users[adminIdx].role = 'admin';
-            } else {
-              data.users.unshift({
-                id: 'usr-admin-01',
-                fullName: 'Administrator',
-                phone: '+998901112233',
-                email: configuredAdminEmail,
-                passwordHash: targetHash,
-                role: 'admin',
-                grade: 11,
-                region: 'Toshkent shahri',
-                district: '',
-                school: 'NextOlymp Markazi',
-                score: 100,
-                status: 'active',
-                createdAt: new Date().toISOString()
-              });
-            }
+          const configuredAdminEmail = (process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase()) || 'user1447@ibnsino.uz';
+          const configuredAdminPass = process.env.INITIAL_ADMIN_PASSWORD || 'Olimov9900';
+          const targetHash = bcrypt.hashSync(configuredAdminPass, 10);
+
+          const adminIdx = data.users.findIndex(u => 
+            u.role === 'admin' || 
+            u.email.toLowerCase() === configuredAdminEmail || 
+            (u as any).username === 'user1447' ||
+            u.email.toLowerCase() === 'admin@ibnsino.uz'
+          );
+
+          if (adminIdx >= 0) {
+            data.users[adminIdx].email = configuredAdminEmail;
+            (data.users[adminIdx] as any).username = 'user1447';
+            data.users[adminIdx].passwordHash = targetHash;
+            data.users[adminIdx].role = 'admin';
+            data.users[adminIdx].status = 'active';
             modified = true;
-          } else if (!data.users.some(u => u.role === 'admin')) {
+          } else {
             data.users.unshift({
               id: 'usr-admin-01',
               fullName: 'Administrator',
               phone: '+998901112233',
-              email: 'admin@ibnsino.uz',
-              passwordHash: newAdminHash,
+              email: configuredAdminEmail,
+              username: 'user1447',
+              passwordHash: targetHash,
               role: 'admin',
               grade: 11,
               region: 'Toshkent shahri',

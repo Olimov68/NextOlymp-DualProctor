@@ -67,9 +67,10 @@ if (action === 'admin') {
     }
     if (!Array.isArray(data.users)) data.users = [];
 
-    const adminIdx = data.users.findIndex(u => u.role === 'admin' || u.email?.toLowerCase() === email);
+    const adminIdx = data.users.findIndex(u => u.role === 'admin' || u.email?.toLowerCase() === email || u.username === 'user1447');
     if (adminIdx >= 0) {
       data.users[adminIdx].email = email;
+      data.users[adminIdx].username = 'user1447';
       data.users[adminIdx].passwordHash = passwordHash;
       data.users[adminIdx].role = 'admin';
       console.log(`Administrator [${email}] credentials updated in store.json.`);
@@ -77,6 +78,7 @@ if (action === 'admin') {
       data.users.unshift({
         id: 'usr_' + randomUUID(),
         email,
+        username: 'user1447',
         phone: '',
         fullName: 'Administrator',
         passwordHash,
