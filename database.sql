@@ -27,6 +27,9 @@ CREATE TABLE `users` (
     `status` VARCHAR(32) DEFAULT 'active',
     `package` VARCHAR(32) DEFAULT 'Bepul',
     `avatar_url` TEXT DEFAULT NULL,
+    `telegram_chat_id` VARCHAR(64) DEFAULT NULL,
+    `telegram_username` VARCHAR(100) DEFAULT NULL,
+    `is_telegram_verified` BOOLEAN DEFAULT FALSE,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

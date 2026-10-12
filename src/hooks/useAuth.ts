@@ -6,6 +6,7 @@ export function useAuth() {
   const isLoading = useAuthStore((state) => state.isLoading);
   const login = useAuthStore((state) => state.login);
   const register = useAuthStore((state) => state.register);
+  const registerVerify = useAuthStore((state) => state.registerVerify);
   const logout = useAuthStore((state) => state.logout);
   const setRole = useAuthStore((state) => state.setRole);
 
@@ -22,6 +23,7 @@ export function useAuth() {
     isAdmin,
     login,
     register,
+    registerVerify,
     logout,
     setRole,
   };

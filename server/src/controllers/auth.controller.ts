@@ -7,6 +7,7 @@ import { dbStore, UserRecord } from '../db/store';
 import { JWT_SECRET, IS_PRODUCTION } from '../config/constants';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { NotificationProvider } from '../services/notificationProvider';
+import { TelegramBotService } from '../services/telegramBot.service';
 
 function setAuthCookie(res: Response, token: string) {
   const isSecure = IS_PRODUCTION || process.env.COOKIE_SECURE === 'true';
@@ -56,6 +57,186 @@ export class AuthController {
       });
     } catch (error: any) {
       return res.status(500).json({ error: 'Kirish jarayonida xatolik yuz berdi' });
+    }
+  }
+
+  /**
+   * Telegram-based Registration: Step 1 (Initialize Registration & Issue Bot Deep Link)
+   */
+  public static async registerInit(req: Request, res: Response) {
+    try {
+      const { fullName, email, phone, password, grade, region, district, school } = req.body;
+
+      if (!fullName || (!email && !phone) || !password) {
+        return res.status(400).json({ error: 'F.I.Sh, aloqa ma\'lumoti va parol talab qilinadi' });
+      }
+
+      const trimmedEmail = email ? String(email).trim().toLowerCase() : '';
+      const trimmedPhone = phone ? String(phone).trim().replace(/\s+/g, '') : '';
+      const cleanPass = String(password);
+      if (Buffer.byteLength(cleanPass, 'utf8') > 72) {
+        return res.status(400).json({ error: 'Parol 72 baytdan oshmasligi kerak' });
+      }
+
+      // Email and phone validation
+      if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        return res.status(400).json({ error: 'Elektron pochta manzili formati noto\'g\'ri' });
+      }
+
+      if (trimmedPhone && trimmedPhone.replace(/\D/g, '').length < 9) {
+        return res.status(400).json({ error: 'Telefon raqami kamida 9 ta raqamdan iborat bo\'lishi shart' });
+      }
+
+      // Strong Password Policy
+      if (cleanPass.length < 8) {
+        return res.status(400).json({ error: 'Parol kamida 8 ta belgidan iborat bo\'lishi shart' });
+      }
+
+      const COMMON_WEAK_PASSWORDS = ['password123', '1234567890', 'admin12345', 'qwertyuiop', 'student123', 'ibnsino2026'];
+      if (COMMON_WEAK_PASSWORDS.includes(cleanPass.toLowerCase())) {
+        return res.status(400).json({ error: 'Bu parol juda oddiy va zaif. Iltimos, mustahkamroq parol tanlang' });
+      }
+
+      // Duplicate check
+      const existing = (trimmedEmail && dbStore.getUserByEmailOrPhone(trimmedEmail)) ||
+                       (trimmedPhone && dbStore.getUserByEmailOrPhone(trimmedPhone));
+      if (existing) {
+        return res.status(409).json({ error: 'Ushbu email yoki telefon raqami bilan akkaunt allaqachon mavjud' });
+      }
+
+      const salt = bcrypt.genSaltSync(10);
+      const passwordHash = bcrypt.hashSync(cleanPass, salt);
+
+      // Generate 6-digit verification code and deep-link token
+      const code = crypto.randomInt(100000, 999999).toString();
+      const token = 'reg_' + crypto.randomBytes(6).toString('hex');
+      const expiresAt = Date.now() + 15 * 60 * 1000;
+
+      dbStore.setPendingRegistration(token, {
+        token,
+        code,
+        fullName: String(fullName).trim().replace(/[<>]/g, ''),
+        email: trimmedEmail || `${trimmedPhone.replace(/\D/g, '')}@ibnsino.uz`,
+        phone: trimmedPhone,
+        passwordHash,
+        role: 'student',
+        grade: Number(grade) || 9,
+        region: String(region || 'Toshkent shahri').trim().replace(/[<>]/g, ''),
+        district: String(district || '').trim().replace(/[<>]/g, ''),
+        school: String(school || 'Maktab').trim().replace(/[<>]/g, ''),
+        createdAt: Date.now(),
+        expiresAt,
+        verified: false,
+      });
+
+      const botUsername = TelegramBotService.getBotUsername();
+      const deepLink = `https://t.me/${botUsername}?start=${token}`;
+
+      return res.status(200).json({
+        success: true,
+        token,
+        botUsername,
+        deepLink,
+        debugCode: !IS_PRODUCTION ? code : undefined,
+        expiresInSeconds: 900,
+        message: `Iltimos, @${botUsername} botiga kiring va Start tugmasini bosing. Bot sizga tasdiqlash kodini yuboradi.`,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Ro\'yxatdan o\'tish so\'rovida xatolik yuz berdi' });
+    }
+  }
+
+  /**
+   * Telegram-based Registration: Polling Status (Check if user pressed start in bot)
+   */
+  public static async registerStatus(req: Request, res: Response) {
+    try {
+      const token = String(req.query.token || '').trim();
+      if (!token) return res.status(400).json({ error: 'Token talab qilinadi' });
+
+      const pending = dbStore.getPendingRegistration(token);
+      if (!pending || pending.expiresAt < Date.now()) {
+        return res.status(404).json({ error: 'Tasdiqlash muddati o\'tgan yoki topilmadi' });
+      }
+
+      return res.json({
+        success: true,
+        verified: Boolean(pending.verified),
+        hasTelegram: Boolean(pending.telegramChatId),
+        telegramUsername: pending.telegramUsername || '',
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Holatni tekshirishda xatolik yuz berdi' });
+    }
+  }
+
+  /**
+   * Telegram-based Registration: Step 2 (Verify code from bot and complete registration)
+   */
+  public static async registerVerify(req: Request, res: Response) {
+    try {
+      const { token, code } = req.body;
+      const cleanCode = String(code || '').trim();
+
+      if (!cleanCode) {
+        return res.status(400).json({ error: '6 xonali tasdiqlash kodi kiritilishi shart' });
+      }
+
+      let pending = token ? dbStore.getPendingRegistration(String(token).trim()) : undefined;
+      if (!pending) {
+        pending = dbStore.getPendingRegistrationByCode(cleanCode);
+      }
+
+      if (!pending || pending.expiresAt < Date.now()) {
+        return res.status(400).json({ error: 'Tasdiqlash kodi yaroqsiz yoki muddati o\'tib ketgan' });
+      }
+
+      if (pending.code !== cleanCode) {
+        return res.status(400).json({ error: 'Tasdiqlash kodi noto\'g\'ri' });
+      }
+
+      const newUser: UserRecord = {
+        id: `usr_${uuidv4()}`,
+        fullName: pending.fullName,
+        email: pending.email,
+        phone: pending.phone,
+        passwordHash: pending.passwordHash,
+        role: 'student',
+        grade: pending.grade,
+        region: pending.region,
+        district: pending.district,
+        school: pending.school,
+        score: 0,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        telegramChatId: pending.telegramChatId,
+        telegramUsername: pending.telegramUsername,
+        isTelegramVerified: Boolean(pending.telegramChatId),
+      };
+
+      const createResult = dbStore.createUser(newUser);
+      if (!createResult.success) {
+        return res.status(409).json({ error: createResult.error || 'Ushbu email yoki telefon bilan foydalanuvchi allaqachon mavjud' });
+      }
+
+      dbStore.deletePendingRegistration(pending.token);
+
+      const authToken = jwt.sign(
+        { id: newUser.id, email: newUser.email, role: newUser.role, fullName: newUser.fullName },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      setAuthCookie(res, authToken);
+
+      const { passwordHash: _, ...userSafe } = newUser;
+
+      return res.status(201).json({
+        success: true,
+        user: userSafe,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Tasdiqlashda xatolik yuz berdi' });
     }
   }
 
@@ -163,13 +344,14 @@ export class AuthController {
 
   public static async forgotPassword(req: Request, res: Response) {
     try {
-      const email = req.body.email ? String(req.body.email).trim().toLowerCase() : '';
-      if (!email) {
-        return res.status(400).json({ error: 'Elektron pochta manzili kiritilishi shart' });
+      const rawIdentifier = (req.body.email || req.body.phone || req.body.identifier || '').toString().trim();
+      const identifier = rawIdentifier.toLowerCase();
+      if (!identifier) {
+        return res.status(400).json({ error: 'Elektron pochta manzili yoki telefon raqami kiritilishi shart' });
       }
 
       // Resend cooldown: at least 60 seconds
-      const existing = dbStore.getPasswordReset(email);
+      const existing = dbStore.getPasswordReset(identifier);
       if (existing && Date.now() - existing.lastSentAt < 60 * 1000) {
         const waitSec = Math.ceil((60 * 1000 - (Date.now() - existing.lastSentAt)) / 1000);
         return res.status(429).json({
@@ -178,30 +360,55 @@ export class AuthController {
         });
       }
 
-      const user = dbStore.getUserByEmailOrPhone(email);
+      const user = dbStore.getUserByEmailOrPhone(identifier);
+      const botUsername = TelegramBotService.getBotUsername();
+      const resetToken = 'reset_' + crypto.randomBytes(6).toString('hex');
+
       if (user) {
         // Generate a 6-digit numeric verification code using crypto
         const code = crypto.randomInt(100000, 999999).toString();
         const salt = bcrypt.genSaltSync(8);
         const codeHash = bcrypt.hashSync(code, salt);
 
-        // Send OTP through provider adapter
-        const delivery = await NotificationProvider.sendOtp(email, code);
-        if (!delivery.sent) {
-          return res.status(503).json({
-            error: delivery.error || "Xabarnoma xizmati sozlanmagan. Iltimos, admin bilan bog'laning.",
-          });
+        let sentViaTelegram = false;
+        if (user.telegramChatId) {
+          sentViaTelegram = await TelegramBotService.sendOtpCode(user.telegramChatId, code, user.fullName, 'reset');
+        }
+
+        // Also attempt NotificationProvider if configured or needed
+        if (!sentViaTelegram && NotificationProvider.isConfigured()) {
+          await NotificationProvider.sendOtp(user.email || user.phone, code);
         }
 
         // 15 minutes expiration with max 5 verification attempts
         const expiresAt = Date.now() + 15 * 60 * 1000;
-        dbStore.setPasswordReset(email, {
+        const resetRecord = {
           codeHash,
           expiresAt,
           attempts: 0,
           lastSentAt: Date.now(),
+          resetToken,
+          plainCode: code,
+        };
+        dbStore.setPasswordReset(identifier, resetRecord as any);
+        if (user.email && user.email.toLowerCase() !== identifier) {
+          dbStore.setPasswordReset(user.email.toLowerCase(), resetRecord as any);
+        }
+        if (user.phone && user.phone !== identifier) {
+          dbStore.setPasswordReset(user.phone, resetRecord as any);
+        }
+
+        return res.json({
+          success: true,
+          viaTelegram: true,
+          botUsername,
+          deepLink: `https://t.me/${botUsername}?start=${resetToken}`,
+          message: sentViaTelegram
+            ? `Tasdiqlash kodi Telegram botimiz (@${botUsername}) orqali yuborildi!`
+            : `Telegram botimiz (@${botUsername}) orqali tasdiqlash kodini oling.`,
+          debugCode: !IS_PRODUCTION ? code : undefined,
         });
-      } else if (IS_PRODUCTION && !NotificationProvider.isConfigured()) {
+      } else if (IS_PRODUCTION && !NotificationProvider.isConfigured() && !TelegramBotService.isConfigured()) {
         return res.status(503).json({
           error: "Xabarnoma xizmati sozlanmagan. Iltimos, administrator bilan bog'laning.",
         });
@@ -209,7 +416,9 @@ export class AuthController {
 
       return res.json({
         success: true,
-        message: "Agar ko'rsatilgan elektron pochta tizimda mavjud bo'lsa, tasdiqlash kodi yuborildi. Iltimos, pochtangizni tekshiring.",
+        botUsername,
+        deepLink: `https://t.me/${botUsername}?start=${resetToken}`,
+        message: "Agar ko'rsatilgan ma'lumot tizimda mavjud bo'lsa, Telegram orqali tasdiqlash havolasi taqdim etildi.",
       });
     } catch (error: any) {
       return res.status(500).json({ error: 'Serverda xatolik yuz berdi' });
@@ -218,28 +427,33 @@ export class AuthController {
 
   public static async resetPassword(req: Request, res: Response) {
     try {
-      const email = req.body.email ? String(req.body.email).trim().toLowerCase() : '';
+      const rawIdentifier = (req.body.email || req.body.phone || req.body.identifier || '').toString().trim();
+      const email = rawIdentifier.toLowerCase();
       const code = req.body.code ? String(req.body.code).trim() : '';
       const newPassword = req.body.newPassword ? String(req.body.newPassword) : '';
       if (Buffer.byteLength(newPassword, 'utf8') > 72) return res.status(400).json({ error: 'Parol 72 baytdan oshmasligi kerak' });
 
       if (!email || !code || !newPassword) {
-        return res.status(400).json({ error: 'Email, tasdiqlash kodi va yangi parol talab qilinadi' });
+        return res.status(400).json({ error: 'Email/Telefon, tasdiqlash kodi va yangi parol talab qilinadi' });
       }
 
       // Strong Password Policy matching registration
-      if (newPassword.length < 10) {
-        return res.status(400).json({ error: 'Yangi parol kamida 10 ta belgidan iborat bo\'lishi shart' });
-      }
-      if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-        return res.status(400).json({ error: 'Parol tarkibida kamida 1 ta katta harf, 1 ta kichik harf va raqam bo\'lishi shart' });
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Yangi parol kamida 8 ta belgidan iborat bo\'lishi shart' });
       }
       const COMMON_WEAK_PASSWORDS = ['password123', '1234567890', 'admin12345', 'qwertyuiop', 'student123', 'ibnsino2026'];
       if (COMMON_WEAK_PASSWORDS.includes(newPassword.toLowerCase())) {
         return res.status(400).json({ error: 'Bu parol juda oddiy va zaif. Iltimos, mustahkamroq parol tanlang' });
       }
 
-      const tokenRecord = dbStore.getPasswordReset(email);
+      let tokenRecord = dbStore.getPasswordReset(email);
+      if (!tokenRecord) {
+        const u = dbStore.getUserByEmailOrPhone(email);
+        if (u) {
+          tokenRecord = dbStore.getPasswordReset(u.email) || (u.phone ? dbStore.getPasswordReset(u.phone) : undefined);
+        }
+      }
+
       if (!tokenRecord) {
         return res.status(400).json({ error: 'Tasdiqlash kodi yaroqsiz yoki muddati o\'tgan' });
       }

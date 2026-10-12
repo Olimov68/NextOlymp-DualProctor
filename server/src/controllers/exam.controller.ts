@@ -19,6 +19,7 @@ import { knownEvent } from '../security/eventPolicy';
 import { decodeSnapshot, SnapshotImageError } from '../security/snapshotImage';
 import { validateExam, normalizeQuestions } from '../security/examValidation';
 import { examKind, practiceAvailable, validateRaschConfig } from '../services/assessment';
+import { TelegramBotService } from '../services/telegramBot.service';
 
 function getClientIp(req: Request): string {
   const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
@@ -407,6 +408,25 @@ export class ExamController {
       const submission = dbStore.finishAndGradeExam(targetSessionId);
       if (!submission) {
         return res.status(400).json({ error: 'Imtihonni baholashda xatolik yuz berdi' });
+      }
+
+      // Send Telegram notification if user has linked Telegram
+      if (req.user) {
+        const student = dbStore.getUserById(req.user.id) || req.user;
+        if (student && student.telegramChatId) {
+          const examSubs = dbStore.getSubmissions().filter(s => s.examId === submission.examId && s.status === 'completed');
+          const higherScores = examSubs.filter(s => s.score > submission.score).length;
+          const rank = higherScores + 1;
+
+          void TelegramBotService.sendExamResult(student.telegramChatId, {
+            studentName: student.fullName,
+            subject: submission.subject || 'Biologiya / Kimyo',
+            score: submission.score,
+            maxScore: submission.maxScore || 100,
+            rank,
+            submissionId: submission.id,
+          });
+        }
       }
 
       return res.json({

@@ -14,6 +14,9 @@ export interface User {
   avatarUrl?: string;
   createdAt: string;
   parentConsent?: boolean;
+  telegramChatId?: string | number;
+  telegramUsername?: string;
+  isTelegramVerified?: boolean;
 }
 
 export type Subject = 'math' | 'physics' | 'chemistry' | 'biology' | 'informatics' | 'other';

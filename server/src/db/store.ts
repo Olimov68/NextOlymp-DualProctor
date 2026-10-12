@@ -279,6 +279,9 @@ export interface UserRecord {
   status: string;
   isActive?: boolean;
   createdAt: string;
+  telegramChatId?: string | number;
+  telegramUsername?: string;
+  isTelegramVerified?: boolean;
 }
 
 export interface QuestionRecord {
@@ -323,6 +326,8 @@ export interface ExamRecord {
   isAlwaysOpen?: boolean;
   registrationStartDate?: string;
   registrationEndDate?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ExamSessionRecord {
@@ -452,8 +457,28 @@ export interface NotificationLogRecord {
   smsCount: number;
 }
 
+export interface PendingRegistration {
+  token: string;
+  code: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  passwordHash: string;
+  role: 'student' | 'teacher';
+  grade: number;
+  region: string;
+  district: string;
+  school: string;
+  telegramChatId?: string | number;
+  telegramUsername?: string;
+  verified?: boolean;
+  createdAt: number;
+  expiresAt: number;
+}
+
 export interface DatabaseSchema {
   passwordResets?: Record<string, { codeHash: string; expiresAt: number; attempts: number; lastSentAt: number }>;
+  pendingRegistrations?: Record<string, PendingRegistration>;
   users: UserRecord[];
   exams: ExamRecord[];
   questions: QuestionRecord[];
@@ -983,6 +1008,42 @@ class Store {
   public deletePasswordReset(email: string) {
     if (this.data.passwordResets) delete this.data.passwordResets[email];
     this.saveData();
+  }
+
+  // --- Telegram & Pending Registrations ---
+  public getPendingRegistration(token: string): PendingRegistration | undefined {
+    return this.data.pendingRegistrations?.[token];
+  }
+
+  public getPendingRegistrationByCode(code: string): PendingRegistration | undefined {
+    if (!this.data.pendingRegistrations) return undefined;
+    const cleanCode = code.trim();
+    return Object.values(this.data.pendingRegistrations).find(p => p.code === cleanCode && p.expiresAt > Date.now());
+  }
+
+  public setPendingRegistration(token: string, data: PendingRegistration): void {
+    (this.data.pendingRegistrations ??= {})[token] = data;
+    this.saveData();
+  }
+
+  public updatePendingRegistration(token: string, updates: Partial<PendingRegistration>): PendingRegistration | null {
+    const existing = this.getPendingRegistration(token);
+    if (!existing) return null;
+    Object.assign(existing, updates);
+    this.saveData();
+    return existing;
+  }
+
+  public deletePendingRegistration(token: string): void {
+    if (this.data.pendingRegistrations) {
+      delete this.data.pendingRegistrations[token];
+      this.saveData();
+    }
+  }
+
+  public getUserByTelegramChatId(chatId: string | number): UserRecord | undefined {
+    const target = String(chatId);
+    return this.data.users.find(u => u.telegramChatId && String(u.telegramChatId) === target);
   }
   public getExams(): ExamRecord[] {
     return this.data.exams;

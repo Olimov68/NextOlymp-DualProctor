@@ -23,6 +23,7 @@ import { databaseMiddleware } from './middleware/database.middleware';
 import { checkDatabase, databasePool } from './db/transactionStore';
 import { SupportController } from './controllers/support.controller';
 import { NotificationController } from './controllers/notification.controller';
+import { TelegramBotService } from './services/telegramBot.service';
 
 const app = express();
 const server = http.createServer(app);
@@ -243,11 +244,33 @@ const io = new Server(server, {
 
 // 1. Auth routes (with granular rate limits)
 app.post('/api/auth/login', loginRateLimiter, AuthController.login);
+app.post('/api/auth/register-init', registerRateLimiter, AuthController.registerInit);
+app.get('/api/auth/register-status', AuthController.registerStatus);
+app.post('/api/auth/register-verify', registerRateLimiter, AuthController.registerVerify);
 app.post('/api/auth/register', registerRateLimiter, AuthController.register);
 app.post('/api/auth/logout', optionalAuth, AuthController.logout);
 app.post('/api/auth/forgot-password', forgotPasswordRateLimiter, AuthController.forgotPassword);
 app.post('/api/auth/reset-password', resetPasswordRateLimiter, AuthController.resetPassword);
 app.get('/api/auth/me', authenticateJWT, AuthController.me);
+
+// Telegram Bot Admin Endpoints
+app.get('/api/admin/telegram/status', authenticateJWT, requireRole(['admin']), (_req, res) => {
+  const users = dbStore.getUsers();
+  const withTg = users.filter(u => u.telegramChatId);
+  res.json({
+    configured: TelegramBotService.isConfigured(),
+    botUsername: TelegramBotService.getBotUsername(),
+    siteUrl: TelegramBotService.getSiteUrl(),
+    totalUsers: users.length,
+    usersWithTelegram: withTg.length,
+  });
+});
+
+app.post('/api/admin/telegram/broadcast-reminder/:id', authenticateJWT, requireRole(['admin']), async (req, res) => {
+  const examId = req.params.id;
+  const result = await TelegramBotService.broadcastOlympiadReminder(examId, 15);
+  res.json({ success: true, ...result });
+});
 app.get('/api/public/stats', (_req, res) => {
   const students = dbStore.getUsers().filter(u => u.role === 'student' && u.status === 'active');
   res.json({ students: students.length, exams: dbStore.getExams().length,
@@ -545,6 +568,8 @@ if (!isTestExecution) {
   validateEnvironment();
   void checkDatabase().then(() => {
     heartbeatWorker.start();
+    TelegramBotService.startPolling();
+    setInterval(() => TelegramBotService.checkUpcomingOlympiadsAndNotify(), 60000);
     const host = process.env.HOST || '0.0.0.0';
     server.listen(PORT, host, () => {
       console.log(`🌿 Ibn Sino Mock Exam & Olympiad Server ${PORT}-portda (${host}) muvaffaqiyatli ishga tushdi`);
@@ -553,6 +578,8 @@ if (!isTestExecution) {
   }).catch((err) => {
     console.error('[startup] Database configuration notice:', err?.message || err);
     heartbeatWorker.start();
+    TelegramBotService.startPolling();
+    setInterval(() => TelegramBotService.checkUpcomingOlympiadsAndNotify(), 60000);
     const host = process.env.HOST || '0.0.0.0';
     server.listen(PORT, host, () => {
       console.log(`🌿 Ibn Sino Server zaxira rejimida ${PORT}-portda (${host}) ishga tushdi`);
@@ -562,6 +589,7 @@ if (!isTestExecution) {
 
 for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => {
   heartbeatWorker.stop();
+  TelegramBotService.stopPolling();
   io.close();
   server.close(() => { void databasePool?.end(); });
 });

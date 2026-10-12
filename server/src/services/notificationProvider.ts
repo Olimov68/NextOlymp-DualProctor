@@ -1,16 +1,17 @@
 import nodemailer from 'nodemailer';
 import axios from 'axios';
 import { IS_PRODUCTION } from '../config/constants';
+import { TelegramBotService } from './telegramBot.service';
 
 export interface SendOtpResult {
   sent: boolean;
-  channel: 'email' | 'sms' | 'development';
+  channel: 'email' | 'sms' | 'telegram' | 'development';
   error?: string;
 }
 
 export interface SendMessageResult {
   sent: boolean;
-  channel: 'sms' | 'email' | 'development';
+  channel: 'sms' | 'email' | 'telegram' | 'development';
   providerMessageId?: string;
   error?: string;
 }
@@ -150,6 +151,16 @@ export class NotificationProvider {
   }
 
   public static async sendMessage(to: string, message: string, subject = 'Ibn Sino xabarnomasi'): Promise<SendMessageResult> {
+    if (to.startsWith('tg:')) {
+      const chatId = to.replace('tg:', '');
+      const res = await TelegramBotService.sendMessage(chatId, message);
+      return {
+        sent: res.success,
+        channel: 'telegram',
+        providerMessageId: res.messageId ? String(res.messageId) : undefined,
+        error: res.error,
+      };
+    }
     const isEmail = to.includes('@');
     if (!message.trim() || message.length > 1000) {
       return { sent: false, channel: isEmail ? 'email' : 'sms', error: 'Xabar bo‘sh yoki juda uzun' };

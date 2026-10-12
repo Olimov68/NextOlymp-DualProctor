@@ -27,7 +27,8 @@ export class NotificationController {
 
     const logs: NotificationLogRecord[] = [];
     for (const user of users.slice(0, 500)) {
-      const result = await NotificationProvider.sendMessage(user.phone, message);
+      const recipient = user.telegramChatId ? `tg:${user.telegramChatId}` : user.phone;
+      const result = await NotificationProvider.sendMessage(recipient, message);
       logs.push(dbStore.addNotificationLog({
         id: `MSG-${crypto.randomBytes(6).toString('hex').toUpperCase()}`, phone: user.phone, userName: user.fullName, userId: user.id,
         type, message, region: user.region || 'Noma’lum', status: result.sent ? 'Qabul qilindi' : 'Yuborilmadi',
