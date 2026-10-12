@@ -14,7 +14,7 @@ export class TelegramBotService {
   private static notifiedReminders = new Set<string>(); // examId + minute to prevent duplicate broadcasts
 
   public static getToken(): string {
-    return (process.env.TELEGRAM_BOT_TOKEN || '8628989066:AAGuMo-4MX2cUlnRcHqdAzgl9lm2OaJnicg').trim();
+    return (process.env.TELEGRAM_BOT_TOKEN || '').trim();
   }
 
   public static getBotUsername(): string {
