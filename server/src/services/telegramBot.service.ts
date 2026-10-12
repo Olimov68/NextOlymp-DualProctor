@@ -252,19 +252,27 @@ export class TelegramBotService {
   }
 
   private static async pollLoop(): Promise<void> {
-    const token = this.getToken();
     const siteUrl = this.getSiteUrl();
+    let hasWarned401 = false;
 
     while (this.isPollingRunning) {
+      const token = this.getToken();
+      if (!token || !token.includes(':')) {
+        await new Promise(res => setTimeout(res, 10000));
+        continue;
+      }
+
       try {
         const response = await axios.get(`https://api.telegram.org/bot${token}/getUpdates`, {
           params: {
             offset: this.lastUpdateId ? this.lastUpdateId + 1 : undefined,
-            timeout: 25,
-            allowed_updates: ['message'],
+            timeout: 20,
+            allowed_updates: JSON.stringify(['message']),
           },
-          timeout: 35000,
+          timeout: 30000,
         });
+
+        hasWarned401 = false; // Reset 401 warning on success
 
         if (response.data && response.data.ok && Array.isArray(response.data.result)) {
           for (const update of response.data.result) {
@@ -272,10 +280,30 @@ export class TelegramBotService {
             await this.handleUpdate(update, siteUrl);
           }
         }
+
+        // Small throttle delay between polling cycles to keep CPU at 0%
+        await new Promise(res => setTimeout(res, 1000));
       } catch (err: any) {
         if (!this.isPollingRunning) break;
-        // Network timeout / connection error - wait 3 seconds and retry gracefully
-        await new Promise(res => setTimeout(res, 3000));
+
+        const status = err?.response?.status;
+        const desc = err?.response?.data?.description || err?.message || '';
+
+        if (status === 401) {
+          if (!hasWarned401) {
+            console.warn(`[TelegramBot] ⚠️ Token yaroqsiz (401 Unauthorized). Iltimos, .env faylidagi TELEGRAM_BOT_TOKEN ni tekshiring: ${desc}`);
+            hasWarned401 = true;
+          }
+          // Back off for 30 seconds on 401 Unauthorized
+          await new Promise(res => setTimeout(res, 30000));
+        } else if (status === 409) {
+          // Conflict: another instance is already running getUpdates
+          console.warn('[TelegramBot] ⚠️ 409 Conflict: Botning boshqa nusxasi ishlayapti. 10 soniya kutilmoqda...');
+          await new Promise(res => setTimeout(res, 10000));
+        } else {
+          // Network timeout / connection drop - wait 3 seconds and retry gracefully
+          await new Promise(res => setTimeout(res, 3000));
+        }
       }
     }
   }
