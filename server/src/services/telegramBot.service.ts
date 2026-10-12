@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { dbStore, type UserRecord, type SubmissionRecord, type ExamRecord } from '../db/store';
+import { databaseTransaction } from '../db/transactionStore';
 
 export interface TelegramSendMessageOptions {
   parse_mode?: 'HTML' | 'Markdown' | 'MarkdownV2';
@@ -191,33 +192,35 @@ export class TelegramBotService {
   /**
    * Scheduled checker: Runs periodically to check exams starting in ~15 minutes
    */
-  public static checkUpcomingOlympiadsAndNotify(): void {
+  public static async checkUpcomingOlympiadsAndNotify(): Promise<void> {
     try {
-      const exams = dbStore.getExams().filter(e => e.status !== 'yopiq');
-      const now = Date.now();
+      await databaseTransaction(async () => {
+        const exams = dbStore.getExams().filter(e => e.status !== 'yopiq');
+        const now = Date.now();
 
-      for (const exam of exams) {
-        let startTimeMs: number | null = null;
-        const timeStr = exam.startTime || (exam as any).startDate;
-        if (timeStr) {
-          const parsed = new Date(timeStr).getTime();
-          if (!isNaN(parsed)) startTimeMs = parsed;
-        }
+        for (const exam of exams) {
+          let startTimeMs: number | null = null;
+          const timeStr = exam.startTime || (exam as any).startDate;
+          if (timeStr) {
+            const parsed = new Date(timeStr).getTime();
+            if (!isNaN(parsed)) startTimeMs = parsed;
+          }
 
-        if (!startTimeMs) continue;
+          if (!startTimeMs) continue;
 
-        const diffMinutes = Math.round((startTimeMs - now) / 60000);
+          const diffMinutes = Math.round((startTimeMs - now) / 60000);
 
-        // If exam is between 13 and 17 minutes away, and not notified yet
-        if (diffMinutes >= 13 && diffMinutes <= 17) {
-          const reminderKey = `${exam.id}_15m`;
-          if (!this.notifiedReminders.has(reminderKey)) {
-            this.notifiedReminders.add(reminderKey);
-            console.log(`[TelegramBot] ⏰ Sending 15-minute reminder for exam: ${exam.title} (${exam.id})`);
-            void this.broadcastOlympiadReminder(exam.id, 15);
+          // If exam is between 13 and 17 minutes away, and not notified yet
+          if (diffMinutes >= 13 && diffMinutes <= 17) {
+            const reminderKey = `${exam.id}_15m`;
+            if (!this.notifiedReminders.has(reminderKey)) {
+              this.notifiedReminders.add(reminderKey);
+              console.log(`[TelegramBot] ⏰ Sending 15-minute reminder for exam: ${exam.title} (${exam.id})`);
+              await this.broadcastOlympiadReminder(exam.id, 15);
+            }
           }
         }
-      }
+      });
     } catch (err: any) {
       console.error('[TelegramBot checkUpcomingOlympiads Error]:', err?.message || err);
     }
@@ -277,7 +280,9 @@ export class TelegramBotService {
         if (response.data && response.data.ok && Array.isArray(response.data.result)) {
           for (const update of response.data.result) {
             this.lastUpdateId = Math.max(this.lastUpdateId, update.update_id);
-            await this.handleUpdate(update, siteUrl);
+            await databaseTransaction(async () => {
+              await this.handleUpdate(update, siteUrl);
+            });
           }
         }
 
